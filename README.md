@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/CrewAI-Agentic%20Orchestration-red)](https://www.crewai.com/)
-[![LLM](https://img.shields.io/badge/NVIDIA%20NIM-Llama%203.3%2070B-green)]([https://build.nvidia.com/meta/llama-3_3-70b-instruct](https://build.nvidia.com/meta/llama-3_3-70b-instruct))
+[![LLM](https://img.shields.io/badge/NVIDIA%20NIM-Llama%203.3%2070B-green)](https://build.nvidia.com/meta/llama-3_3-70b-instruct)
 
 An advanced multi-agent system designed to automate the end-to-end workflow of market intelligence, content strategy, and business reporting for the technology sector. This project leverages **CrewAI** for agent orchestration and **NVIDIA NIM** for high-performance inference.
 
