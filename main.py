@@ -11,12 +11,12 @@ def run_smartphone_intelligence_system():
     agents_factory = MarketingAgents()
     tasks_factory = MarketingTasks()
 
-    # 2. Tạo các Agents (Giữ nguyên của bệ hạ)
+    # 2. Tạo các Agents 
     search_analyst = agents_factory.search_analyst()
     content_strategist = agents_factory.content_strategist()
     business_reporter = agents_factory.business_reporter()
 
-    # 3. Tạo các Tasks (Giữ nguyên của bệ hạ)
+    # 3. Tạo các Tasks 
     research_task = tasks_factory.research_task(search_analyst, "Xu hướng smartphone 2026")
     content_task = tasks_factory.content_creation_task(content_strategist)
     report_task = tasks_factory.analytics_report_task(business_reporter)

@@ -1,17 +1,17 @@
 import sqlite3
 import os
 
-# Thiết lập đường dẫn
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-db_path = os.path.join(project_root, 'data', 'raw', 'marketing_intelligence.db')
+# --- CẤU HÌNH ĐƯỜNG DẪN DATABASE ---
+# Đảm bảo database được tạo trong thư mục data/raw của project
+db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'raw', 'marketing_intelligence.db')
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+# Xóa file db cũ nếu tồn tại để khởi tạo lại từ đầu
+if os.path.exists(db_path):
+    os.remove(db_path)
 
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
-
-# Làm sạch hệ thống
-tables = ['competitor_products', 'marketing_campaigns', 'social_sentiment', 'sales_performance', 'sales']
-for table in tables:
-    cursor.execute(f'DROP TABLE IF EXISTS {table}')
 
 # --- BẢNG 1: ĐỐI THỦ & THÔNG SỐ (Để Agent so sánh Specs) ---
 cursor.execute('''
@@ -129,4 +129,5 @@ cursor.executemany('INSERT INTO sales_performance VALUES (?,?,?,?,?)', sales_per
 
 conn.commit()
 conn.close()
+
 print("📈 Database Marketing Intelligence đã sẵn sàng cho Agent phân tích!")

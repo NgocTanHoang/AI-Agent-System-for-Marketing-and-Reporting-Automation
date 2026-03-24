@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 from ddgs import DDGS
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -31,14 +30,6 @@ def search_internet(query: str):
         return results if results else f"Không tìm thấy kết quả cho: {query}"
     except Exception as e:
         return f"Lỗi tìm kiếm: {e}"
-
-def read_sales_data(file_path: str):
-    """Đọc dữ liệu từ file CSV để phân tích báo cáo."""
-    try:
-        df = pd.read_csv(file_path)
-        return df.to_string()
-    except Exception as e:
-        return f"Lỗi không đọc được file: {e}"
 
 def save_report(content: str, filename: str):
     """Lưu báo cáo xuống định dạng Markdown (.md)."""
@@ -109,7 +100,7 @@ def publish_to_google_docs(title: str, content: str, folder_id: str = ""):
 # Đóng gói thành CrewAI tools
 if tool:
     search_internet = tool(search_internet)
-    read_sales_data = tool(read_sales_data)
+
     save_report = tool(save_report)
     publish_to_google_docs = tool(publish_to_google_docs)
 
@@ -119,10 +110,6 @@ class MarketingTools:
     @staticmethod
     def search_internet(query: str):
         return search_internet.run(query) if hasattr(search_internet, "run") else search_internet(query)
-
-    @staticmethod
-    def read_sales_data(file_path: str):
-        return read_sales_data.run(file_path) if hasattr(read_sales_data, "run") else read_sales_data(file_path)
 
     @staticmethod
     def save_report(content: str, filename: str):
