@@ -1,133 +1,156 @@
 import sqlite3
 import os
+import random
+from datetime import datetime, timedelta
 
 # --- CẤU HÌNH ĐƯỜNG DẪN DATABASE ---
-# Đảm bảo database được tạo trong thư mục data/raw của project
 db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'raw', 'marketing_intelligence.db')
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-# Xóa file db cũ nếu tồn tại để khởi tạo lại từ đầu
 if os.path.exists(db_path):
     os.remove(db_path)
 
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-# --- BẢNG 1: ĐỐI THỦ & THÔNG SỐ (Để Agent so sánh Specs) ---
+# --- 1. BẢNG COMPETITOR_PRODUCTS (Mở rộng thêm RELEASE_YEAR) ---
 cursor.execute('''
     CREATE TABLE competitor_products (
         id INTEGER PRIMARY KEY,
         brand TEXT,
         model_name TEXT,
-        key_features TEXT, -- Ví dụ: "Chip AI, Camera 200MP"
-        price_segment TEXT, -- Flagship, Mid-range
+        key_features TEXT,
+        price_segment TEXT,
         current_price REAL,
+        release_year INTEGER,
         strengths TEXT,
         weaknesses TEXT
     )
 ''')
 
-# --- BẢNG 2: CHIẾN DỊCH MARKETING (Để Agent phân tích hiệu quả - ROI) ---
+# --- 2. BẢNG MARKETING_CAMPAIGNS (Mở rộng STATUS, ROI) ---
 cursor.execute('''
     CREATE TABLE marketing_campaigns (
         id INTEGER PRIMARY KEY,
         campaign_name TEXT,
-        channel TEXT, -- Facebook, Google, TikTok, KOL
+        channel TEXT,
         budget REAL,
-        reach INTEGER, -- Lượt tiếp cận
-        conversions INTEGER, -- Số đơn hàng từ quảng cáo
+        reach INTEGER,
+        conversions INTEGER,
+        roi REAL,
+        status TEXT,
         start_date DATE,
         end_date DATE
     )
 ''')
 
-# --- BẢNG 3: SENTIMENT & TRENDS (Dữ liệu từ Social Listening) ---
+# --- 3. BẢNG SOCIAL_SENTIMENT (Mở rộng TOTAL_MENTIONS, EMOTION) ---
 cursor.execute('''
     CREATE TABLE social_sentiment (
         id INTEGER PRIMARY KEY,
-        keyword TEXT, -- ví dụ: "iPhone 17", "Màn hình gập"
-        positive_score REAL, -- 0.0 đến 1.0
+        keyword TEXT,
+        positive_score REAL,
         negative_score REAL,
+        total_mentions INTEGER,
         top_complaint TEXT,
-        trending_platform TEXT
+        trending_platform TEXT,
+        top_emotion TEXT -- Happy, Angry, Excited, Neutral
     )
 ''')
 
-# --- BẢNG 4: DOANH SỐ SMARTPHONE CHI TIẾT (Để Business Reporter phân tích) ---
+# --- 4. BẢNG SALES (Mở rộng CUSTOMER_AGE, PAYMENT_METHOD) ---
 cursor.execute('''
     CREATE TABLE sales (
         id INTEGER PRIMARY KEY,
         brand TEXT,
         model_name TEXT,
-        spec_variant TEXT, -- RAM/Storage variant
+        spec_variant TEXT,
         units_sold INTEGER,
         unit_price REAL,
         region TEXT,
+        customer_age_group TEXT,
+        payment_method TEXT,
         launch_date DATE
     )
 ''')
 
-# --- BẢNG 5: HIỆU SUẤT DOANH SỐ (Kết quả cuối cùng để báo cáo) ---
+# --- 5. BẢNG SALES_PERFORMANCE ---
 cursor.execute('''
     CREATE TABLE sales_performance (
         id INTEGER PRIMARY KEY,
         product_name TEXT,
         units_sold INTEGER,
         revenue REAL,
-        month_period TEXT -- ví dụ: "2026-03"
+        month_period TEXT
     )
 ''')
 
-# --- 🚀 CHÈN DỮ LIỆU GIẢ (FAKE DATA) PHỤC VỤ MARKETING ---
+# --- 🚀 CHÈN DỮ LIỆU FAKE TRƯỞNG THÀNH (DENSE DATA) ---
 
-# 1. Dữ liệu đối thủ (Để Agent viết bài so sánh)
+# 1. Competitors
 competitors = [
-    (1, 'Apple', 'iPhone 17 Pro', 'Apple Intelligence 2.0, A19 Chip', 'Flagship', 32000000, 'Brand loyalty, OS ecosystem', 'Slow charging'),
-    (2, 'Samsung', 'Galaxy S26 Ultra', 'S-Pen, 100x Zoom AI', 'Flagship', 30000000, 'Best display, Zoom camera', 'Bulky design'),
-    (3, 'Xiaomi', 'Mi 16 Pro', 'Leica Lens, 120W Charging', 'Mid-High', 18000000, 'Price/Performance, Charging speed', 'Software bugs')
+    (1, 'Apple', 'iPhone 17 Pro', 'AI 2.0, A19', 'Flagship', 32000000, 2025, 'Ecosystem', 'Charging'),
+    (2, 'Samsung', 'Galaxy S26 Ultra', '100x Zoom, S-Pen', 'Flagship', 30000000, 2026, 'Display', 'Bulky'),
+    (3, 'Xiaomi', 'Mi 16 Pro', '120W Charge, Leica', 'High', 19000000, 2026, 'Charging', 'UI Bug'),
+    (4, 'Oppo', 'Find X9 Pro', 'Hasselblad Cam', 'Flagship', 26000000, 2026, 'Camera', 'Availability'),
+    (5, 'Google', 'Pixel 10 Pro', 'Tensor G5, Pure AI', 'Flagship', 28000000, 2025, 'Software', 'Hardware'),
+    (6, 'Vivo', 'X200 Ultra', 'Zeiss Gimbal', 'Flagship', 24000000, 2026, 'Video', 'Brand'),
+    (7, 'Realme', 'GT 7 Pro', 'Snapdragon 8 Gen 5', 'Budget Flagship', 14000000, 2026, 'Value', 'Camera'),
+    (8, 'Sony', 'Xperia 1 VII', '4K Display', 'Niche', 35000000, 2026, 'Screen', 'Price')
 ]
 
-# 2. Hiệu quả quảng cáo (Để Agent đề xuất phân bổ ngân sách)
-campaigns = [
-    (1, 'Tet Tech Festival', 'TikTok', 50000000, 1000000, 1200, '2026-01-01', '2026-02-10'),
-    (2, 'Back to School', 'Facebook', 30000000, 500000, 450, '2026-08-15', '2026-09-30'),
-    (3, 'AI Phone Launch', 'Google Search', 100000000, 2000000, 3500, '2026-03-01', '2026-03-31')
+# 2. Campaigns
+channels = ['TikTok', 'Facebook', 'Google Search', 'YouTube', 'Instagram', 'KOL Partnership']
+statuses = ['Completed', 'Active', 'Planned']
+campaigns = []
+for i in range(1, 15):
+    budget = random.randint(20, 200) * 1000000
+    reach = random.randint(100000, 5000000)
+    conv = int(reach * random.uniform(0.001, 0.02))
+    roi = round((conv * 2000000) / budget, 2)
+    start = (datetime.now() - timedelta(days=random.randint(30, 180))).strftime('%Y-%m-%d')
+    end = (datetime.now() + timedelta(days=random.randint(0, 60))).strftime('%Y-%m-%d')
+    campaigns.append((i, f"Campaign {i}", random.choice(channels), budget, reach, conv, roi, random.choice(statuses), start, end))
+
+# 3. Sentiment
+keywords = ['AI Phone', 'Foldable Screen', 'Fast Charging', 'Battery Life', 'Camera Zoom', 'Dynamic Island', 'Scree Durability', 'Heat Management']
+emotions = ['Happy', 'Excited', 'Relieved', 'Skeptical', 'Frustrated']
+sentiments = []
+for i, kw in enumerate(keywords, 1):
+    pos = round(random.uniform(0.4, 0.95), 2)
+    neg = round(1.0 - pos - random.uniform(0.0, 0.1), 2)
+    mentions = random.randint(5000, 100000)
+    sentiments.append((i, kw, pos, neg, mentions, 'Noise in quiet rooms' if neg > 0.3 else 'Price', random.choice(channels), random.choice(emotions)))
+
+# 4. Sales
+brands = ['Apple', 'Samsung', 'Xiaomi', 'Google', 'Oppo']
+regions = ['North', 'South', 'Central', 'Highlands']
+age_groups = ['Gen Z', 'Millennials', 'Gen X', 'Boomers']
+payments = ['Credit Card', 'E-Wallet', 'Cash', 'Installment']
+sales = []
+for i in range(1, 101):
+    brand = random.choice(brands)
+    model = f"{brand} Model {random.randint(1, 5)}"
+    price = random.randint(10, 40) * 1000000
+    qty = random.randint(500, 5000)
+    sales.append((i, brand, model, '256GB/8GB', qty, price, random.choice(regions), random.choice(age_groups), random.choice(payments), '2026-01-01'))
+
+# 5. Sales Performance
+performance = [
+    (1, 'iPhone 17 Pro', 15000, 480000000000, '2026-03'),
+    (2, 'Galaxy S26 Ultra', 12000, 360000000000, '2026-03'),
+    (3, 'Mi 16 Pro', 18000, 342000000000, '2026-03'),
+    (4, 'Oppo Find X9', 9000, 234000000000, '2026-03'),
+    (5, 'Pixel 10 Pro', 7500, 210000000000, '2026-03')
 ]
 
-# 3. Phản hồi mạng xã hội (Để Agent điều chỉnh nội dung content)
-sentiment = [
-    (1, 'Foldable Screen', 0.85, 0.15, 'Crease visibility', 'TikTok'),
-    (2, 'Fast Charging', 0.90, 0.10, 'Battery health concern', 'YouTube'),
-    (3, 'AI Photo Editing', 0.70, 0.30, 'Unnatural results', 'Facebook')
-]
-
-# 4. Doanh số chi tiết smartphone (Để Business Reporter phân tích specs và phân khúc)
-sales_data = [
-    (1, 'Apple', 'iPhone 17 Pro', '256GB', 15000, 32000000, 'Vietnam', '2026-01-15'),
-    (2, 'Apple', 'iPhone 17', '128GB', 25000, 25000000, 'Vietnam', '2026-01-15'),
-    (3, 'Samsung', 'Galaxy S26 Ultra', '512GB', 12000, 30000000, 'Vietnam', '2026-02-01'),
-    (4, 'Samsung', 'Galaxy S26', '256GB', 18000, 22000000, 'Vietnam', '2026-02-01'),
-    (5, 'Xiaomi', 'Mi 16 Pro', '256GB', 22000, 18000000, 'Vietnam', '2026-02-15'),
-    (6, 'Xiaomi', 'Mi 16', '128GB', 30000, 12000000, 'Vietnam', '2026-02-15'),
-    (7, 'Google', 'Pixel 9 Pro', '256GB', 8000, 28000000, 'Vietnam', '2026-03-01'),
-    (8, 'Google', 'Pixel 9', '128GB', 15000, 20000000, 'Vietnam', '2026-03-01'),
-    (9, 'OnePlus', '12 Pro', '256GB', 10000, 25000000, 'Vietnam', '2026-03-15'),
-    (10, 'OnePlus', '12', '128GB', 18000, 18000000, 'Vietnam', '2026-03-15')
-]
-
-# 5. Doanh số thực tế (Để Business Reporter chốt số)
-sales_performance_data = [
-    (1, 'iPhone 17 Pro', 5000, 160000000000, '2026-03'),
-    (2, 'Galaxy S26 Ultra', 4200, 126000000000, '2026-03')
-]
-
-cursor.executemany('INSERT INTO competitor_products VALUES (?,?,?,?,?,?,?,?)', competitors)
-cursor.executemany('INSERT INTO marketing_campaigns VALUES (?,?,?,?,?,?,?,?)', campaigns)
-cursor.executemany('INSERT INTO social_sentiment VALUES (?,?,?,?,?,?)', sentiment)
-cursor.executemany('INSERT INTO sales VALUES (?,?,?,?,?,?,?,?)', sales_data)
-cursor.executemany('INSERT INTO sales_performance VALUES (?,?,?,?,?)', sales_performance_data)
+cursor.executemany('INSERT INTO competitor_products VALUES (?,?,?,?,?,?,?,?,?)', competitors)
+cursor.executemany('INSERT INTO marketing_campaigns VALUES (?,?,?,?,?,?,?,?,?,?)', campaigns)
+cursor.executemany('INSERT INTO social_sentiment VALUES (?,?,?,?,?,?,?,?)', sentiments)
+cursor.executemany('INSERT INTO sales VALUES (?,?,?,?,?,?,?,?,?,?)', sales)
+cursor.executemany('INSERT INTO sales_performance VALUES (?,?,?,?,?)', performance)
 
 conn.commit()
 conn.close()
 
-print("📈 Database Marketing Intelligence đã sẵn sàng cho Agent phân tích!")
+print(f"✅ Database updated with {len(sales)} sales records, {len(campaigns)} campaigns and new columns!")

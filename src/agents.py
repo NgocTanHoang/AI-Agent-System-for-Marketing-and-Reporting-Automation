@@ -21,6 +21,7 @@ search_tool = None
 query_tool = None
 save_tool = None
 publish_tool = None
+chart_tool = None
 
 try:
     from src.tools import (
@@ -28,22 +29,25 @@ try:
         publish_to_google_docs,
         save_report,
         search_internet,
+        create_sales_chart,
     )
 
     _db = EnterpriseDataTools()
 
     @tool("query_marketing_db")
-    def query_marketing_db(query: str) -> str:
+    def query_marketing_db(query: str, output_format: str = "markdown") -> str:
         """
-        Truy vấn SQLite marketing_intelligence.db (sales, competitor_products,
-        social_sentiment, marketing_campaigns, sales_performance). Chỉ dùng SELECT.
+        Truy vấn SQLite marketing_intelligence.db.
+        - output_format: "markdown" (để xem/viết báo cáo) hoặc "json" (để truyền vào tool vẽ biểu đồ).
+        Bảng: sales, competitor_products, social_sentiment, marketing_campaigns, sales_performance.
         """
-        return _db.query_marketing_db(query)
+        return _db.query_marketing_db(query, output_format=output_format)
 
     search_tool = search_internet
     save_tool = save_report
     publish_tool = publish_to_google_docs
     query_tool = query_marketing_db
+    chart_tool = create_sales_chart
 except Exception as e:
     print(f"Warning: failed to load tools: {e}")
 
@@ -123,15 +127,17 @@ class MarketingAgents:
         return [query_tool] if query_tool else []
 
     def _tools_reporter(self):
-        return [t for t in (query_tool, save_tool, publish_tool) if t is not None]
+        return [t for t in (query_tool, save_tool, publish_tool, chart_tool) if t is not None]
 
     def search_analyst(self) -> Agent:
         return Agent(
-            role="Chuyên gia Phân tích Thị trường Công nghệ",
-            goal="Tìm xu hướng smartphone và đối chiếu với dữ liệu trong database.",
+            role="Trưởng phòng Kinh doanh & Phân tích Thị trường Bán lẻ",
+            goal="Theo dõi thị trường smartphone và đối chiếu với tồn kho/doanh số tại đại lý.",
             backstory=(
-                "Bạn phân tích kép: tìm tin trên Internet và truy vấn DB doanh số/đối thủ "
-                "để đưa insight kinh doanh smartphone."
+                "Bạn là chuyên gia phân tích cho một chuỗi cửa hàng smartphone lớn. "
+                "Thay vì sản xuất, bạn tập trung vào việc quyết định: Nhập dòng nào? "
+                "Giá bán so với đối thủ (Apple Store, TGDD, CellphoneS) thế nào? "
+                "Phân khúc khách hàng nào đang tăng trưởng? Đưa ra insight để tối ưu hóa doanh số bán lẻ."
             ),
             tools=self._tools_search(),
             llm=self.llm,
@@ -141,13 +147,12 @@ class MarketingAgents:
 
     def content_strategist(self) -> Agent:
         return Agent(
-            role="Chuyên viên Chiến lược Nội dung Công nghệ",
-            goal="Xây dựng nội dung marketing dựa trên sentiment trong database.",
+            role="Quản lý Chiến dịch Marketing & Sự kiện tại Cửa hàng",
+            goal="Lên kế hoạch khuyến mãi và sự kiện thu hút khách hàng đến cửa hàng.",
             backstory=(
-                "Bảng social_sentiment có: keyword, positive_score, negative_score, "
-                "top_complaint, trending_platform. Không có cột sentiment hay topic. "
-                "Ví dụ: SELECT keyword, positive_score, top_complaint FROM social_sentiment "
-                "ORDER BY positive_score DESC. Kết hợp dữ liệu để viết caption và ý tưởng sự kiện."
+                "Bạn không phát triển tính năng sản phẩm, bạn phát triển trải nghiệm mua sắm. "
+                "Dựa trên dữ liệu cảm xúc (cột top_emotion trong bảng social_sentiment) và phân khúc khách hàng, bạn thiết kế: "
+                "Các mẫu ưu đãi, trả góp, sự kiện store để tăng tỷ lệ chốt đơn."
             ),
             tools=self._tools_content(),
             llm=self.llm,
@@ -157,14 +162,14 @@ class MarketingAgents:
 
     def business_reporter(self) -> Agent:
         return Agent(
-            role="Chuyên viên Báo cáo Chiến lược Thị trường",
-            goal="Truy vấn DB, viết báo cáo markdown có số liệu thật; xuất bản Google Docs khi công cụ sẵn có.",
+            role="Giám đốc Vận hành (COO) Chuỗi Bán lẻ",
+            goal="Tổng hợp báo cáo hiệu quả kinh doanh, ROI chiến dịch và đề xuất chiến lược nhập hàng/bán hàng.",
             backstory=(
-                "Bắt buộc dùng tool query_marketing_db để lấy số liệu; không bịa số. "
-                "Schema: sales, sales_performance, competitor_products, social_sentiment, marketing_campaigns. "
-                "Sau khi hoàn thành báo cáo, gọi publish_to_google_docs("
-                'title="Smartphone Market Strategic Report 2026", content=<toàn bộ markdown>). '
-                "Nếu thiếu GOOGLE_DOCS_FOLDER_ID hoặc OAuth, ghi rõ trong kết quả và vẫn lưu nội dung qua save_report nếu có."
+                "Bạn chịu trách nhiệm về lợi nhuận của toàn chuỗi. Bạn cần báo cáo Executive cho Hội đồng quản trị: "
+                "Chiến dịch nào mang lại lợi nhuận cao nhất? Nên đẩy mạnh mẫu nào cho Gen Z? "
+                "Đối thủ đang giảm giá dòng nào để mình phản ứng kịp thời? "
+                "Báo cáo tập trung vào: Doanh số, Lợi nhuận (ROI), Chiến lược giá và Khuyến mãi. "
+                "Cuối cùng, xuất bản báo cáo lên Google Docs để Ban quản trị xem xét."
             ),
             tools=self._tools_reporter(),
             llm=self.llm,
