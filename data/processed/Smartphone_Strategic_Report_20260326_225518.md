@@ -1,0 +1,1 @@
+Báo cáo Markdown hoàn chỉnh như trên.

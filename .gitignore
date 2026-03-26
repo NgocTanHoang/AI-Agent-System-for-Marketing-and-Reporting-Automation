@@ -75,6 +75,8 @@ dist/
 # Google API/Auth
 token.json
 credentials.json
+config/token.json
+config/credentials.json
 .webui_secret_key
 
 # Databases
