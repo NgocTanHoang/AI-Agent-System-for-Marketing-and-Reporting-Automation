@@ -13,90 +13,84 @@ except ImportError as e:
 class MarketingTasks:
 
     def research_task(self, agent, market_topic: str):
-        """Bước 1: Tình báo thị trường & Phân tích Gaps."""
+        """Bước 1: Trend Scouting & Phân tích Insight Đối thủ."""
         return Task(
             description=dedent(f"""
                 Thực hiện tình báo thị trường chuyên sâu cho chủ đề: {market_topic} trong ngành smartphone.
                 
                 QUY TRÌNH BẮT BUỘC:
-                1. Dùng tool tìm kiếm để lấy GIÁ THỰC TẾ tại TGDD, CellphoneS và Hoàng Hà cho các model {market_topic}.
+                1. Dùng tool tìm kiếm để lấy thông tin về các 'Viral Trends' và 'Chiến dịch thành công của đối thủ' (như TGDD, CellphoneS, Hoàng Hà) cho các model {market_topic}.
                 2. Truy vấn bảng 'competitor_products' để đối chiếu giá niêm yết của ta với đối thủ.
-                3. XÁC ĐỊNH 'PRICE GAP': Model nào đối thủ đang phá giá hoặc có khuyến mãi 'Trade-in' tốt hơn?
-                4. Tìm kiếm 03 xu hướng công nghệ (ví dụ: AI Camera, sạc 120W) đang là tiêu chí chọn mua hàng đầu hiện nay.
+                3. XÁC ĐỊNH MỤC TIÊU MARKETING: Đối thủ đang dùng thông điệp gì để bán hàng? (Ví dụ: Khuyến mãi Trade-in, AI Camera test).
+                4. Tìm kiếm 03 xu hướng nội dung (ví dụ: Video ngắn TikTok biến hình, Bài đăng Meme hài hước về pin) đang được Gen Z tương tác nhiều nhất.
 
                 YÊU CẦU TRÌNH BÀY:
-                - Bảng so sánh giá: Model | Giá Đối Thủ | Giá Của Ta | Chênh lệch.
-                - Mục 'Nhận định Gaps': Phải ghi rõ 'Ta đang mất lợi thế ở dòng X vì đối thủ Y đang tặng kèm Z'.
+                - Danh sách 03 Viral Trends hiện tại.
+                - Phân tích góc nhìn chiến dịch đối thủ (Thông điệp & Giá).
+                - Nhận định Gaps nội dung: Cửa hàng của chúng ta đang thiếu loại nội dung nào để thu hút khách hàng?
             """),
             expected_output=dedent("""
-                Báo cáo tình báo (Markdown):
-                - Bảng so sánh giá đối thủ chi tiết.
-                - Phân tích 03 điểm Gaps chiến lược.
+                Báo cáo xu hướng & Insight đối thủ (Markdown):
+                - 03 Viral Trends nổi bật trên MXH.
+                - Đánh giá chiến dịch của đối thủ và gaps nội dung.
                 - Danh sách dẫn nguồn (URL) từ Internet.
             """),
             agent=agent,
         )
 
     def content_creation_task(self, agent, research_task: Task):
-        """Bước 2: Kiểm toán Nội dung (Content Audit) - Đối chiếu Sự thật vs. Quảng cáo."""
+        """Bước 2: Sáng tạo Nội dung Viral (Social Media Content Creation)."""
         return Task(
             description=dedent("""
-                Tiến hành 'Kiểm toán nội dung' (Audit) cho Team Marketing. 
-                Nhiệm vụ của bạn là trở thành một người phản biện 'khó tính' dựa trên dữ liệu.
-
+                Dựa trên dữ liệu thị trường và cảm xúc khách hàng, hãy đóng vai một Creative Director.
+                
                 QUY TRÌNH:
-                1. Đọc file nháp (.txt) dùng 'read_marketing_content'.
-                2. Truy vấn 'social_sentiment' để lấy Top 03 phàn nàn của khách hàng về model tương ứng.
-                3. KIỂM TRA TÍNH TRUNG THỰC: 
-                   - Nếu Marketing nói 'Pin trâu' mà Social nói 'Nhanh nóng máy', hãy chỉ trích sự thiếu trung thực.
-                   - Nếu Marketing bỏ qua điểm yếu về giá mà đối thủ đang thắng (từ Research Task), hãy yêu cầu bổ sung chiến lược 'Quà tặng' để bù đắp.
+                1. Đọc văn phong từ marketing_content để giữ đúng 'giọng điệu' thương hiệu.
+                2. Truy vấn 'social_sentiment' để nắm bắt cảm xúc của khách hàng.
+                3. Phải tạo ra 03 mẫu bài đăng Facebook/Instagram/TikTok khác nhau:
+                   - Mẫu 1 (Viral/Hài hước): Bắt trend từ dữ liệu social_sentiment hoặc trends tìm được.
+                   - Mẫu 2 (Kỹ thuật/Expert): Dùng thông số thực từ competitor_products để so sánh khéo léo.
+                   - Mẫu 3 (Kêu gọi hành động/Sales): Dựa trên ROI và khuyến mãi đối thủ để đưa ra ưu đãi không thể từ chối.
 
-                YÊU CẦU ĐẦU RA:
-                - Bảng 'Đối chiếu Sự thật': [Nội dung Marketing nói] vs [Sự thật từ Database].
-                - Đề xuất sửa đổi: Viết lại 02 đoạn văn quan trọng nhất của bài bài viết theo hướng trung thực nhưng vẫn hấp dẫn.
-                Always cite specific numbers from the database.
+                YÊU CẦU ĐẦU RA CHO MỖI MẪU BÀI ĐĂNG:
+                - Tiêu đề (Hook) hấp dẫn.
+                - Nội dung chính (Body) dễ đọc, tự nhiên.
+                - Danh sách Hashtag.
+                - Gợi ý hình ảnh/video mô tả cụ thể bên dưới mỗi post.
             """),
             expected_output=dedent("""
-                Bản kiểm toán nội dung chuyên sâu:
-                - Bảng đối chiếu thực tế (Truth vs. Draft).
-                - Điểm đánh giá mức độ rủi ro truyền thông (1-10).
-                - Bản thảo Key Messages đã sửa đổi.
+                Danh sách 03 bài đăng MXH hoàn chỉnh (Facebook, Instagram, TikTok Script):
+                - Tiêu đề, Body, Hashtags.
+                - Gợi ý thiết kế hình ảnh/video đi kèm chuẩn xác.
             """),
             agent=agent,
             context=[research_task],
         )
 
-    def analytics_report_task(self, agent, research_task: Task, content_task: Task, tools: List[BaseTool]):
-        """Bước 3: Báo cáo Executive - Tính toán KPI thực và Đề xuất."""
+    def marketing_strategy_task(self, agent, research_task: Task, content_task: Task, tools: List[BaseTool]):
+        """Bước 3: Kế hoạch Hành động Tuần - Gợi ý Chiến lược Tăng trưởng."""
         return Task(
             description=dedent("""
-                Tổng hợp báo cáo Executive Retail Report dành cho cấp quản trị. 
-                Báo cáo này PHẢI dựa trên các con số thực tế từ SQL. KHÔNG ĐƯỢC tự bịa số liệu.
+                Tổng hợp "Cố vấn Kế hoạch Hành động Tuần" dành cho Team Marketing.
+                Biến các con số khô khan thành Insight hành động. Đừng chỉ nói doanh thu tăng, hãy nói: 'Nhóm Gen Z đang chuộng trả góp cho iPhone màu Titan, hãy đẩy mạnh bài viết về chính sách tài chính vào khung giờ 20h-22h'.
 
-                QUY TRÌNH TỐI QUAN TRỌNG:
-                1. Dùng 'query_marketing_db' truy vấn bảng 'sales_performance' để lấy TỔNG DOANH THU thực tế (đơn vị tỷ VNĐ).
-                2. Truy vấn bảng 'marketing_campaigns' để lấy TỔNG NGÂN SÁCH (budget).
-                3. TÍNH TOÁN CHÍNH XÁC:
-                   - ROI = (Tổng Doanh Thu - Tổng Ngân Sách) / Tổng Ngân Sách. (Ví dụ: Doanh thu 1000 tỷ, Ngân sách 1 tỷ -> ROI x1000).
-                   - CPA = Tổng Ngân Sách / Tổng Conversions.
-                4. CẢNH BÁO: Dữ liệu thật doanh thu iPhone 17 Pro là ~480 tỷ VNĐ. Nếu bạn báo cáo 10 triệu là SAI HOÀN TOÀN.
+                QUY TRÌNH BAO GỒM:
+                1. Sử dụng 'Data Triangulation': Lấy dữ liệu bán hàng (sales_performance) và dữ liệu chiến dịch (marketing_campaigns) làm căn cứ (Evidence) để lên kế hoạch.
+                2. Định vị rõ các yếu tố chiến lược dựa trên dữ liệu và bài đăng đã tạo.
+                3. Trình bày định dạng Markdown với các `Hộp gợi ý` (Alert boxes / Blockquotes) để làm nổi bật trọng tâm.
 
-                YÊU CẦU VẼ BIỂU ĐỒ (Bắt buộc):
-                1. Top 5 Doanh Thu (y_col="revenue").
-                2. Top 5 Doanh Số (y_col="units_sold").
-
-                CẤU TRÚC BÁO CÁO:
-                - # 📱 BÁO CÁO CHIẾN LƯỢC KINH DOANH SMARTPHONE Q1/2026
-                - ## 📈 Hiệu suất Tài chính: Bảng Markdown với các cột: Chỉ số | Giá trị | Đơn vị. 
-                - Chèn link ảnh: ![Top Doanh Thu](data/processed/top_revenue.png)
-                - ## ⚠️ Cảnh báo & Hành động: Chơi chữ ít, tập trung vào số liệu.
+                CẤU TRÚC BÁO CÁO PHẢI CÓ:
+                - # 🚀 KẾ HOẠCH HÀNH ĐỘNG TUẦN & POST SUGGESTIONS
+                - ## 🎯 Đối tượng Mục tiêu & Kênh Ưu tiên
+                - ## 💡 Thông điệp Chủ đạo (Key Message)
+                - ## 📝 Gợi ý Bài đăng (Copy paste nguyên văn 3 bài đăng từ Content Strategist vào đây để tiện sử dụng)
+                - ## ⚠️ Cảnh báo & Đề xuất (Dựa trên con số thực từ database để đề xuất ưu đãi bù đắp).
             """),
             expected_output=dedent("""
-                Một bản báo cáo Markdown chuyên nghiệp (500+ từ):
-                - TRÌNH BÀY SỐ LIỆU DOANH THU THEO ĐƠN VỊ TỶ VNĐ (Vd: 480 tỷ VNĐ).
-                - Nhúng đầy đủ 2 biểu đồ PNG đã tạo.
-                - Phân tích sâu sắc dựa trên Price Gap từ Research Task và Truth vs Draft từ Content Task.
-                - KHÔNG ĐƯỢC dùng số giả 10.000.000 cho doanh thu.
+                Một Kế hoạch Hành động Tuần Markdown chuyên nghiệp:
+                - Gồm Đối tượng, Kênh, Thông điệp chủ đạo.
+                - Trình bày 03 bài đăng MXH rõ ràng, có thể copy-paste.
+                - Các 'Hộp gợi ý' hành động sắc bén từ số liệu SQL (Ví dụ: Dựa trên 40% doanh thu là sản phẩm X...).
             """),
             agent=agent,
             context=[research_task, content_task],

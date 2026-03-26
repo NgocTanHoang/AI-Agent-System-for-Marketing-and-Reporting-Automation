@@ -37,11 +37,11 @@ def run_smartphone_intelligence_system():
         agent=content_strategist,
         research_task=research_task,
     )
-    report_task = tasks_factory.analytics_report_task(
+    report_task = tasks_factory.marketing_strategy_task(
         agent=business_reporter,
         research_task=research_task,
         content_task=content_task,
-        tools=[create_sales_chart],
+        tools=[],
     )
 
     # 4. Thiết lập Crew

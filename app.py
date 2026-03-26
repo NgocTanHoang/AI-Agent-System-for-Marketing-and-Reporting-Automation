@@ -77,35 +77,33 @@ def _md_to_html_sections(md: str) -> list[dict]:
 
     def flush():
         nonlocal current_heading, current_lines
-        if current_heading or current_lines:
+        if current_lines:
             body = "\n".join(current_lines).strip()
             # Basic MD to HTML
             body = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", body)
             body = re.sub(r"\*(.+?)\*", r"<em>\1</em>", body)
             body = re.sub(r"`(.+?)`", r"<code>\1</code>", body)
+            # Table conversion
             body = _md_table_to_html(body)
-            # Render Markdown Images -> HTML Images (Keep path relative to /static/)
-            # The agent outputs: ![Top Doanh Thu](data/processed/top_revenue.png)
-            # We want: <img src="/static/top_revenue.png" alt="Top Doanh Thu">
-            body = re.sub(r"!\[(.*?)\]\(data/processed/(.*?)\)", r'<img src="/static/\2" alt="\1" class="report-img">', body)
-            
-            # Paragraph breaks
+            # Image conversion (data/processed/ -> /static/)
+            body = re.sub(r"!\[(.*?)\]\((.*?\/)?(.*?\.png)\)", r'<img src="/static/\3" alt="\1" class="report-img">', body)
+            # Paragraphs
             body = re.sub(r"\n{2,}", "</p><p>", body)
             body = f"<p>{body}</p>"
             sections.append({"heading": current_heading or "Tổng quan", "body_html": body})
+            current_lines = []
 
     for line in md.splitlines():
         if line.startswith("## "):
             flush()
             current_heading = line[3:].strip()
-            current_lines = []
         elif line.startswith("# "):
-            if not sections and not current_lines: # First title is usually the main report title
+            # Special case for the very first top-level header as a title
+            if not sections and not current_lines:
                 current_heading = line[2:].strip()
             else:
                 flush()
                 current_heading = line[2:].strip()
-                current_lines = []
         else:
             current_lines.append(line)
     flush()
@@ -175,11 +173,15 @@ async def run_pipeline(background_tasks: BackgroundTasks):
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         
         try:
-            # Xóa log cũ
+            # Xóa nội dung log cũ một cách an toàn
             if LOG_FILE.exists():
-                LOG_FILE.unlink()
+                try:
+                    with open(LOG_FILE, "w", encoding="utf-8") as f:
+                        f.write("")
+                except PermissionError:
+                    pass # Đang bị tiến trình khác giữ (ví dụ: trình duyệt đang polling)
             
-            with open(LOG_FILE, "w", encoding="utf-8") as lf:
+            with open(LOG_FILE, "a", encoding="utf-8", buffering=1) as lf:
                 process = subprocess.Popen(
                     [sys.executable, "main.py"],
                     cwd=str(PROJECT_ROOT),
@@ -212,11 +214,15 @@ async def get_pipeline_status():
 
 @app.get("/api/pipeline-logs")
 async def get_pipeline_logs():
-    if not LOG_FILE.exists():
-        return {"logs": "Chưa có dữ liệu log."}
     try:
-        content = LOG_FILE.read_text(encoding="utf-8")
+        # Sử dụng rb và decode để tránh lỗi lock file trên Windows
+        if not LOG_FILE.exists():
+            return {"logs": "Chưa có dữ liệu log."}
+        with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
         return {"logs": content}
+    except PermissionError:
+        return {"logs": "Đang cập nhật log (Permission Denied)..."}
     except Exception as e:
         return {"logs": f"Lỗi đọc log: {str(e)}"}
 

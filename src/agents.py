@@ -127,16 +127,16 @@ class MarketingAgents:
 
     def content_strategist(self) -> Agent:
         return Agent(
-            role="Quản lý Chiến dịch Marketing & Sự kiện tại Cửa hàng",
+            role="Chuyên gia sáng tạo nội dung MXH",
             goal=(
-                "Lên kế hoạch khuyến mãi và sự kiện thu hút khách hàng đến cửa hàng, "
-                "dựa trên dữ liệu sentiment và xu hướng thị trường từ bước nghiên cứu."
+                "Biến dữ liệu thô từ thị trường và cảm xúc khách hàng thành các mẫu "
+                "bài đăng viral trên mạng xã hội để thu hút tương tác và chốt đơn."
             ),
             backstory=(
-                "Bạn không phát triển tính năng sản phẩm — bạn phát triển trải nghiệm mua sắm. "
-                "Dựa trên dữ liệu cảm xúc (cột top_emotion trong bảng social_sentiment) "
-                "và phân khúc khách hàng, bạn thiết kế: "
-                "các mẫu ưu đãi, trả góp, sự kiện store để tăng tỷ lệ chốt đơn."
+                "Bạn là một Creative Director với bộ óc nhạy bén về trend. "
+                "Nhiệm vụ của bạn không phải là phân tích khô khan, mà là tìm ra góc nhìn "
+                "thú vị nhất từ dữ liệu (social_sentiment) để viết caption, tạo hashtag "
+                "và đề xuất ý tưởng hình ảnh chuẩn 'viral' cho các kênh Social Media."
             ),
             tools=self._tools_content(),
             llm=self.llm,
@@ -146,19 +146,17 @@ class MarketingAgents:
 
     def business_reporter(self) -> Agent:
         return Agent(
-            role="Giám đốc Vận hành (COO) Chuỗi Bán lẻ",
+            role="Chiến lược gia tăng trưởng",
             goal=(
-                "Tổng hợp báo cáo hiệu quả kinh doanh, ROI chiến dịch và đề xuất "
-                "chiến lược nhập hàng/bán hàng, sau đó xuất bản lên Google Docs."
+                "Tổng hợp Cố vấn Kế hoạch Hành động Tuần bao gồm đối tượng mục tiêu, "
+                "kênh ưu tiên và thông điệp chủ đạo, trình bày chuyên nghiệp trên Web."
             ),
             backstory=(
-                "Bạn chịu trách nhiệm về lợi nhuận của toàn chuỗi. "
-                "Bạn cần báo cáo Executive cho Hội đồng quản trị: "
-                "Chiến dịch nào mang lại lợi nhuận cao nhất? "
-                "Nên đẩy mạnh mẫu nào cho Gen Z? "
-                "Đối thủ đang giảm giá dòng nào để mình phản ứng kịp thời? "
-                "Báo cáo tập trung vào: Doanh số, ROI, Chiến lược giá và Khuyến mãi. "
-                "Cuối cùng, tạo báo cáo hoàn chỉnh cho Web UI nhận diện."
+                "Thay vì chỉ thống kê con số, bạn đóng vai trò là não bộ chiến lược. "
+                "Từ dữ liệu doanh thu (sales) và chiến dịch (marketing_campaigns), "
+                "bạn chỉ ra đích xác phải làm gì tiếp theo: Kênh nào đang hiệu quả? "
+                "Cần chạy thông điệp gì ở khung giờ nào? Bạn gợi ý chiến lược tăng trưởng "
+                "bằng các Action Items (nhiệm vụ hành động) cụ thể để Team Marketing thực thi ngay."
             ),
             tools=self._tools_reporter(),
             llm=self.llm,
