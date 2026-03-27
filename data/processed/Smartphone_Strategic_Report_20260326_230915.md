@@ -1,1 +1,0 @@
-Báo cáo trên đã cung cấp đầy đủ thông tin về hiệu suất tài chính, chân dung Gen Z và cảnh báo & hành động cho tuần tới.

@@ -203,6 +203,18 @@
       <h1>Intelligence Dashboard</h1>
     </div>
     <div class="header-utils">
+      <select id="filter-brand" onchange="applyFilters()" style="background:var(--surface-dark); border:1px solid var(--border-color); color:var(--text-bright); padding:6px 12px; border-radius:4px; font-size: 0.75rem; cursor:pointer;">
+        <option value="">Tất cả Thương hiệu</option>
+        <option value="iPhone 18">iPhone 18 (Apple)</option>
+        <option value="Galaxy Z">Galaxy Z (Samsung)</option>
+        <option value="Xiaomi 16">Xiaomi 16</option>
+      </select>
+      <select id="filter-region" onchange="applyFilters()" style="background:var(--surface-dark); border:1px solid var(--border-color); color:var(--text-bright); padding:6px 12px; border-radius:4px; font-size: 0.75rem; cursor:pointer;">
+        <option value="">Tất cả Khu vực</option>
+        <option value="Miền Bắc">Miền Bắc</option>
+        <option value="Miền Nam">Miền Nam</option>
+        <option value="Miền Trung">Miền Trung</option>
+      </select>
       <div class="search-wrap"><span>🔍</span><input type="text" placeholder="Search..."></div>
       <span style="position:relative; cursor:pointer">🔔<div style="position:absolute;top:0;right:0;width:5px;height:5px;background:var(--accent-red);border-radius:50%"></div></span>
       <div style="width:28px; height:28px; background:var(--surface-dark); border:1px solid var(--border-color); border-radius:50%; display:grid; place-items:center; cursor:pointer; font-size:0.8rem">👤</div>
@@ -483,10 +495,22 @@ function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
 
+// ══════════════ FILTER SYSTEM ══════════════
+function applyFilters() {
+  loadKPI();
+  loadCharts();
+}
+
 // ══════════════ KPI LOADER ══════════════
 async function loadKPI() {
   try {
-    const res = await fetch('/api/kpi-summary');
+    const brand = document.getElementById('filter-brand').value;
+    const region = document.getElementById('filter-region').value;
+    let url = '/api/kpi-summary?';
+    if(brand) url += `brand=${encodeURIComponent(brand)}&`;
+    if(region) url += `region=${encodeURIComponent(region)}`;
+
+    const res = await fetch(url);
     const d = await res.json();
     if (d.error) return;
     document.getElementById('kpi-revenue').textContent = fmtVND(d.total_revenue) + ' VNĐ';
@@ -501,7 +525,13 @@ async function loadKPI() {
 // ══════════════ ANALYTICS CHARTS ══════════════
 async function loadCharts() {
   try {
-    const res = await fetch('/api/dashboard-data');
+    const brand = document.getElementById('filter-brand').value;
+    const region = document.getElementById('filter-region').value;
+    let url = '/api/dashboard-data?';
+    if(brand) url += `brand=${encodeURIComponent(brand)}&`;
+    if(region) url += `region=${encodeURIComponent(region)}`;
+
+    const res = await fetch(url);
     const data = await res.json();
     if (!data || data.error) return;
 

@@ -13,84 +13,78 @@ except ImportError as e:
 class MarketingTasks:
 
     def research_task(self, agent, market_topic: str):
-        """Bước 1: Trend Scouting & Phân tích Insight Đối thủ."""
+        """Bước 1: Tình báo Thực chiến & Benchmarking Đối thủ."""
         return Task(
             description=dedent(f"""
-                Thực hiện tình báo thị trường chuyên sâu cho chủ đề: {market_topic} trong ngành smartphone.
+                Thực hiện tình báo thị trường 'sắc lẹm' cho chủ đề: {market_topic}.
                 
                 QUY TRÌNH BẮT BUỘC:
-                1. Dùng tool tìm kiếm để lấy thông tin về các 'Viral Trends' và 'Chiến dịch thành công của đối thủ' (như TGDD, CellphoneS, Hoàng Hà) cho các model {market_topic}.
-                2. Truy vấn bảng 'competitor_products' để đối chiếu giá niêm yết của ta với đối thủ.
-                3. XÁC ĐỊNH MỤC TIÊU MARKETING: Đối thủ đang dùng thông điệp gì để bán hàng? (Ví dụ: Khuyến mãi Trade-in, AI Camera test).
-                4. Tìm kiếm 03 xu hướng nội dung (ví dụ: Video ngắn TikTok biến hình, Bài đăng Meme hài hước về pin) đang được Gen Z tương tác nhiều nhất.
-
-                YÊU CẦU TRÌNH BÀY:
-                - Danh sách 03 Viral Trends hiện tại.
-                - Phân tích góc nhìn chiến dịch đối thủ (Thông điệp & Giá).
-                - Nhận định Gaps nội dung: Cửa hàng của chúng ta đang thiếu loại nội dung nào để thu hút khách hàng?
+                1. Dùng tool tìm kiếm để lấy thông số kỹ thuật (Chipset, RAM, Camera, Sạc nhanh) của đối thủ từ bảng 'competitor_products'.
+                2. Truy vấn bảng 'sales' để xác định chính xác Model nào đang có tồn kho cao nhất hoặc doanh số thấp nhất theo từng Vùng miền.
+                3. XÁC ĐỊNH 'NỖI ĐAU' KHÁCH HÀNG: Đối thủ đang bị chê ở điểm nào? (Ví dụ: iPhone sạc chậm, Samsung nóng máy).
+                4. Tìm 03 xu hướng 'Toxic' hoặc 'Flexing' trên TikTok/Facebook mà Gen Z đang sử dụng để làm content.
+                
+                ⚠️ CẢNH BÁO DATA INTEGRITY: Tuyệt đối không làm tròn số. Nếu giá là 32.190.000 VNĐ, phải báo cáo đúng như vậy.
             """),
             expected_output=dedent("""
-                Báo cáo xu hướng & Insight đối thủ (Markdown):
-                - 03 Viral Trends nổi bật trên MXH.
-                - Đánh giá chiến dịch của đối thủ và gaps nội dung.
-                - Danh sách dẫn nguồn (URL) từ Internet.
+                Báo cáo Tình báo (Markdown):
+                - Bảng so sánh cấu hình chi tiết (Chip, Camera, Sạc) giữa Ta và Đối thủ.
+                - Danh sách 03 Model đang gặp vấn đề doanh số (gọi tên đích danh từ SQL).
+                - 03 Buzzwords/Trends Gen Z đang hot nhất (Ví dụ: Check-var, Slay...).
             """),
             agent=agent,
         )
 
     def content_creation_task(self, agent, research_task: Task):
-        """Bước 2: Sáng tạo Nội dung Viral (Social Media Content Creation)."""
+        """Bước 2: Sáng tạo Nội dung Viral 'Toxic & Flexing'."""
         return Task(
             description=dedent("""
-                Dựa trên dữ liệu thị trường và cảm xúc khách hàng, hãy đóng vai một Creative Director.
+                Đóng vai CSO (Chief Slay Officer) để tạo ra các bài đăng 'cháy phố'.
                 
                 QUY TRÌNH:
-                1. Đọc văn phong từ marketing_content để giữ đúng 'giọng điệu' thương hiệu.
-                2. Truy vấn 'social_sentiment' để nắm bắt cảm xúc của khách hàng.
-                3. Phải tạo ra 03 mẫu bài đăng Facebook/Instagram/TikTok khác nhau:
-                   - Mẫu 1 (Viral/Hài hước): Bắt trend từ dữ liệu social_sentiment hoặc trends tìm được.
-                   - Mẫu 2 (Kỹ thuật/Expert): Dùng thông số thực từ competitor_products để so sánh khéo léo.
-                   - Mẫu 3 (Kêu gọi hành động/Sales): Dựa trên ROI và khuyến mãi đối thủ để đưa ra ưu đãi không thể từ chối.
-
-                YÊU CẦU ĐẦU RA CHO MỖI MẪU BÀI ĐĂNG:
-                - Tiêu đề (Hook) hấp dẫn.
-                - Nội dung chính (Body) dễ đọc, tự nhiên.
-                - Danh sách Hashtag.
-                - Gợi ý hình ảnh/video mô tả cụ thể bên dưới mỗi post.
+                1. Sử dụng các câu Hook 'Toxic nhẹ' để so sánh sản phẩm của mình với đối thủ. 
+                2. Ngôn ngữ: Gen Z thực chiến (Check-var, 32 củ, sạc rùa, đỉnh nóc kịch trần...).
+                3. Phải tạo ra 03 mẫu bài đăng cho Facebook/TikTok bằng cấu trúc AIDA:
+                   - Mẫu 1 (Pain Point): Nhấn vào nỗi đau của người dùng máy đối thủ.
+                   - Mẫu 2 (Flexing): Khoe cấu hình hoặc tính năng độc quyền (Ví dụ: Chụp đêm 'hết nước chấm').
+                   - Mẫu 3 (CTA): Call to action cực gắt kèm deal giảm giá đích danh cho Model đang chậm KPI (lấy từ Research).
             """),
             expected_output=dedent("""
-                Danh sách 03 bài đăng MXH hoàn chỉnh (Facebook, Instagram, TikTok Script):
-                - Tiêu đề, Body, Hashtags.
-                - Gợi ý thiết kế hình ảnh/video đi kèm chuẩn xác.
+                03 Mẫu Bài Đăng 'Slay' nhất:
+                - Định dạng: [Tiêu đề] - [Nội dung AIDA] - [CTA] - [10 Hashtags].
+                - Phải lồng ghép các từ khóa: Slay, Flex, Check-var, 32 củ.
+                - Phải chỉ đích danh model cần đẩy doanh số.
             """),
             agent=agent,
             context=[research_task],
         )
 
     def marketing_strategy_task(self, agent, research_task: Task, content_task: Task, tools: List[BaseTool]):
-        """Bước 3: Kế hoạch Hành động Tuần - Gợi ý Chiến lược Tăng trưởng."""
+        """Bước 3: Mật lệnh Chiến lược Tăng trưởng."""
         return Task(
             description=dedent("""
-                Tổng hợp "Cố vấn Kế hoạch Hành động Tuần" dành cho Team Marketing.
-                Biến các con số khô khan thành Insight hành động. Đừng chỉ nói doanh thu tăng, hãy nói: 'Nhóm Gen Z đang chuộng trả góp cho iPhone màu Titan, hãy đẩy mạnh bài viết về chính sách tài chính vào khung giờ 20h-22h'.
-
-                QUY TRÌNH BAO GỒM:
-                1. Sử dụng 'Data Triangulation': Lấy dữ liệu bán hàng (sales_performance) và dữ liệu chiến dịch (marketing_campaigns) làm căn cứ (Evidence) để lên kế hoạch.
-                2. Định vị rõ các yếu tố chiến lược dựa trên dữ liệu và bài đăng đã tạo.
-                3. Trình bày định dạng Markdown với các `Hộp gợi ý` (Alert boxes / Blockquotes) để làm nổi bật trọng tâm.
-
-                CẤU TRÚC BÁO CÁO PHẢI CÓ:
-                - # 🚀 KẾ HOẠCH HÀNH ĐỘNG TUẦN & POST SUGGESTIONS
-                - ## 🎯 Đối tượng Mục tiêu & Kênh Ưu tiên
-                - ## 💡 Thông điệp Chủ đạo (Key Message)
-                - ## 📝 Gợi ý Bài đăng (Copy paste nguyên văn 3 bài đăng từ Content Strategist vào đây để tiện sử dụng)
-                - ## ⚠️ Cảnh báo & Đề xuất (Dựa trên con số thực từ database để đề xuất ưu đãi bù đắp).
+                Hợp nhất toàn bộ dữ liệu thành một bản 'Mật lệnh' cho Sếp.
+                
+                YÊU CẦU QUY TRÌNH:
+                1. DATA INTEGRITY: Trích xuất ROI, CPA, Revenue lẻ đến từng số lẻ. Không làm tròn.
+                2. ĐÍCH DANH MODEL: Gọi tên chính xác Model có doanh số thấp nhất và đề xuất % giảm giá cụ thể.
+                3. PHÂN TÍCH ĐỐI ĐẦU: Dùng Chipset/Camera cụ thể từ competitor_products để chỉ ra tại sao khách hàng chê đối thủ và nên mua máy mình.
+                4. PHÂN BỔ NGÂN SÁCH: Chỉ rõ dồn bao nhiêu ngân sách (số tiền cụ thể) vào kênh nào (TikTok/KOL) tại khu vực nào.
+                
+                BỐ CỤC BÁO CÁO (##):
+                ## 🚀 MẬT LỆNH HÀNH ĐỘNG & ĐIỀU PHỐI CHIẾN DỊCH
+                ## 📊 Hiệu quả Tài chính chi tiết (Bảng Markdown lẻ đến hàng đơn vị)
+                ## ⚖️ Phân tích Đối đầu: Dìm hàng đối thủ & Flexing tính năng
+                ## 🎯 Target Model & Mức giảm giá đề xuất
+                ## 📝 03 Mẫu Post 'Gen Z Toxic' (Copy từ Content Specialist)
+                ## ⚠️ Kế hoạch thực thi 7 ngày tới (Model - Khu vực - Ngân sách)
             """),
             expected_output=dedent("""
-                Một Kế hoạch Hành động Tuần Markdown chuyên nghiệp:
-                - Gồm Đối tượng, Kênh, Thông điệp chủ đạo.
-                - Trình bày 03 bài đăng MXH rõ ràng, có thể copy-paste.
-                - Các 'Hộp gợi ý' hành động sắc bén từ số liệu SQL (Ví dụ: Dựa trên 40% doanh thu là sản phẩm X...).
+                BÁO CÁO CHIẾN LƯỢC THỰC CHIẾN (>800 TỪ):
+                - KHÔNG ĐƯỢC TRẢ LỜI CHUNG CHUNG. 
+                - SỐ LIỆU PHẢI CHÍNH XÁC TUYỆT ĐỐI TỪ SQL.
+                - PHẢI CÓ MODEL_NAME VÀ KHU VỰC CỤ THỂ.
+                - FINAL ANSWER LÀ TOÀN BỘ NỘI DUNG BÁO CÁO.
             """),
             agent=agent,
             context=[research_task, content_task],

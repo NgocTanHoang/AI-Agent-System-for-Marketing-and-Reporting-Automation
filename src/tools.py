@@ -41,7 +41,9 @@ def search_internet(query: str):
 
 
 def save_report(content: str, filename: str):
-    """Lưu báo cáo xuống định dạng Markdown (.md)."""
+    """Lưu báo cáo xuống định dạng Markdown (.md). Tool này chỉ dùng để lưu file vật lý. 
+    LƯU Ý: Nếu bạn là Agent cuối cùng, bạn VẪN PHẢI trả về toàn bộ nội dung báo cáo như là Câu trả lời cuối cùng (Final Answer).
+    """
     output_dir = os.path.join(PROJECT_ROOT, "data", "processed")
     os.makedirs(output_dir, exist_ok=True)
 
@@ -137,9 +139,15 @@ class EnterpriseDataTools:
     def query_marketing_db(self, query: str, output_format: str = "markdown"):
         """
         Truy vấn database Marketing Intelligence (sales, competitor_products, sentiment...).
-        - output_format: "markdown" (mặc định cho báo cáo) hoặc "json" (để truyền vào tool vẽ biểu đồ).
+        - output_format: "markdown" (mặc định) hoặc "json".
         - Chỉ cho phép câu lệnh SELECT (read-only).
-        Các bảng: competitor_products, marketing_campaigns, social_sentiment, sales_performance, sales.
+        ⚠️ LƯU Ý CHO AGENT: 
+        - competitor_products: id, brand, model_name, key_features, price_segment, current_price, release_year, strengths, weaknesses. (KHOÔNG dùng 'price', hãy dùng 'current_price')
+        - marketing_campaigns: id, campaign_name, channel, budget, reach, conversions, roi, status, start_date, end_date.
+        - social_sentiment: id, keyword, positive_score, negative_score, total_mentions, top_complaint, trending_platform, top_emotion.
+        - sales: id, brand, model_name, spec_variant, units_sold, unit_price, region, customer_age_group, payment_method, launch_date, campaign_id, price_bin. (KHÔNG dùng 'price', hãy dùng 'unit_price')
+        - sales_performance: id, product_name, units_sold, revenue, month_period.
+        ⚠️ Rà soát Reach/Engagements: Dùng AVG hoặc lọc theo tháng mới nhất thay vì SUM toàn bộ để tránh con số hàng tỷ.
         """
         # Lớp bảo vệ 1: Application-level — chỉ cho phép SELECT
         normalized = query.strip().upper()
@@ -156,7 +164,7 @@ class EnterpriseDataTools:
                 rows = cursor.fetchall()
 
             if not rows:
-                return "Không tìm thấy dữ liệu phù hợp."
+                return "❌ LỖI: Không tìm thấy dữ liệu phù hợp trong SQL. TUYỆT ĐỐI KHÔNG ĐƯỢC tự bịa đặt con số, hãy báo cáo rằng không có thông tin."
 
             columns = rows[0].keys()
 

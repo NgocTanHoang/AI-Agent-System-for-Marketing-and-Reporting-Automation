@@ -94,19 +94,20 @@ def _md_to_html_sections(md: str) -> list[dict]:
             current_lines = []
 
     for line in md.splitlines():
-        if line.startswith("## "):
-            flush()
-            current_heading = line[3:].strip()
-        elif line.startswith("# "):
-            # Special case for the very first top-level header as a title
-            if not sections and not current_lines:
-                current_heading = line[2:].strip()
-            else:
+        # Tìm tiêu đề cấp 1 hoặc 2 bằng regex (cho phép khoảng trắng phía trước)
+        header_match = re.search(r"^(#+|##+)\s+(.+)", line.strip())
+        
+        if header_match:
+            if current_lines:
                 flush()
-                current_heading = line[2:].strip()
+            current_heading = header_match.group(2).strip()
         else:
             current_lines.append(line)
-    flush()
+    
+    # Một lần flush cuối cùng để lấy hết content còn sót lại
+    if current_lines:
+        flush()
+        
     return sections
 
 
@@ -240,24 +241,39 @@ async def health():
 # Dashboard KPI Summary (Intelligence page)
 # ---------------------------------------------------------------------------
 @app.get("/api/kpi-summary")
-async def get_kpi_summary():
+async def get_kpi_summary(brand: str = None, region: str = None):
     db_path = PROJECT_ROOT / "data" / "raw" / "marketing_intelligence.db"
     if not db_path.exists():
         return {"error": "Database not found"}
     import sqlite3
     with sqlite3.connect(db_path) as conn:
         cur = conn.cursor()
-        cur.execute("SELECT SUM(revenue) FROM sales_performance")
+        
+        where_sales = []
+        params_sales = []
+        if brand and brand != "All" and brand != "":
+            where_sales.append("brand LIKE ?")
+            params_sales.append(f"%{brand}%")
+        if region and region != "All" and region != "":
+            where_sales.append("region LIKE ?")
+            params_sales.append(f"%{region}%")
+        
+        where_str = " WHERE " + " AND ".join(where_sales) if where_sales else ""
+        
+        cur.execute(f"SELECT SUM(units_sold*unit_price) FROM sales{where_str}", params_sales)
         total_revenue = cur.fetchone()[0] or 0
-        cur.execute("SELECT SUM(units_sold) FROM sales_performance")
+        cur.execute(f"SELECT SUM(units_sold) FROM sales{where_str}", params_sales)
         total_units = cur.fetchone()[0] or 0
+        
+        # fallback to no filter for campaigns as it has no brand/region unless joined
         cur.execute("SELECT ROUND(AVG(roi), 2) FROM marketing_campaigns")
         avg_roi = cur.fetchone()[0] or 0
         cur.execute("SELECT ROUND(AVG(positive_score) * 100, 1) FROM social_sentiment")
         avg_sentiment = cur.fetchone()[0] or 0
         cur.execute("SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'Active'")
         active_campaigns = cur.fetchone()[0] or 0
-        cur.execute("SELECT product_name, revenue FROM sales_performance ORDER BY revenue DESC LIMIT 1")
+        
+        cur.execute(f"SELECT model_name as product_name, SUM(units_sold*unit_price) as revenue FROM sales{where_str} GROUP BY model_name ORDER BY revenue DESC LIMIT 1", params_sales)
         top_product = cur.fetchone()
         
         cur.execute("SELECT channel FROM marketing_campaigns ORDER BY roi DESC LIMIT 1")
@@ -284,7 +300,7 @@ async def get_kpi_summary():
 # Analytics (Chart Data)
 # ---------------------------------------------------------------------------
 @app.get("/api/dashboard-data")
-async def get_dashboard_data():
+async def get_dashboard_data(brand: str = None, region: str = None):
     db_path = PROJECT_ROOT / "data" / "raw" / "marketing_intelligence.db"
     if not db_path.exists():
         return {"error": "Database not found"}
@@ -295,25 +311,36 @@ async def get_dashboard_data():
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         
+        where_sales = []
+        params_sales = []
+        if brand and brand != "All" and brand != "":
+            where_sales.append("brand LIKE ?")
+            params_sales.append(f"%{brand}%")
+        if region and region != "All" and region != "":
+            where_sales.append("region LIKE ?")
+            params_sales.append(f"%{region}%")
+            
+        where_str = " WHERE " + " AND ".join(where_sales) if where_sales else ""
+        
         # ── MODULE 1: Performance Ranking ──
-        cur.execute("SELECT product_name, revenue FROM sales_performance ORDER BY revenue DESC LIMIT 5")
+        cur.execute(f"SELECT model_name as product_name, SUM(units_sold*unit_price) as revenue FROM sales{where_str} GROUP BY model_name ORDER BY revenue DESC LIMIT 5", params_sales)
         data['top_revenue'] = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT product_name, units_sold FROM sales_performance ORDER BY units_sold DESC LIMIT 5")
+        cur.execute(f"SELECT model_name as product_name, SUM(units_sold) as units_sold FROM sales{where_str} GROUP BY model_name ORDER BY units_sold DESC LIMIT 5", params_sales)
         data['top_sales'] = [dict(r) for r in cur.fetchall()]
         
-        cur.execute("SELECT product_name, revenue FROM sales_performance ORDER BY revenue ASC LIMIT 5")
+        cur.execute(f"SELECT model_name as product_name, SUM(units_sold*unit_price) as revenue FROM sales{where_str} GROUP BY model_name ORDER BY revenue ASC LIMIT 5", params_sales)
         data['bottom_revenue'] = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT product_name, units_sold FROM sales_performance ORDER BY units_sold ASC LIMIT 5")
+        cur.execute(f"SELECT model_name as product_name, SUM(units_sold) as units_sold FROM sales{where_str} GROUP BY model_name ORDER BY units_sold ASC LIMIT 5", params_sales)
         data['bottom_sales'] = [dict(r) for r in cur.fetchall()]
         
         # ── MODULE 2: Payment Dynamics ──
-        cur.execute("SELECT payment_method, COUNT(*) as count FROM sales GROUP BY payment_method ORDER BY count DESC")
+        cur.execute(f"SELECT payment_method, COUNT(*) as count FROM sales{where_str} GROUP BY payment_method ORDER BY count DESC", params_sales)
         data['payment_donut'] = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT customer_age_group, payment_method, COUNT(*) as count FROM sales GROUP BY customer_age_group, payment_method")
+        cur.execute(f"SELECT customer_age_group, payment_method, COUNT(*) as count FROM sales{where_str} GROUP BY customer_age_group, payment_method", params_sales)
         data['payment_age'] = [dict(r) for r in cur.fetchall()]
         
         # ── MODULE 3: Customer Profiles ──
-        cur.execute("SELECT customer_age_group, price_bin, COUNT(*) as count FROM sales GROUP BY customer_age_group, price_bin")
+        cur.execute(f"SELECT customer_age_group, price_bin, COUNT(*) as count FROM sales{where_str} GROUP BY customer_age_group, price_bin", params_sales)
         data['price_age_heatmap'] = [dict(r) for r in cur.fetchall()]
         
         # ── MODULE 4: Marketing Efficiency ──

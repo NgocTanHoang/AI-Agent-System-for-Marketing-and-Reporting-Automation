@@ -41,7 +41,7 @@ def run_smartphone_intelligence_system():
         agent=business_reporter,
         research_task=research_task,
         content_task=content_task,
-        tools=[],
+        tools=business_reporter.tools,
     )
 
     # 4. Thiết lập Crew
@@ -61,13 +61,14 @@ def run_smartphone_intelligence_system():
     print("=" * 60 + "\n")
 
     result = crew.kickoff()
+    print(f"\n[DEBUG]: Độ dài báo cáo nhận được: {len(result.raw)} ký tự")
 
     # --- Lưu báo cáo cục bộ ---
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "processed")
     os.makedirs(output_dir, exist_ok=True)
     report_path = os.path.join(output_dir, f"Smartphone_Strategic_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write(str(result))
+        f.write(result.raw)
 
     print("\n" + "=" * 60)
     print("✅ PIPELINE HOÀN TẤT")

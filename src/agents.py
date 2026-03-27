@@ -69,24 +69,27 @@ class MarketingAgents:
     # ------------------------------------------------------------------
 
     def _build_llm(self) -> LLM:
-        api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
-
+        # Ưu tiên OpenRouter để tránh Rate Limit của NVIDIA NIM
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        
         if not api_key:
-            raise EnvironmentError(
-                "NVIDIA_NIM_API_KEY chưa được set.\n"
-                "Thêm dòng sau vào file .env rồi chạy lại:\n"
-                "  NVIDIA_NIM_API_KEY=your_key_here"
-            )
+            # Fallback về NVIDIA NIM nếu không có OpenRouter
+            api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
+            if not api_key:
+                raise EnvironmentError("OPENROUTER_API_KEY hoặc NVIDIA_NIM_API_KEY chưa được set trong .env")
+            
+            print("Khởi tạo LLM: NVIDIA NIM (llama-3.3-70b-instruct)...")
+            return LLM(model="nvidia_nim/meta/llama-3.3-70b-instruct", api_key=api_key, temperature=0.2)
 
         try:
-            print("Khởi tạo LLM: NVIDIA NIM (nvidia_nim/meta/llama-3.3-70b-instruct)...")
+            print("Khởi tạo LLM: OpenRouter (openrouter/meta-llama/llama-3.3-70b-instruct)...")
             return LLM(
-                model="nvidia_nim/meta/llama-3.3-70b-instruct",
+                model="openrouter/meta-llama/llama-3.3-70b-instruct",
                 api_key=api_key,
                 temperature=0.2,
             )
         except Exception as e:
-            raise RuntimeError(f"Khởi tạo LLM thất bại: {e}")
+            raise RuntimeError(f"Khởi tạo LLM OpenRouter thất bại: {e}")
 
     # ------------------------------------------------------------------
     # Tool sets — mỗi agent chỉ nhận tool cần thiết (least privilege)
@@ -107,17 +110,16 @@ class MarketingAgents:
 
     def search_analyst(self) -> Agent:
         return Agent(
-            role="Trưởng phòng Kinh doanh & Phân tích Thị trường Bán lẻ",
+            role="Trưởng phòng Tình báo Thị trường & Đối thủ (Market Intelligence Lead)",
             goal=(
-                "Theo dõi thị trường smartphone và đối chiếu với tồn kho/doanh số "
-                "tại đại lý để đưa ra quyết định nhập hàng và định giá tối ưu."
+                "Thực hiện 'truy quét' dữ liệu từ Internet và SQL để bóc tách chiến thuật của đối thủ (Apple, Samsung, Xiaomi) "
+                "và tìm ra các điểm yếu (Gaps) trong chuỗi cung ứng/giá bán để tấn công thị trường."
             ),
             backstory=(
-                "Bạn là chuyên gia phân tích cho một chuỗi cửa hàng smartphone lớn. "
-                "Thay vì sản xuất, bạn tập trung vào: Nhập dòng nào? "
-                "Giá bán so với đối thủ (Apple Store, TGDD, CellphoneS) thế nào? "
-                "Phân khúc khách hàng nào đang tăng trưởng? "
-                "Đưa ra insight để tối ưu hóa doanh số bán lẻ."
+                "BẠN LÀ MỘT 'BỘ ÓC TÌNH BÁO' SẮC SẢO. Thay vì liệt kê số liệu chung chung, bạn phải: "
+                "1. Data Integrity: Trích xuất số liệu thực (Price, Stock) từ SQL. Nếu S26 Ultra đang đọng hàng, hãy báo cáo chính xác số lượng. "
+                "2. Competitive Benchmarking: So sánh trực tiếp key_features (Chip, Pin, Camera) của ta với đối thủ từ bảng 'competitor_products'. "
+                "3. Insight Thực chiến: Chỉ ra tại sao khách hàng lại chọn đối thủ thay vì ta (Ví dụ: 'Apple đang thắng ở phân khúc Gen Z nhờ Trade-in hời hơn')."
             ),
             tools=self._tools_search(),
             llm=self.llm,
@@ -127,16 +129,17 @@ class MarketingAgents:
 
     def content_strategist(self) -> Agent:
         return Agent(
-            role="Chuyên gia sáng tạo nội dung MXH",
+            role="Giám đốc Sáng tạo Gen Z & Viral Growth Hacker (CSO - Chief Slay Officer)",
             goal=(
-                "Biến dữ liệu thô từ thị trường và cảm xúc khách hàng thành các mẫu "
-                "bài đăng viral trên mạng xã hội để thu hút tương tác và chốt đơn."
+                "Biến các nỗi đau của khách hàng (pain points) và thông số kỹ thuật khô khan thành "
+                "các nội dung 'Toxic nhẹ', 'Flexing' hoặc 'Slay' để thu hút Gen Z và đẩy phễu bán hàng."
             ),
             backstory=(
-                "Bạn là một Creative Director với bộ óc nhạy bén về trend. "
-                "Nhiệm vụ của bạn không phải là phân tích khô khan, mà là tìm ra góc nhìn "
-                "thú vị nhất từ dữ liệu (social_sentiment) để viết caption, tạo hashtag "
-                "và đề xuất ý tưởng hình ảnh chuẩn 'viral' cho các kênh Social Media."
+                "BẠN LÀ MỘT 'CHÚA TỂ CONTENT'. Văn phong của bạn phải cực kỳ 'thời thượng': "
+                "1. Từ khóa bắt buộc: Slay, Flex, Chill, Check-var, 32 củ, 'phát cơm chó', 'hết nước chấm'. "
+                "2. Tư duy so sánh: 'iPhone 17 Pro giá 32 củ nhưng sạc vẫn chậm hơn rùa? Qua đây xem S26 Ultra sạc 30 phút đầy bình!'. "
+                "3. Tuyệt đối trung thực: Luôn giữ nguyên các chỉ số ROI/Conversion từ SQL, không làm tròn số đẹp. "
+                "Cấu trúc bài đăng: [TIÊU ĐỀ THU HÚT] - [NỘI DUNG CHÍNH (AIDA)] - [CALL TO ACTION] - [10 HASHTAGS TRENDING]."
             ),
             tools=self._tools_content(),
             llm=self.llm,
@@ -146,17 +149,17 @@ class MarketingAgents:
 
     def business_reporter(self) -> Agent:
         return Agent(
-            role="Chiến lược gia tăng trưởng",
+            role="Tổng giám đốc Chiến lược & Tăng trưởng (Chief Strategy & Creative Officer)",
             goal=(
-                "Tổng hợp Cố vấn Kế hoạch Hành động Tuần bao gồm đối tượng mục tiêu, "
-                "kênh ưu tiên và thông điệp chủ đạo, trình bày chuyên nghiệp trên Web."
+                "Hợp nhất dữ liệu Tam giác (SQL + Internet + Content) thành một 'Mật lệnh hành động' "
+                "có tính thực chiến cực cao, chỉ ra đích danh model, khu vực và ngân sách cần dồn lực."
             ),
             backstory=(
-                "Thay vì chỉ thống kê con số, bạn đóng vai trò là não bộ chiến lược. "
-                "Từ dữ liệu doanh thu (sales) và chiến dịch (marketing_campaigns), "
-                "bạn chỉ ra đích xác phải làm gì tiếp theo: Kênh nào đang hiệu quả? "
-                "Cần chạy thông điệp gì ở khung giờ nào? Bạn gợi ý chiến lược tăng trưởng "
-                "bằng các Action Items (nhiệm vụ hành động) cụ thể để Team Marketing thực thi ngay."
+                "BẠN KHÔNG PHẢI LÀ NGƯỜI LÀM BÁO CÁO, BẠN LÀ 'TỔNG TƯ LỆNH' CHIẾN DỊCH. "
+                "1. Phá bỏ sự chung chung: Không dùng 'cần tăng cường marketing'. Hãy dùng: 'Model X đang đọng 200 máy ở Miền Bắc, dồn gấp 50 triệu ngân sách TikTok vào đây'. "
+                "2. Data Integrity: Phải lấy ROI, Doanh thu lẻ đến từng đơn vị từ SQL. Không làm tròn số. "
+                "3. Phân tích đối đầu: Lấy key_features và strengths từ bảng 'competitor_products' để giải mã tại sao thắng/thua. "
+                "4. Final Answer: Trả về toàn bộ nội dung báo cáo bằng Markdown chi tiết (ít nhất 800 từ)."
             ),
             tools=self._tools_reporter(),
             llm=self.llm,
