@@ -1,25 +1,25 @@
-# 🛡️ COGNITIVE SHADOW v2.5
-## AI Marketing Intelligence & Reporting Automation System
+# 🛡️ AI Marketing Intelligence Hub
+## AI Marketing Analysis & Reporting Automation System
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/CrewAI-Agentic%20Orchestration-red)](https://www.crewai.com/)
 [![LLM](https://img.shields.io/badge/OpenRouter-Llama%203.3%2070B-purple)](https://openrouter.ai/)
 [![UI](https://img.shields.io/badge/FastAPI-High--Tech%20Dashboard-009688)](https://fastapi.tiangolo.com/)
 
-**Cognitive Shadow** is a sophisticated multi-agent AI system designed to replace manual marketing reporting with a **Data-Triangulated Intelligence Pipeline**. It scours the internet, queries enterprise databases, and analyzes internal content to generate "viral-ready" social media strategies and executive retail reports.
+**AI Marketing Intelligence Hub** is a sophisticated multi-agent AI system designed to replace manual marketing reporting with a **Data-Triangulated Intelligence Pipeline**. It scours the internet, queries enterprise databases, and analyzes internal content to generate "viral-ready" social media strategies and executive retail reports.
 
 ---
 
-## ⚡ Key Upgrades (v2.5 - "The Slay Update")
+## ⚡ Key Upgrades (Slay Edition)
 
-In version 2.5, the system moved beyond simple data reporting to **Active Market Critique**:
+The system has evolved beyond simple data reporting to **Active Market Critique**:
 
 | Feature | Description |
 | :--- | :--- |
-| **🚀 Gen Z Viral Engine** | The `Content Strategist` now uses a strict **AIDA structure** (Attention, Interest, Desire, Action) and Gen Z slang (Slay, Flex, Chill, Tới công chuyện) for high-engagement social posts. |
-| **📐 Data Triangulation** | Agents perform 3-way cross-referencing: **SQL Records** (Sales/ROI) + **Live Web** (Competitor Pricing) + **Internal TXT Docs** (KOL Reviews). |
-| **⚖️ Price War Analysis** | Automated comparison between **Apple vs Samsung** pricing segments to explain market shifts and "Win/Loss" factors. |
-| **🛡️ Anti-Hallucination** | Hard-coded SQL guardrails to prevent inflated reach/engagement figures (no more "billions of users" errors). |
+| **🔥 Gen Z "Slay" Copy** | The `CSO Agent` uses a "Toxic & Flexing" tone with slang (Slay, Flex, Check-var) to target Gen Z pain points (e.g., Apple's slow charging). |
+| **📐 SQL Integrity** | 100% accurate data extraction from SQLite. ROI/CPA figures are reported with absolute precision (no rounding of decimals). |
+| **⚔️ Feature Benchmarking** | Automated analysis of **Chipsets, Camera Specs, and Charging** vs competitors from the `competitor_products` table. |
+| **🛡️ Strategic Mật Lệnh** | Replaces generic advice with direct orders: **"Model X is overstocked in North Region, shift 50M budget to TikTok NOW."** |
 
 ---
 
@@ -41,9 +41,9 @@ graph LR
 ```
 
 ### Specialized Agent Personas:
-1.  **Search Analyst (The Scout)**: Monitors competitor pricing and "Viral Trends" across the smartphone retail landscape.
-2.  **Content Strategist (The Growth Hacker)**: Transforms raw data into "cháy" (fire) social media scripts with viral hooks and trending hashtags.
-3.  **Business Reporter (The Strategist)**: The final decision-maker. Synthesizes all data, performs ROI calculations, and explains "WHY WE WIN/LOSE".
+1.  **Search Analyst (Intelligence Lead)**: Performs deep chip-level and spec-based benchmarking against Apple/Samsung.
+2.  **Content Strategist (Chief Slay Officer)**: Crafts "aggressive" viral posts with structural AIDA and 10+ trending hashtags.
+3.  **Business Reporter (Strategic Commander)**: Issues the final "Mật lệnh" with specific regional budget shifts and inventory clearances.
 
 ---
 
@@ -111,7 +111,7 @@ Visit: `http://localhost:8000`
 ---
 
 > [!IMPORTANT]
-> **Cognitive Shadow** requires an LLM with strong Vietnamese language capabilities and logical reasoning (recommend: Llama 3.3 70B or GPT-4o).
+> **AI Marketing Intelligence Hub** requires an LLM with strong Vietnamese language capabilities and logical reasoning (recommend: Llama 3.3 70B or GPT-4o).
 
 **Author**: [Ngọc Tân Hoàng](https://github.com/NgocTanHoang)  
-**Version**: 2.5.0 - *Refined Content & Data Logic*
+**Version**: 2.6.0 - *Strategic & Tactical Excellence*
