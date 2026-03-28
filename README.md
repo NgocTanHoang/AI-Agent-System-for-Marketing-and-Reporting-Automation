@@ -1,5 +1,4 @@
-# 🛡️ AI Marketing Intelligence Hub
-## AI Marketing Analysis & Reporting Automation System
+## AI Agent System for Marketing and Reporting Automation
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/CrewAI-Agentic%20Orchestration-red)](https://www.crewai.com/)
@@ -7,19 +6,6 @@
 [![UI](https://img.shields.io/badge/FastAPI-High--Tech%20Dashboard-009688)](https://fastapi.tiangolo.com/)
 
 **AI Marketing Intelligence Hub** is a sophisticated multi-agent AI system designed to replace manual marketing reporting with a **Data-Triangulated Intelligence Pipeline**. It scours the internet, queries enterprise databases, and analyzes internal content to generate "viral-ready" social media strategies and executive retail reports.
-
----
-
-## ⚡ Key Upgrades (Slay Edition)
-
-The system has evolved beyond simple data reporting to **Active Market Critique**:
-
-| Feature | Description |
-| :--- | :--- |
-| **🔥 Gen Z "Slay" Copy** | The `CSO Agent` uses a "Toxic & Flexing" tone with slang (Slay, Flex, Check-var) to target Gen Z pain points (e.g., Apple's slow charging). |
-| **📐 SQL Integrity** | 100% accurate data extraction from SQLite. ROI/CPA figures are reported with absolute precision (no rounding of decimals). |
-| **⚔️ Feature Benchmarking** | Automated analysis of **Chipsets, Camera Specs, and Charging** vs competitors from the `competitor_products` table. |
-| **🛡️ Strategic Mật Lệnh** | Replaces generic advice with direct orders: **"Model X is overstocked in North Region, shift 50M budget to TikTok NOW."** |
 
 ---
 
