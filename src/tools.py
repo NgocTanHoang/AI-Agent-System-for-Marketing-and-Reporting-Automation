@@ -138,15 +138,22 @@ class EnterpriseDataTools:
 
     def query_marketing_db(self, query: str, output_format: str = "markdown"):
         """
-        Truy vấn database Marketing Intelligence (sales, competitor_products, sentiment...).
-        - output_format: "markdown" (mặc định) hoặc "json".
+        Truy vấn database Marketing Intelligence.
+
+        DANH SÁCH BẢNG & CỘT QUAN TRỌNG:
+        1. sales: [id, brand, model_name, units_sold, unit_price, region, launch_date]
+        2. competitor_products: [id, brand, model_name, key_features, current_price, strengths, weaknesses]
+        3. sales_performance: [id, model_name, units_sold, revenue, month_period]
+        4. marketing_campaigns: [id, campaign_name, channel, budget, reach, conversions, roi, status]
+        5. social_sentiment: [id, keyword, positive_score, negative_score, total_mentions, top_complaint]
+
+        LỜI KHUYÊN: Luôn dùng 'model_name' để lọc sản phẩm.
         - Chỉ cho phép câu lệnh SELECT (read-only).
         ⚠️ LƯU Ý CHO AGENT: 
         - competitor_products: id, brand, model_name, key_features, price_segment, current_price, release_year, strengths, weaknesses. (KHOÔNG dùng 'price', hãy dùng 'current_price')
         - marketing_campaigns: id, campaign_name, channel, budget, reach, conversions, roi, status, start_date, end_date.
         - social_sentiment: id, keyword, positive_score, negative_score, total_mentions, top_complaint, trending_platform, top_emotion.
         - sales: id, brand, model_name, spec_variant, units_sold, unit_price, region, customer_age_group, payment_method, launch_date, campaign_id, price_bin. (KHÔNG dùng 'price', hãy dùng 'unit_price')
-        - sales_performance: id, product_name, units_sold, revenue, month_period.
         ⚠️ Rà soát Reach/Engagements: Dùng AVG hoặc lọc theo tháng mới nhất thay vì SUM toàn bộ để tránh con số hàng tỷ.
         """
         # Lớp bảo vệ 1: Application-level — chỉ cho phép SELECT

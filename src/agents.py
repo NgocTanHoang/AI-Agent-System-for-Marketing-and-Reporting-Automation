@@ -69,27 +69,31 @@ class MarketingAgents:
     # ------------------------------------------------------------------
 
     def _build_llm(self) -> LLM:
-        # Ưu tiên OpenRouter để tránh Rate Limit của NVIDIA NIM
-        api_key = os.getenv("OPENROUTER_API_KEY")
+        # Ưu tiên NVIDIA NIM (Llama 3.3 70B) theo yêu cầu bệ hạ
+        api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
         
-        if not api_key:
-            # Fallback về NVIDIA NIM nếu không có OpenRouter
-            api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
-            if not api_key:
-                raise EnvironmentError("OPENROUTER_API_KEY hoặc NVIDIA_NIM_API_KEY chưa được set trong .env")
-            
-            print("Khởi tạo LLM: NVIDIA NIM (llama-3.3-70b-instruct)...")
-            return LLM(model="nvidia_nim/meta/llama-3.3-70b-instruct", api_key=api_key, temperature=0.2)
-
-        try:
-            print("Khởi tạo LLM: OpenRouter (openrouter/meta-llama/llama-3.3-70b-instruct)...")
+        if api_key:
+            print("🚀 Khởi tạo LLM ƯU TIÊN: NVIDIA NIM (meta/llama-3.3-70b-instruct)...")
             return LLM(
-                model="openrouter/meta-llama/llama-3.3-70b-instruct",
+                model="nvidia_nim/meta/llama-3.3-70b-instruct", 
+                api_key=api_key, 
+                temperature=0.2
+            )
+        
+        # Fallback về OpenRouter dùng MODEL FREE (Demo mode)
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if api_key:
+            # Ưu tiên các model thực sự :free trên OpenRouter để tiết kiệm chi phí
+            print("📡 Fallback LLM: OpenRouter FREE (minimax/minimax-m2.5:free)...")
+            return LLM(
+                model="openrouter/minimax/minimax-m2.5:free",
                 api_key=api_key,
                 temperature=0.2,
             )
-        except Exception as e:
-            raise RuntimeError(f"Khởi tạo LLM OpenRouter thất bại: {e}")
+            
+        raise EnvironmentError(
+            "Cần có NVIDIA_NIM_API_KEY hoặc OPENROUTER_API_KEY trong file .env để chạy hệ thống."
+        )
 
     # ------------------------------------------------------------------
     # Tool sets — mỗi agent chỉ nhận tool cần thiết (least privilege)

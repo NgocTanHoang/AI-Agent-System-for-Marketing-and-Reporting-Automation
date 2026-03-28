@@ -209,7 +209,7 @@ def init_db(db_path: str = DB_PATH) -> None:
         cursor.execute("""
             CREATE TABLE sales_performance (
                 id           INTEGER PRIMARY KEY,
-                product_name TEXT,
+                model_name   TEXT,
                 units_sold   INTEGER,
                 revenue      REAL,
                 month_period TEXT
