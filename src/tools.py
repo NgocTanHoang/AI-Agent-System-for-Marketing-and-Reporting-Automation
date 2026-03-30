@@ -138,23 +138,21 @@ class EnterpriseDataTools:
 
     def query_marketing_db(self, query: str, output_format: str = "markdown"):
         """
-        Truy vấn database Marketing Intelligence.
+        Truy vấn SQLite marketing_intelligence.db.
 
-        DANH SÁCH BẢNG & CỘT QUAN TRỌNG:
+        ⚠️⚠️ BẮT BUỘC: Dùng 'model_name' KHÔNG dùng 'model'.
+
+        DANH SÁCH BẢNG & CỘT:
         1. sales: [id, brand, model_name, units_sold, unit_price, region, launch_date]
         2. competitor_products: [id, brand, model_name, key_features, current_price, strengths, weaknesses]
         3. sales_performance: [id, model_name, units_sold, revenue, month_period]
         4. marketing_campaigns: [id, campaign_name, channel, budget, reach, conversions, roi, status]
         5. social_sentiment: [id, keyword, positive_score, negative_score, total_mentions, top_complaint]
 
-        LỜI KHUYÊN: Luôn dùng 'model_name' để lọc sản phẩm.
-        - Chỉ cho phép câu lệnh SELECT (read-only).
-        ⚠️ LƯU Ý CHO AGENT: 
-        - competitor_products: id, brand, model_name, key_features, price_segment, current_price, release_year, strengths, weaknesses. (KHOÔNG dùng 'price', hãy dùng 'current_price')
-        - marketing_campaigns: id, campaign_name, channel, budget, reach, conversions, roi, status, start_date, end_date.
-        - social_sentiment: id, keyword, positive_score, negative_score, total_mentions, top_complaint, trending_platform, top_emotion.
-        - sales: id, brand, model_name, spec_variant, units_sold, unit_price, region, customer_age_group, payment_method, launch_date, campaign_id, price_bin. (KHÔNG dùng 'price', hãy dùng 'unit_price')
-        ⚠️ Rà soát Reach/Engagements: Dùng AVG hoặc lọc theo tháng mới nhất thay vì SUM toàn bộ để tránh con số hàng tỷ.
+        ⚠️ LƯU Ý: 
+        - Luôn dùng 'model_name' để lọc hoặc join các bảng sản phẩm.
+        - competitor_products: dùng 'current_price' (không phải 'price').
+        - sales: dùng 'unit_price' (không phải 'price').
         """
         # Lớp bảo vệ 1: Application-level — chỉ cho phép SELECT
         normalized = query.strip().upper()
@@ -185,6 +183,23 @@ class EnterpriseDataTools:
             return f"\n{header}\n{separator}\n{body}\n"
 
         except sqlite3.OperationalError as e:
-            return f"❌ Lỗi SQL: {str(e)}"
+            error_msg = str(e)
+            error_msg_lower = error_msg.lower()
+            
+            # Hướng dẫn cụ thể cho các lỗi tên cột hay gặp
+            if "no such column: model" in error_msg_lower and "model_name" not in error_msg_lower:
+                return "❌ Lỗi SQL: Cột 'model' không tồn tại. Dùng 'model_name'."
+            if "no such column: model_name" in error_msg_lower and "marketing_campaigns" in query.lower():
+                return "❌ Lỗi SQL: Bảng 'marketing_campaigns' KHÔNG CÓ cột 'model_name'. Dùng 'campaign_name' hoặc join qua qua ID."
+            if "no such column: roi" in error_msg_lower:
+                return "❌ Lỗi SQL: Cột 'ROI'/'roi' chỉ có trong bảng 'marketing_campaigns'. Query mẫu: SELECT campaign_name, roi FROM marketing_campaigns"
+            if "no such column: price" in error_msg_lower:
+                return "❌ Lỗi SQL: Cột 'price' không tồn tại. Trong 'sales' dùng 'unit_price'. Trong 'competitor_products' dùng 'current_price'."
+            if "no such column: revenue" in error_msg_lower:
+                return "❌ Lỗi SQL: Cột 'revenue' chỉ có trong bảng 'sales_performance', KHÔNG có trong 'sales'."
+            
+            if "no such table" in error_msg_lower:
+                return f"❌ Lỗi SQL: {error_msg}. Bảng có sẵn: sales, competitor_products, social_sentiment, marketing_campaigns, sales_performance."
+            return f"❌ Lỗi SQL: {error_msg}"
         except Exception as e:
             return f"❌ Lỗi không xác định: {str(e)}"

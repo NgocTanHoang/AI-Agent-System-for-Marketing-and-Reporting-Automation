@@ -19,12 +19,12 @@ class MarketingTasks:
                 Thực hiện tình báo thị trường 'sắc lẹm' cho chủ đề: {market_topic}.
                 
                 QUY TRÌNH BẮT BUỘC:
-                1. Dùng tool tìm kiếm để lấy thông số kỹ thuật (Chipset, RAM, Camera, Sạc nhanh) của đối thủ từ bảng 'competitor_products'.
-                2. Truy vấn bảng 'sales' để xác định chính xác Model nào đang có tồn kho cao nhất hoặc doanh số thấp nhất theo từng Vùng miền.
+                1. Dùng tool tìm kiếm để lấy thông số kỹ thuật (Chipset, RAM, Camera, Sạc nhanh) của đối thủ từ bảng 'competitor_products'. Lưu ý: Bảng này dùng 'model_name' và 'current_price'.
+                2. Truy vấn bảng 'sales' và 'sales_performance' để xác định chính xác Model nào (gọi tên model_name) đang có tồn kho cao nhất hoặc doanh số thấp nhất theo từng Vùng miền (region). Lưu ý: Dùng cột 'units_sold' và 'revenue'.
                 3. XÁC ĐỊNH 'NỖI ĐAU' KHÁCH HÀNG: Đối thủ đang bị chê ở điểm nào? (Ví dụ: iPhone sạc chậm, Samsung nóng máy).
                 4. Tìm 03 xu hướng 'Toxic' hoặc 'Flexing' trên TikTok/Facebook mà Gen Z đang sử dụng để làm content.
                 
-                ⚠️ CẢNH BÁO DATA INTEGRITY: Tuyệt đối không làm tròn số. Nếu giá là 32.190.000 VNĐ, phải báo cáo đúng như vậy.
+                ⚠️ CẢNH BÁO DATA INTEGRITY: Tuyệt đối không làm tròn số. Khi query, TUYỆT ĐỐI không dùng cột 'model', PHẢI dùng 'model_name'.
             """),
             expected_output=dedent("""
                 Báo cáo Tình báo (Markdown):
@@ -47,7 +47,7 @@ class MarketingTasks:
                 3. Phải tạo ra 03 mẫu bài đăng cho Facebook/TikTok bằng cấu trúc AIDA:
                    - Mẫu 1 (Pain Point): Nhấn vào nỗi đau của người dùng máy đối thủ.
                    - Mẫu 2 (Flexing): Khoe cấu hình hoặc tính năng độc quyền (Ví dụ: Chụp đêm 'hết nước chấm').
-                   - Mẫu 3 (CTA): Call to action cực gắt kèm deal giảm giá đích danh cho Model đang chậm KPI (lấy từ Research).
+                   - Mẫu 3 (CTA): Call to action cực gắt kèm deal giảm giá ĐÍCH DANH cho Model đang chậm KPI (Lấy từ research, PHẢI DÙNG TÊN 'model_name' CHÍNH XÁC).
             """),
             expected_output=dedent("""
                 03 Mẫu Bài Đăng 'Slay' nhất:
@@ -66,18 +66,23 @@ class MarketingTasks:
                 Hợp nhất toàn bộ dữ liệu thành một bản 'Mật lệnh' cho Sếp.
                 
                 YÊU CẦU QUY TRÌNH:
-                1. DATA INTEGRITY: Trích xuất ROI, CPA, Revenue lẻ đến từng số lẻ. Không làm tròn.
-                2. ĐÍCH DANH MODEL: Gọi tên chính xác Model có doanh số thấp nhất và đề xuất % giảm giá cụ thể.
+                1. DATA INTEGRITY: Trích xuất ROI từ bảng 'marketing_campaigns' (cột 'roi'), Revenue từ 'sales_performance' (cột 'revenue'). Không làm tròn. Lưu ý dùng 'model_name' (KHÔNG dùng 'model').
+                2. ĐÍCH DANH MODEL: Gọi tên chính xác model_name có doanh số thấp nhất và đề xuất % giảm giá cụ thể.
                 3. PHÂN TÍCH ĐỐI ĐẦU: Dùng Chipset/Camera cụ thể từ competitor_products để chỉ ra tại sao khách hàng chê đối thủ và nên mua máy mình.
                 4. PHÂN BỔ NGÂN SÁCH: Chỉ rõ dồn bao nhiêu ngân sách (số tiền cụ thể) vào kênh nào (TikTok/KOL) tại khu vực nào.
                 
-                BỐ CỤC BÁO CÁO (##):
-                ## 🚀 MẬT LỆNH HÀNH ĐỘNG & ĐIỀU PHỐI CHIẾN DỊCH
-                ## 📊 Hiệu quả Tài chính chi tiết (Bảng Markdown lẻ đến hàng đơn vị)
-                ## ⚖️ Phân tích Đối đầu: Dìm hàng đối thủ & Flexing tính năng
-                ## 🎯 Target Model & Mức giảm giá đề xuất
-                ## 📝 03 Mẫu Post 'Gen Z Toxic' (Copy từ Content Specialist)
-                ## ⚠️ Kế hoạch thực thi 7 ngày tới (Model - Khu vực - Ngân sách)
+                QUY TẮC ĐỊNH DẠNG (BẮT BUỘC):
+                - SỬ DỤNG Markdown CHUẨN. Mỗi tiêu đề (##) PHẢI nằm trên một dòng riêng.
+                - KHÔNG ĐƯỢC viết dính chùm tất cả các mục trên một dòng duy nhất.
+                - Sử dụng bảng Markdown (|---|---|) để trình bày số liệu.
+                
+                BỐ CỤC BÁO CÁO (BẮT BUỘC):
+                ## 🚀 CHIẾN LƯỢC HÀNH ĐỘNG TỔNG THỂ & ĐIỀU PHỐI CHIẾN DỊCH
+                ## 📊 Hiệu quả Tài chính & Chỉ số ROI (Bảng chi tiết)
+                ## ⚖️ Phân tích Cạnh tranh & Đòn bẩy Tính năng
+                ## 🎯 Mục tiêu Sản phẩm & Chính sách Ưu đãi đề xuất
+                ## 📝 03 Phương án Truyền thông Viral (Tác giả: Content Specialist)
+                ## ⚠️ Kế hoạch thực thi 7 ngày (Model - Khu vực - Ngân sách cụ thể)
             """),
             expected_output=dedent("""
                 BÁO CÁO CHIẾN LƯỢC THỰC CHIẾN (>800 TỪ):

@@ -72,7 +72,7 @@ def _md_to_html_sections(md: str) -> list[dict]:
     """
     import re
     sections = []
-    current_heading = "Tổng quan"
+    current_heading = "Tổng quan chiến lược"
     current_lines: list[str] = []
 
     def flush():
@@ -93,18 +93,31 @@ def _md_to_html_sections(md: str) -> list[dict]:
             sections.append({"heading": current_heading or "Tổng quan", "body_html": body})
             current_lines = []
 
-    for line in md.splitlines():
-        # Tìm tiêu đề cấp 1 hoặc 2 bằng regex (cho phép khoảng trắng phía trước)
-        header_match = re.search(r"^(#+|##+)\s+(.+)", line.strip())
-        
-        if header_match:
-            if current_lines:
-                flush()
-            current_heading = header_match.group(2).strip()
-        else:
-            current_lines.append(line)
+    # Xử lý trường hợp Agent trả về tất cả trên 1 dòng duy nhất
+    if "\n" not in md and "##" in md:
+        # Tách dựa trên pattern ## 
+        parts = re.split(r"(##\s+.+?)(?=##|$)", md)
+        for part in parts:
+            part = part.strip()
+            if not part: continue
+            # header_match = re.match(r"^##+\s+(.+?)$", part) # Trường hợp part chỉ là header (ít gặp)
+            header_content_match = re.match(r"^##+\s+(.+?)\s+(.*)", part, re.DOTALL)
+            if header_content_match:
+                if current_lines: flush()
+                current_heading = header_content_match.group(1).strip()
+                current_lines = [header_content_match.group(2).strip()]
+            else:
+                current_lines.append(part)
+    else:
+        # Xử lý theo dòng như bình thường
+        for line in md.splitlines():
+            header_match = re.search(r"^(#+|##+)\s+(.+)", line.strip())
+            if header_match:
+                if current_lines: flush()
+                current_heading = header_match.group(2).strip()
+            else:
+                current_lines.append(line)
     
-    # Một lần flush cuối cùng để lấy hết content còn sót lại
     if current_lines:
         flush()
         

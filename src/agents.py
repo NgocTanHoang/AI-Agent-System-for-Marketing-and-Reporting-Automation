@@ -29,8 +29,16 @@ try:
     def query_marketing_db(query: str, output_format: str = "markdown") -> str:
         """
         Truy vấn SQLite marketing_intelligence.db.
-        - output_format: "markdown" (để xem/viết báo cáo) hoặc "json" (để vẽ biểu đồ).
-        Bảng: sales, competitor_products, social_sentiment, marketing_campaigns, sales_performance.
+
+        ⚠️⚠️ BẮT BUỘC: Dùng đúng tên cột theo từng bảng:
+        1. sales: id, brand, model_name, spec_variant, units_sold, unit_price, region, customer_age_group, payment_method, launch_date (KHÔNG có roi, revenue)
+        2. competitor_products: id, brand, model_name, key_features, price_segment, current_price, release_year, strengths, weaknesses (KHÔNG có price)
+        3. sales_performance: id, model_name, units_sold, revenue, month_period (chứa revenue)
+        4. marketing_campaigns: id, campaign_name, channel, budget, reach, conversions, roi, status, start_date, end_date (ĐÂY là bảng chứa roi)
+        5. social_sentiment: id, keyword, positive_score, negative_score, total_mentions, top_complaint, trending_platform, top_emotion
+
+        ❤️ Mẹo: để lấy ROI, dùng: SELECT campaign_name, roi FROM marketing_campaigns
+        - output_format: "markdown" hoặc "json"
         """
         return _db.query_marketing_db(query, output_format=output_format)
 
@@ -69,30 +77,30 @@ class MarketingAgents:
     # ------------------------------------------------------------------
 
     def _build_llm(self) -> LLM:
-    # 1. Ép buộc dùng NVIDIA NIM
-    api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
-    
-    if api_key:
-        print("🚀 Khởi tạo LLM ƯU TIÊN: NVIDIA NIM (meta/llama-3.3-70b-instruct)...")
-        return LLM(
-            model="nvidia_nim/meta/llama-3.3-70b-instruct", 
-            api_key=api_key, 
-            temperature=0.2
-        )
-    
-    # 2. Nếu không có NVIDIA, báo lỗi luôn thay vì dùng model tính phí của OpenRouter
-    # Hoặc chỉ dùng model FREE thực sự
-    openrouter_key = os.getenv("OPENROUTER_API_KEY")
-    if openrouter_key:
-        print("📡 CẢNH BÁO: Dùng OpenRouter FREE (Chỉ dùng model miễn phí)...")
-        return LLM(
-            # Phải đảm bảo model ID có chữ :free ở cuối
-            model="openrouter/google/gemini-2.0-flash-exp:free", # Ví dụ model free khác
-            api_key=openrouter_key,
-            temperature=0.2,
-        )
+        # 1. Ép buộc dùng NVIDIA NIM
+        api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
         
-    raise EnvironmentError("Bệ hạ chưa nạp API Key vào file .env rồi!")
+        if api_key:
+            print("🚀 Khởi tạo LLM ƯU TIÊN: NVIDIA NIM (meta/llama-3.3-70b-instruct)...")
+            return LLM(
+                model="nvidia_nim/meta/llama-3.3-70b-instruct", 
+                api_key=api_key, 
+                temperature=0.2
+            )
+        
+        # 2. Nếu không có NVIDIA, báo lỗi luôn thay vì dùng model tính phí của OpenRouter
+        # Hoặc chỉ dùng model FREE thực sự
+        openrouter_key = os.getenv("OPENROUTER_API_KEY")
+        if openrouter_key:
+            print("📡 CẢNH BÁO: Dùng OpenRouter FREE (Chỉ dùng model miễn phí)...")
+            return LLM(
+                # Phải đảm bảo model ID có chữ :free ở cuối
+                model="openrouter/google/gemini-2.0-flash-exp:free", # Ví dụ model free khác
+                api_key=openrouter_key,
+                temperature=0.2,
+            )
+            
+        raise EnvironmentError("Bệ hạ chưa nạp API Key vào file .env rồi!")
 
     # ------------------------------------------------------------------
     # Tool sets — mỗi agent chỉ nhận tool cần thiết (least privilege)
@@ -120,7 +128,7 @@ class MarketingAgents:
             ),
             backstory=(
                 "BẠN LÀ MỘT 'BỘ ÓC TÌNH BÁO' SẮC SẢO. Thay vì liệt kê số liệu chung chung, bạn phải: "
-                "1. Data Integrity: Trích xuất số liệu thực (Price, Stock) từ SQL. Nếu S26 Ultra đang đọng hàng, hãy báo cáo chính xác số lượng. "
+                "1. Data Integrity: Trích xuất số liệu thực (Price, Stock) từ SQL. Lưu ý dùng 'model_name' và 'unit_price' (KHÔNG dùng 'model' hay 'price'). "
                 "2. Competitive Benchmarking: So sánh trực tiếp key_features (Chip, Pin, Camera) của ta với đối thủ từ bảng 'competitor_products'. "
                 "3. Insight Thực chiến: Chỉ ra tại sao khách hàng lại chọn đối thủ thay vì ta (Ví dụ: 'Apple đang thắng ở phân khúc Gen Z nhờ Trade-in hời hơn')."
             ),
@@ -141,7 +149,7 @@ class MarketingAgents:
                 "BẠN LÀ MỘT 'CHÚA TỂ CONTENT'. Văn phong của bạn phải cực kỳ 'thời thượng': "
                 "1. Từ khóa bắt buộc: Slay, Flex, Chill, Check-var, 32 củ, 'phát cơm chó', 'hết nước chấm'. "
                 "2. Tư duy so sánh: 'iPhone 17 Pro giá 32 củ nhưng sạc vẫn chậm hơn rùa? Qua đây xem S26 Ultra sạc 30 phút đầy bình!'. "
-                "3. Tuyệt đối trung thực: Luôn giữ nguyên các chỉ số ROI/Conversion từ SQL, không làm tròn số đẹp. "
+                "3. Tuyệt đối trung thực: Luôn dùng REAL DATA từ Research agent. Khi truy vấn SQL, BẮT BUỘC dùng 'model_name' (KHÔNG dùng 'model'). "
                 "Cấu trúc bài đăng: [TIÊU ĐỀ THU HÚT] - [NỘI DUNG CHÍNH (AIDA)] - [CALL TO ACTION] - [10 HASHTAGS TRENDING]."
             ),
             tools=self._tools_content(),
@@ -159,10 +167,10 @@ class MarketingAgents:
             ),
             backstory=(
                 "BẠN KHÔNG PHẢI LÀ NGƯỜI LÀM BÁO CÁO, BẠN LÀ 'TỔNG TƯ LỆNH' CHIẾN DỊCH. "
-                "1. Phá bỏ sự chung chung: Không dùng 'cần tăng cường marketing'. Hãy dùng: 'Model X đang đọng 200 máy ở Miền Bắc, dồn gấp 50 triệu ngân sách TikTok vào đây'. "
-                "2. Data Integrity: Phải lấy ROI, Doanh thu lẻ đến từng đơn vị từ SQL. Không làm tròn số. "
-                "3. Phân tích đối đầu: Lấy key_features và strengths từ bảng 'competitor_products' để giải mã tại sao thắng/thua. "
-                "4. Final Answer: Trả về toàn bộ nội dung báo cáo bằng Markdown chi tiết (ít nhất 800 từ)."
+                "1. DATA INTEGRITY: Phải lấy ROI, Doanh thu lẻ đến từng đơn vị từ SQL. Lưu ý dùng 'model_name' (KHÔNG dùng 'model'). "
+                "2. Phân tích Đối đầu: Lấy key_features và strengths từ bảng 'competitor_products' để giải mã tại sao thắng/thua. "
+                "3. KẾT QUẢ ĐẦU RA: Bắt buộc trả về bản báo cáo bằng Markdown CHUẨN, sử dụng xuống dòng (\n) rõ ràng giữa các mục. "
+                "4. Final Answer: Trả về bản báo cáo Markdown thật chi tiết, phân tích sâu (ít nhất 1000 từ). KHÔNG được trả lời vài dòng ngắn ngủi. BẠN PHẢI TỔNG HỢP CẢ NỘI DUNG TỪ CONTENT SPECIALIST VÀO ĐÂY."
             ),
             tools=self._tools_reporter(),
             llm=self.llm,
