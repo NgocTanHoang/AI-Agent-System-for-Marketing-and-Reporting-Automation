@@ -69,31 +69,30 @@ class MarketingAgents:
     # ------------------------------------------------------------------
 
     def _build_llm(self) -> LLM:
-        # Ưu tiên NVIDIA NIM (Llama 3.3 70B) theo yêu cầu bệ hạ
-        api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
-        
-        if api_key:
-            print("🚀 Khởi tạo LLM ƯU TIÊN: NVIDIA NIM (meta/llama-3.3-70b-instruct)...")
-            return LLM(
-                model="nvidia_nim/meta/llama-3.3-70b-instruct", 
-                api_key=api_key, 
-                temperature=0.2
-            )
-        
-        # Fallback về OpenRouter dùng MODEL FREE (Demo mode)
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        if api_key:
-            # Ưu tiên các model thực sự :free trên OpenRouter để tiết kiệm chi phí
-            print("📡 Fallback LLM: OpenRouter FREE (minimax/minimax-m2.5:free)...")
-            return LLM(
-                model="openrouter/minimax/minimax-m2.5:free",
-                api_key=api_key,
-                temperature=0.2,
-            )
-            
-        raise EnvironmentError(
-            "Cần có NVIDIA_NIM_API_KEY hoặc OPENROUTER_API_KEY trong file .env để chạy hệ thống."
+    # 1. Ép buộc dùng NVIDIA NIM
+    api_key = os.getenv("NVIDIA_NIM_API_KEY") or os.getenv("NVIDIA_API_KEY")
+    
+    if api_key:
+        print("🚀 Khởi tạo LLM ƯU TIÊN: NVIDIA NIM (meta/llama-3.3-70b-instruct)...")
+        return LLM(
+            model="nvidia_nim/meta/llama-3.3-70b-instruct", 
+            api_key=api_key, 
+            temperature=0.2
         )
+    
+    # 2. Nếu không có NVIDIA, báo lỗi luôn thay vì dùng model tính phí của OpenRouter
+    # Hoặc chỉ dùng model FREE thực sự
+    openrouter_key = os.getenv("OPENROUTER_API_KEY")
+    if openrouter_key:
+        print("📡 CẢNH BÁO: Dùng OpenRouter FREE (Chỉ dùng model miễn phí)...")
+        return LLM(
+            # Phải đảm bảo model ID có chữ :free ở cuối
+            model="openrouter/google/gemini-2.0-flash-exp:free", # Ví dụ model free khác
+            api_key=openrouter_key,
+            temperature=0.2,
+        )
+        
+    raise EnvironmentError("Bệ hạ chưa nạp API Key vào file .env rồi!")
 
     # ------------------------------------------------------------------
     # Tool sets — mỗi agent chỉ nhận tool cần thiết (least privilege)
