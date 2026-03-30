@@ -28,13 +28,20 @@ try:
     @tool("query_marketing_db")
     def query_marketing_db(query: str, output_format: str = "markdown") -> str:
         """
-        Chạy SQL trên marketing_intelligence.db. output_format: 'markdown' hoặc 'json'.
-        Schema: sales(brand,model_name,units_sold,unit_price,region) |
-        competitor_products(brand,model_name,key_features,current_price,strengths,weaknesses) |
-        sales_performance(model_name,units_sold,revenue,month_period) |
-        marketing_campaigns(campaign_name,channel,budget,reach,conversions,roi,status) |
-        social_sentiment(keyword,positive_score,negative_score,total_mentions,top_complaint,trending_platform)
-        CẢNH BÁO: Dùng 'model_name' (không phải 'model'), 'unit_price' (không phải 'price'), 'current_price' trong competitor_products, 'roi' chỉ có trong marketing_campaigns.
+        Truy vấn SQLite marketing_intelligence.db để lấy dữ liệu thực chiến.
+
+        ⚠️ QUY TẮC BẮT BUỘC:
+        1. SORT & LIMIT: Luôn sử dụng 'ORDER BY [column] DESC' và 'LIMIT [n]' để lấy dữ liệu dẫn đầu (Top Revenue/Units).
+        2. Dùng 'model_name' (KHÔNG dùng 'model').
+        3. Dùng 'unit_price' trong 'sales' (KHÔNG dùng 'price').
+        4. Dùng 'current_price' trong 'competitor_products' (KHÔNG dùng 'price').
+
+        DANH SÁCH BẢNG & CỘT:
+        - sales: (brand, model_name, units_sold, unit_price, region) -> 'region' gồm: North, South, Central, Highlands.
+        - competitor_products: (brand, model_name, key_features, current_price, strengths, weaknesses)
+        - sales_performance: (model_name, units_sold, revenue, month_period) -> Dùng 'revenue' để tìm Model dẫn đầu.
+        - marketing_campaigns: (campaign_name, channel, budget, reach, conversions, roi, status)
+        - social_sentiment: (keyword, positive_score, negative_score, total_mentions, top_complaint)
         """
         return _db.query_marketing_db(query, output_format=output_format)
 
@@ -136,14 +143,15 @@ class MarketingAgents:
             backstory=(
                 "Bạn là thám tử số liệu không bao giờ bỏ qua một chi tiết nào. Tư duy sắc bén, "
                 "không nể mặt, không nhận định chung chung. Quy tắc sống còn: "
-                "(1) SQL TRƯỚC: Luôn lấy ít nhất 3 đối thủ từ bảng 'competitor_products'. "
+                "(1) SQL TRƯỚC: Luôn lấy TOP 1 Revenue từ sales_performance và ít nhất 3 đối thủ từ 'competitor_products'. "
                 "Dùng đúng 'model_name' và 'current_price' — KHÔNG dùng 'model' hay 'price'. "
-                "(2) WIN/LOSS SẮC BÉN: Chỉ ra 1 thông số ta THẮNG và 1 thông số ta THUA với "
+                "(2) KHU VỰC: Chỉ được dùng 4 vùng: North, South, Central, Highlands. CẤM Ấn Độ/Đông Nam Á. "
+                "(3) WIN/LOSS SẮC BÉN: Chỉ ra 1 thông số ta THẮNG và 1 thông số ta THUA với "
                 "số liệu cụ thể. Ví dụ: 'Sạc 120W của ta vs 20W của Apple — gap 6x, đối thủ hết nước chấm'. "
-                "(3) SENTIMENT PAIN: Query bảng 'social_sentiment' để biết top_complaint — đây là "
+                "(4) SENTIMENT PAIN: Query bảng 'social_sentiment' để biết top_complaint — đây là "
                 "'đạn thật' cho Content Agent. "
-                "(4) EMPTY DATA: SQL rỗng → ghi 'Thiếu dữ liệu: [tên bảng]'. KHÔNG bịa số, không ước tính. "
-                "(5) TIẾNG VIỆT: Toàn bộ báo cáo phải có đầy đủ dấu tiếng Việt chuẩn UTF-8."
+                "(5) EMPTY DATA: SQL rỗng → ghi 'Thiếu dữ liệu: [tên bảng]'. KHÔNG bịa số, không ước tính. "
+                "(6) TIẾNG VIỆT: Toàn bộ báo cáo phải có đầy đủ dấu tiếng Việt chuẩn UTF-8."
             ),
             tools=self._tools_search(),
             llm=self.llm,
@@ -192,13 +200,13 @@ class MarketingAgents:
                 "Bạn là Tướng Quân Tăng Trưởng với triết lý 'No Data, No Decision — No Action, No Victory'. "
                 "Không bao giờ viết báo cáo nhạt nhẽo, không bao giờ làm tròn số. Quy tắc bất biến: "
                 "(1) TRIANGULATION: Mọi nhận định phải được đối chiếu ≥ 2 nguồn. Nếu data mâu thuẫn → nêu rõ. "
-                "(2) SỐ LIỆU CHÍNH XÁC: ROI = ROUND(AVG(roi),2), CPA = ROUND(AVG(budget/NULLIF(conversions,0)),0). "
-                "KHÔNG làm tròn. KHÔNG viết '12x' khi thực tế là '12.45x'. "
+                "(2) SỐ LIỆU TÀI CHÍNH CHÍNH XÁC ĐẾN TỪNG XU: ROI = ROUND(AVG(roi),2), CPA = ROUND(AVG(budget/NULLIF(conversions,0)),0). "
+                "KHÔNG làm tròn, không nói chung chung. Giá bán, ngân sách, ROI phải ghi cụ thể. "
                 "(3) NGÔN NGỮ MẬT LỆNH: Kế hoạch 7 ngày phải dùng: 'Lên camp', 'Booking KOL Tier A', "
                 "'Vít ad toàn lực', 'Flash deal 12h', 'Kích hoạt retargeting', 'Check-var kết quả'. "
                 "KHÔNG dùng 'Tổ chức sự kiện', 'Triển khai chiến dịch' — nghe nhạt như nước ốc. "
                 "(4) CONTENT EMBED: Copy NGUYÊN VẸN 03 mẫu AIDA từ Content Agent vào Phần V. KHÔNG rút gọn. "
-                "(5) TIẾNG VIỆT: Đầy đủ dấu tiếng Việt trong toàn bộ báo cáo — tiêu đề, bảng, phân tích. "
+                "(5) TIẾNG VIỆT & VÙNG ĐỊA LÝ: Đầy đủ dấu tiếng Việt. CHỈ SỬ DỤNG data từ 4 vùng: North, South, Central, Highlands. TUYỆT ĐỐI KHÔNG sử dụng 'Đông Nam Á', 'Ấn Độ' hay bất kỳ khu vực nào bịa ra. "
                 "(6) FORMAT LAW: Mỗi tiêu đề ## phải nằm trên 1 dòng riêng. Báo cáo ≥ 800 từ. "
                 "(7) EMPTY DATA: SQL rỗng → ghi 'Thiếu dữ liệu: [tên bảng]'. KHÔNG bịa số bao giờ."
             ),

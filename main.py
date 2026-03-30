@@ -4,6 +4,11 @@ Quy trình: Nghiên cứu -> Phân tích Sentiment -> Báo cáo Chiến lược 
 """
 import os
 import sys
+
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 from datetime import datetime
 from crewai import Crew, Process
 from src.agents import MarketingAgents

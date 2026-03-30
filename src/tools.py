@@ -138,21 +138,24 @@ class EnterpriseDataTools:
 
     def query_marketing_db(self, query: str, output_format: str = "markdown"):
         """
-        Truy vấn SQLite marketing_intelligence.db.
+        Truy vấn SQLite marketing_intelligence.db để lấy dữ liệu thực chiến.
 
-        ⚠️⚠️ BẮT BUỘC: Dùng 'model_name' KHÔNG dùng 'model'.
+        ⚠️ QUY TẮC BẮT BUỘC:
+        1. SORT & LIMIT: Luôn sử dụng 'ORDER BY [column] DESC' và 'LIMIT [n]' để lấy dữ liệu dẫn đầu.
+        2. Dùng 'model_name' (KHÔNG dùng 'model').
+        3. Dùng 'unit_price' trong 'sales' (KHÔNG dùng 'price').
+        4. Dùng 'current_price' trong 'competitor_products' (KHÔNG dùng 'price').
+        5. DOANH THU: ĐỂ TÌM MODEL DẪN ĐẦU DOANH THU, BẮT BUỘC phải tính tổng `SUM(units_sold * unit_price)` TỪ BẢNG `sales`. Tuyệt đối không dùng bảng `sales_performance` để so sánh xếp hạng doanh thu.
 
         DANH SÁCH BẢNG & CỘT:
-        1. sales: [id, brand, model_name, units_sold, unit_price, region, launch_date]
-        2. competitor_products: [id, brand, model_name, key_features, current_price, strengths, weaknesses]
-        3. sales_performance: [id, model_name, units_sold, revenue, month_period]
-        4. marketing_campaigns: [id, campaign_name, channel, budget, reach, conversions, roi, status]
-        5. social_sentiment: [id, keyword, positive_score, negative_score, total_mentions, top_complaint]
+        - sales: (brand, model_name, units_sold, unit_price, region) -> 'region' gồm: North, South, Central, Highlands. -> TÍNH DOANH THU TỪ BẢNG NÀY.
+        - competitor_products: (brand, model_name, key_features, current_price, strengths, weaknesses)
+        - sales_performance: (model_name, units_sold, revenue, month_period)
+        - marketing_campaigns: (campaign_name, channel, budget, reach, conversions, roi, status)
+        - social_sentiment: (keyword, positive_score, negative_score, total_mentions, top_complaint)
 
-        ⚠️ LƯU Ý: 
-        - Luôn dùng 'model_name' để lọc hoặc join các bảng sản phẩm.
-        - competitor_products: dùng 'current_price' (không phải 'price').
-        - sales: dùng 'unit_price' (không phải 'price').
+        VÍ DỤ TOP REVENUE:
+        SELECT model_name, SUM(units_sold * unit_price) AS revenue FROM sales GROUP BY model_name ORDER BY revenue DESC LIMIT 1;
         """
         # Lớp bảo vệ 1: Application-level — chỉ cho phép SELECT
         normalized = query.strip().upper()

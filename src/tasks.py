@@ -56,9 +56,15 @@ class MarketingTasks:
                 Xuất bảng: | Đối Thủ | Model | Tính Năng | Giá (VNĐ) | Điểm Mạnh | Gót Chân Achilles |
                 Lưu ý format giá: 32,000,000 VNĐ (thêm dấu phẩy phân cách hàng nghìn).
 
+                BƯỚC 1.5 — MODEL DẪN ĐẦU DOANH THU (Bắt buộc SQL):
+                    SELECT model_name, SUM(units_sold * unit_price) AS revenue
+                    FROM sales
+                    GROUP BY model_name
+                    ORDER BY revenue DESC
+                    LIMIT 1
+
                 BƯỚC 2 — PHÂN TÍCH WIN/LOSS (Bắt buộc, dùng data từ SQL):
                 - ✅ 1 thông số Ta THẮNG rõ ràng: nêu số liệu CỦA TA vs ĐỐI THỦ.
-                  Ví dụ: "Sạc 120W vs Apple 20W — ta nhanh gấp 6x, đối thủ hết nước chấm"
                 - ❌ 1 thông số Ta THUA thực sự: không che giấu, nêu lý do khách quan.
 
                 BƯỚC 3 — MODEL DOANH SỐ THẤP NHẤT (Bắt buộc SQL):
@@ -67,7 +73,7 @@ class MarketingTasks:
                     FROM sales
                     GROUP BY model_name, region
                     ORDER BY total_units ASC
-                    LIMIT 5
+                    LIMIT 2
 
                 {_REGION_NOTE}
                 Chỉ liệt kê các khu vực có trong kết quả SQL. KHÔNG thêm khu vực ngoài.
@@ -77,7 +83,7 @@ class MarketingTasks:
                            total_mentions, trending_platform
                     FROM social_sentiment
                     ORDER BY negative_score DESC
-                    LIMIT 5
+                    LIMIT 3
 
                 BƯỚC 5 — XU HƯỚNG GEN Z:
                 Tìm 3 buzzword/trend Gen Z đang HOT nhất trên TikTok VN qua search tool.
@@ -88,24 +94,28 @@ class MarketingTasks:
                 - Dùng 'current_price' trong competitor_products (KHÔNG dùng 'price')
                 - SQL rỗng → ghi 'Thiếu dữ liệu: [tên bảng]'. KHÔNG bịa số.
                 - Số > 1 triệu → format: 32,000,000 VNĐ (có dấu phẩy).
+                - KHU VỰC: KHÔNG ĐƯỢC dùng Ấn Độ hay Đông Nam Á. Chỉ dùng North, South, Central, Highlands.
             """),
             expected_output=dedent("""
                 ## 🕵️ I. Bảng Benchmarking Đối Thủ
                 | Đối Thủ | Model | Tính Năng Nổi Bật | Giá (VNĐ) | Điểm Mạnh | Gót Chân Achilles |
                 (≥ 3 đối thủ, giá format 32,000,000 VNĐ)
 
-                ## ⚔️ II. Phân Tích WIN/LOSS
+                ## 💰 II. Model Dẫn Đầu Doanh Thu (Top 1 Revenue)
+                *Model: [model_name] | Doanh thu: [revenue] VNĐ*
+
+                ## ⚔️ III. Phân Tích WIN/LOSS
                 - ✅ Ta THẮNG: [tính năng] — [số liệu Ta] vs [số liệu Đối Thủ]
                 - ❌ Ta THUA: [tính năng] — [lý do + dữ liệu thực]
 
-                ## 📉 III. Top 5 Model Doanh Số Thấp Nhất
+                ## 📉 IV. Top 5 Model Doanh Số Thấp Nhất
                 | model_name | region | total_units | avg_price |
                 (Chỉ dùng khu vực: North/South/Central/Highlands)
 
-                ## 😤 IV. Nỗi Đau Khách Hàng
+                ## 😤 V. Nỗi Đau Khách Hàng
                 | keyword | top_complaint | negative_score | trending_platform |
 
-                ## 🔥 V. 3 Buzzwords Gen Z Đang Trending
+                ## 🔥 VI. 3 Buzzwords Gen Z Đang Trending
             """),
             agent=agent,
         )
@@ -152,12 +162,13 @@ class MarketingTasks:
                 [HASHTAGS]: Đúng 10 hashtags. Bắt buộc có: tên model + pain point keyword + Gen Z slang.
 
                 ════════════════════════════════════════════════
-                MẪU 2 — 💪 Flexing Mode (Khoe cấu hình)
+                MẪU 2 — 💪 Flexing Mode (Khoe cấu hình Model Dẫn Đầu Doanh Thu)
                 ════════════════════════════════════════════════
-                [HOOK]: Câu mở Flex về tính năng độc quyền từ key_features, có số liệu thực.
-                  Ví dụ: "⚡ Snapdragon 8 Gen 5 + Sạc 120W + Camera 200MP mà giá chỉ 19tr củ??? Flex hard 🔥"
+                [HOOK]: Câu mở Flex về Model đang DẪN ĐẦU DOANH THU (lấy từ Top 1 Revenue trong context Research).
+                  BẮT BUỘC NÊU ĐÍCH DANH MODEL (vd: Find X9 Pro) và GIÁ THỰC TẾ (current_price).
+                  Ví dụ: "⚡ Snapdragon 8 Gen 5 + Camera Hasselblad mà [Tên model dẫn đầu] giá chỉ [current_price] VNĐ??? Flex hard 🔥"
 
-                [BODY]: Đúng 3 tính năng "đỉnh nóc kịch trần" — mỗi tính năng theo format:
+                [BODY]: Đúng 3 tính năng "đỉnh nóc kịch trần" của model dẫn đầu — mỗi tính năng theo format:
                   "⚡ [Tính năng]: [Thông số Ta] vs [Thông số Đối Thủ] — [Nhận định xéo sắc]"
 
                 [DESIRE]: Mini story 2-3 câu về trải nghiệm người dùng thực tế, sống động.
@@ -246,8 +257,9 @@ class MarketingTasks:
                     ORDER BY avg_roi DESC
 
                 SQL 2 — Doanh thu chi tiết theo sản phẩm:
-                    SELECT model_name, units_sold, revenue, month_period
-                    FROM sales_performance
+                    SELECT model_name, SUM(units_sold) AS units_sold, SUM(units_sold * unit_price) AS revenue
+                    FROM sales
+                    GROUP BY model_name
                     ORDER BY revenue DESC
                     LIMIT 10
 
@@ -265,7 +277,7 @@ class MarketingTasks:
             expected_output=(
                 "3 bảng Markdown chứa kết quả thô từ SQL:\n"
                 f"Bảng 1: channel | avg_roi | avg_cpa | total_budget (kênh: TikTok/Instagram/Facebook/YouTube/Google Search/KOL)\n"
-                f"Bảng 2: model_name | units_sold | revenue | month_period\n"
+                f"Bảng 2: model_name | units_sold | revenue\n"
                 f"Bảng 3: region | total_units | total_revenue (chỉ hiện: {_REGIONS})"
             ),
             agent=agent,
@@ -290,16 +302,17 @@ class MarketingTasks:
                 ════════════════════════════════════════════════
                 QUY TẮC DỮ LIỆU CỨNG (VI PHẠM = BÁO CÁO THẤT BẠI):
                 ════════════════════════════════════════════════
-                1. KHU VỰC: Chỉ được nhắc đến: {_REGIONS}
-                   → KHÔNG viết "Đông Nam Á", "Ấn Độ", "Châu Âu", "Tây Bắc Bộ" hay bất kỳ KV nào khác.
-                2. GIÁ SẢN PHẨM: Lấy từ current_price trong context. Format: 32,000,000 VNĐ.
-                3. REVENUE: Lấy từ kết quả SQL trong context — KHÔNG làm tròn thành "48 tỷ", viết đủ: 48,000,000,000 VNĐ.
-                4. ROI ANALYSIS ĐÚNG CHIỀU (dùng data thực: {_ROI_DATA}):
+                1. TOP 1 MODEL: Bạn PHẢI nhìn vào kết quả 'Model Dẫn Đầu Doanh Thu' từ context. Nếu SQL báo Find X9 Pro, báo cáo PHẢI nói về Find X9 Pro. KHÔNG ĐƯỢC bịa ra iPhone hay Xiaomi dẫn đầu nếu dữ liệu SQL không nói vậy.
+                2. KHU VỰC: Chỉ được nhắc đến: {_REGIONS}
+                   → TUYỆT ĐỐI KHÔNG viết "Đông Nam Á", "Ấn Độ", "Châu Âu", "Tây Bắc Bộ" hay bất kỳ KV nào khác.
+                3. GIÁ SẢN PHẨM: Lấy từ current_price trong context cho model đó. Format: 32,000,000 VNĐ.
+                4. REVENUE: Lấy từ kết quả SQL trong context — KHÔNG làm tròn thành "48 tỷ", viết đủ: 48,000,000,000 VNĐ.
+                5. ROI ANALYSIS ĐÚNG CHIỀU (dùng data thực: {_ROI_DATA}):
                    - ROI CAO + budget THẤP → "Đang bị bỏ đói — double budget NGAY"
                    - ROI THẤP + budget CAO → "Đang burn tiền — cắt giảm 30% và tái phân bổ"
                    → KHÔNG được nhận định ngược chiều (ROI cao mà bảo burn tiền là SAI).
-
                 ════════════════════════════════════════════════
+
                 CẤU TRÚC BÁO CÁO — 7 PHẦN (≥ 800 từ)
                 ════════════════════════════════════════════════
 
@@ -327,7 +340,7 @@ class MarketingTasks:
                 Từ benchmarking Task 1:
                 - ✅ Đòn mạnh nhất của Ta: [tính năng + số liệu cụ thể từ SQL]
                 - ❌ Điểm yếu cần khắc phục: [tính năng + kế hoạch cụ thể]
-                - 🎯 Cơ hội tấn công Gót Chân Achilles đối thủ nào với vũ khí gì?
+                - 🎯 Cơ hội tấn công Gót Chân Achilles đối thủ nào with vũ khí gì?
 
                 ## 📱 V. Kho Vũ Khí Truyền Thông (Nội Dung AIDA)
                 PASTE NGUYÊN VẸN toàn bộ 03 mẫu bài đăng từ Task 2.
