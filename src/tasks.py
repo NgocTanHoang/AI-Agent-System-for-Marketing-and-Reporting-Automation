@@ -7,7 +7,7 @@ QUYỀN LỢI ĐÃ ĐƯỢC ĐẢM BẢO:
   ✅ ROI logic đúng chiều: cao + budget thấp → tăng; thấp + budget cao → cắt
   ✅ Định dạng số lớn: 48,000,000,000 VNĐ (không viết 48000000000)
   ✅ Tiếng Việt đầy đủ dấu UTF-8 trong toàn bộ output
-  ✅ Persona "Chief Slay Officer" — Flex, Slay, Check-var, Đỉnh nóc kịch trần
+  ✅ Persona "Strategic Marketing Lead" — Chuyên nghiệp, Sắc bén, Dựa trên dữ liệu thực tế
 
 Pipeline 4 stages:
   Stage 1  : Tình báo thị trường & Benchmarking đối thủ
@@ -127,7 +127,7 @@ class MarketingTasks:
     def content_creation_task(self, agent, research_task: Task) -> Task:
         return Task(
             description=dedent("""
-                NHIỆM VỤ: Đóng vai Chief Slay Officer — tạo 03 mẫu bài đăng VIRAL chuẩn AIDA.
+                NHIỆM VỤ: Đóng vai Giám đốc Chiến lược Nội dung — tạo 03 mẫu bài đăng VIRAL chuẩn AIDA.
 
                 DỮ LIỆU ĐẦU VÀO: Đọc TRỰC TIẾP từ context của Research Agent.
                 Lấy từ context:
@@ -141,7 +141,7 @@ class MarketingTasks:
                 ════════════════════════════════════════════════
                 MẪU 1 — 💥 Pain Point Attack
                 ════════════════════════════════════════════════
-                [HOOK]: Câu mở "sát thương cao" dựa trên top_complaint THỰC TẾ từ context.
+                [HOOK]: Câu mở ấn tượng dựa trên top_complaint THỰC TẾ từ context.
                   Bắt buộc dùng emoji + ngôn ngữ Gen Z.
                   Ví dụ HAY: "📱 Pin cạn lúc 2h chiều khi đang chốt deal 50 triệu??? Bro ơi Check-var cái này 😤"
                   Ví dụ DỞ (KHÔNG làm): "Sản phẩm của chúng tôi rất tốt." ← bị loại ngay
@@ -169,7 +169,7 @@ class MarketingTasks:
                   Ví dụ: "⚡ Snapdragon 8 Gen 5 + Camera Hasselblad mà [Tên model dẫn đầu] giá chỉ [current_price] VNĐ??? Flex hard 🔥"
 
                 [BODY]: Đúng 3 tính năng "đỉnh nóc kịch trần" của model dẫn đầu — mỗi tính năng theo format:
-                  "⚡ [Tính năng]: [Thông số Ta] vs [Thông số Đối Thủ] — [Nhận định xéo sắc]"
+                  "⚡ [Tính năng]: [Thông số Ta] vs [Thông số Đối Thủ] — [Nhận định chiến lược]"
 
                 [DESIRE]: Mini story 2-3 câu về trải nghiệm người dùng thực tế, sống động.
                   Ví dụ: "Check-var anh kỹ sư dùng Mi 16 Pro cả ngày làm việc nặng, 6h tối vẫn còn 45% pin."
@@ -194,10 +194,8 @@ class MarketingTasks:
                 [HASHTAGS]: Đúng 10 hashtags có tên model + deal keyword.
 
                 ════════════════════════════════════════════════
-                QUY TẮC VĂN PHONG TUYỆT ĐỐI:
-                ════════════════════════════════════════════════
-                ✅ PHẢI dùng: Flex, Slay, Check-var, củ khoai, chốt đơn, đỉnh nóc kịch trần,
-                   hết nước chấm, gót chân Achilles, lên camp, booking KOL, vít ad
+                ✅ PHẢI dùng ngôn từ chuyên nghiệp: Tối ưu hoá, Lợi thế cạnh tranh, Điểm yếu đối thủ, 
+                   Định vị thương hiệu, Chốt đơn, Ngân sách chiến dịch, Tiếp cận khách hàng, Tăng tỷ lệ chuyển đổi.
                 ✅ PHẢI dùng Emoji (😤, 🔥, ⚡, 💥, 🎯, 👇, 😈, 🚀, 🎪, 💪)
                 ✅ PHẢI có đầy đủ dấu tiếng Việt trong toàn bộ nội dung
                 ✅ GIÁ THỰC TẾ: 32,000,000 VNĐ (có dấu phẩy) — KHÔNG viết "32 triệu" chung chung
@@ -320,7 +318,7 @@ class MarketingTasks:
                 Nhận định "xéo sắc" từ đối chiếu 3 nguồn dữ liệu. Ít nhất 150 từ.
                 Đặt 3 câu hỏi Data Triangulation và trả lời bằng data thực:
                 - Kênh nào ROI cao nhất nhưng ngân sách đang "đói"? → Đề xuất cụ thể.
-                - Model nào revenue thấp nhưng đối thủ mạnh ở segment đó? → Cơ hội tấn công.
+                - Model nào revenue thấp nhưng đối thủ mạnh ở segment đó? → Cơ hội tối ưu hóa cạnh tranh.
                 - Khu vực nào ({_REGIONS}) revenue thấp nhưng sentiment tốt? → Khai thác ngay.
 
                 ## 📊 II. Hiệu Quả Tài Chính Chi Tiết
@@ -336,19 +334,17 @@ class MarketingTasks:
                 - LEAD: Model/khu vực nào dẫn đầu (dữ liệu SQL nói gì?)
                 - LAG: Model/khu vực nào tụt hậu (lý do theo data)
 
-                ## ⚔️ IV. Phân Tích Cạnh Tranh & Đòn Tấn Công
+                ## ⚔️ IV. Phân Tích Cạnh Tranh & Chiến Lược Đối Đầu
                 Từ benchmarking Task 1:
                 - ✅ Đòn mạnh nhất của Ta: [tính năng + số liệu cụ thể từ SQL]
                 - ❌ Điểm yếu cần khắc phục: [tính năng + kế hoạch cụ thể]
-                - 🎯 Cơ hội tấn công Gót Chân Achilles đối thủ nào with vũ khí gì?
+                - 🎯 Cơ hội khai thác điểm yếu của đối thủ bằng lợi thế cạnh tranh của ta?
 
                 ## 📱 V. Kho Vũ Khí Truyền Thông (Nội Dung AIDA)
                 PASTE NGUYÊN VẸN toàn bộ 03 mẫu bài đăng từ Task 2.
                 KHÔNG rút gọn. KHÔNG tóm tắt. KHÔNG thay đổi từ ngữ.
 
-                ## 🗺️ VI. Kế Hoạch Tác Chiến 7 Ngày — MẬT LỆNH
-                Bảng 7 hàng — Format cứng:
-                | Ngày | Mật Lệnh Hành Động | Kênh | Khu Vực | Ngân Sách (VNĐ) | KPI Kỳ Vọng | Lý Do Từ Data |
+                | Ngày | Hành Động Chiến Lược | Kênh | Khu Vực | Ngân Sách (VNĐ) | KPI Kỳ Vọng | Lý Do Từ Data |
 
                 Quy tắc:
                 - Khu vực: chỉ chọn trong {_REGIONS}
@@ -382,7 +378,7 @@ class MarketingTasks:
                 ## 🏆 III. Phân Tích Doanh Thu Theo Sản Phẩm & Khu Vực
                 (Bảng revenue format 48,000,000,000 VNĐ — khu vực: {_REGIONS} only)
 
-                ## ⚔️ IV. Phân Tích Cạnh Tranh & Đòn Tấn Công
+                ## ⚔️ IV. Phân Tích Cạnh Tranh & Chiến Lược Đối Đầu
                 (WIN/LOSS với giá current_price thực từ SQL)
 
                 ## 📱 V. Kho Vũ Khí Truyền Thông
