@@ -1,1 +1,0 @@
-Tôi hy vọng rằng báo cáo này sẽ giúp công ty đưa ra quyết định sáng suốt và tăng cường cạnh tranh trên thị trường điện thoại di động.

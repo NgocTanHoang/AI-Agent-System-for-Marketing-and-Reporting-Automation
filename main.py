@@ -28,7 +28,7 @@ def run_smartphone_intelligence_system():
     content_strategist = agents_factory.content_strategist()
     business_reporter  = agents_factory.business_reporter()
 
-    # 3. Khởi tạo tasks với context chaining
+    # 3. Khởi tạo tasks với context chaining 4 stages
     research_task = tasks_factory.research_task(
         agent=search_analyst,
         market_topic="Xu hướng smartphone 2026 và thị trường AI Phone",
@@ -37,31 +37,66 @@ def run_smartphone_intelligence_system():
         agent=content_strategist,
         research_task=research_task,
     )
+    # Stage 2.5: Pre-fetch SQL data để giảm tải token cho Stage 3
+    data_task = tasks_factory.data_fetch_task(
+        agent=business_reporter,
+        research_task=research_task,
+        content_task=content_task,
+    )
     report_task = tasks_factory.marketing_strategy_task(
         agent=business_reporter,
         research_task=research_task,
         content_task=content_task,
+        data_fetch_task=data_task,
         tools=business_reporter.tools,
     )
 
     # 4. Thiết lập Crew
     crew = Crew(
         agents=[search_analyst, content_strategist, business_reporter],
-        tasks=[research_task, content_task, report_task],
+        tasks=[research_task, content_task, data_task, report_task],
         process=Process.sequential,
         memory=False,   # tắt để tránh phụ thuộc Embedder ngoài
         verbose=True,
     )
 
-    # 5. Chạy pipeline
+    # 5. Chạy pipeline — tự động retry khi gặp Timeout / 5xx (NVIDIA NIM 504)
+    import time
+
     print("\n" + "=" * 60)
     print("🚀 SMARTPHONE INTELLIGENCE SYSTEM — BẮT ĐẦU")
     print(f"   Thời gian : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"   Mục tiêu  : Biến dữ liệu thô thành Báo cáo Chiến lược")
     print("=" * 60 + "\n")
 
-    result = crew.kickoff()
-    print(f"\n[DEBUG]: Độ dài báo cáo nhận được: {len(result.raw)} ký tự")
+    _MAX_RETRIES = 3
+    _retry_delay = 30   # giây — bắt đầu 30s, tăng gấp đôi mỗi lần (exponential backoff)
+
+    result = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            print(f"\n⚡ Lần chạy #{attempt}/{_MAX_RETRIES}...")
+            result = crew.kickoff()
+            print(f"\n[DEBUG]: Độ dài báo cáo: {len(result.raw)} ký tự")
+            break   # Thành công → thoát vòng lặp retry
+
+        except Exception as e:
+            err_str = str(e)
+            is_retryable = any(k in err_str for k in [
+                "Timeout", "504", "502", "503", "ConnectionError", "ReadTimeout",
+                "NvidiaException", "litellm.Timeout"
+            ])
+            if is_retryable and attempt < _MAX_RETRIES:
+                print(f"\n⚠️  Lần #{attempt} gặp lỗi timeout/5xx: {err_str[:120]}")
+                print(f"   Thử lại sau {_retry_delay}s...")
+                time.sleep(_retry_delay)
+                _retry_delay *= 2   # 30s → 60s → 120s
+            else:
+                raise   # Lỗi logic hoặc hết retry → cho nổi lên
+
+    if result is None:
+        raise RuntimeError("Pipeline thất bại sau tất cả các lần retry.")
+
 
     # --- Lưu báo cáo cục bộ ---
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "processed")

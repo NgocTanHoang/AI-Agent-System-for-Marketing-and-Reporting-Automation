@@ -4,6 +4,7 @@ Chạy: uvicorn app:app --reload
 Truy cập: http://localhost:8000
 """
 import os
+import re
 import json
 import base64
 import subprocess
@@ -64,92 +65,130 @@ def _chart_to_base64() -> str:
         return base64.b64encode(fh.read()).decode()
 
 
+def _fix_md_tables(text: str) -> str:
+    """
+    Đảm bảo bảng Markdown luôn có blank line trước và sau.
+    Thư viện python-markdown yêu cầu blank line trước | để kích hoạt table parser.
+    LLM thường generate text ngay liền trước bảng → table bị render ra text thô.
+    """
+    lines = text.split("\n")
+    result = []
+    for i, line in enumerate(lines):
+        is_table_line = line.strip().startswith("|") and line.strip().endswith("|")
+        prev_is_table = (i > 0 and lines[i-1].strip().startswith("|")
+                         and lines[i-1].strip().endswith("|"))
+        next_is_table = (i < len(lines)-1 and lines[i+1].strip().startswith("|")
+                         and lines[i+1].strip().endswith("|"))
+
+        if is_table_line and not prev_is_table:
+            # Chèn blank line trước bảng nếu chưa có
+            if result and result[-1].strip() != "":
+                result.append("")
+
+        result.append(line)
+
+        if is_table_line and not next_is_table:
+            # Chèn blank line sau bảng nếu dòng tiếp theo không phải table
+            if i < len(lines)-1 and lines[i+1].strip() != "":
+                result.append("")
+
+    return "\n".join(result)
+
+
 def _md_to_html_sections(md: str) -> list[dict]:
     """
-    Parse Markdown thủ công thành list section dạng:
-    [{"heading": "...", "body_html": "..."}, ...]
-    Không dùng thư viện ngoài để giữ dependencies tối thiểu.
+    Parse Markdown thành list[{heading, body_html}] dùng thư viện markdown.
+    Hỗ trợ bảng Markdown, bold/**italic**, bullet list, xuống dòng chuẩn.
     """
-    import re
+    try:
+        import markdown as _md_lib
+        md_ext = ["tables", "fenced_code", "nl2br", "sane_lists"]
+        def _convert(txt: str) -> str:
+            txt = _fix_md_tables(txt)   # Đảm bảo blank line trước/sau bảng
+            return _md_lib.markdown(txt, extensions=md_ext)
+    except ImportError:
+        # Fallback nếu chưa cài markdown
+        _convert = lambda txt: f"<p>{txt}</p>"
+
     sections = []
     current_heading = "Tổng quan chiến lược"
     current_lines: list[str] = []
 
     def flush():
         nonlocal current_heading, current_lines
-        if current_lines:
-            body = "\n".join(current_lines).strip()
-            # Basic MD to HTML
-            body = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", body)
-            body = re.sub(r"\*(.+?)\*", r"<em>\1</em>", body)
-            body = re.sub(r"`(.+?)`", r"<code>\1</code>", body)
-            # Table conversion
-            body = _md_table_to_html(body)
-            # Image conversion (data/processed/ -> /static/)
-            body = re.sub(r"!\[(.*?)\]\((.*?\/)?(.*?\.png)\)", r'<img src="/static/\3" alt="\1" class="report-img">', body)
-            # Paragraphs
-            body = re.sub(r"\n{2,}", "</p><p>", body)
-            body = f"<p>{body}</p>"
-            sections.append({"heading": current_heading or "Tổng quan", "body_html": body})
-            current_lines = []
+        body = "\n".join(current_lines).strip()
+        if body:
+            body_html = _convert(body)
+            # Đổi đường dẫn ảnh sang /static/
+            body_html = re.sub(
+                r'<img([^>]*?)src="(?:.*?/)?(.*?\.png)"',
+                r'<img\1src="/static/\2"',
+                body_html
+            )
+            sections.append({
+                "heading": current_heading or "Nội dung",
+                "body_html": body_html
+            })
+        current_lines.clear()
 
-    # Xử lý trường hợp Agent trả về tất cả trên 1 dòng duy nhất
+    # Xử lý trường hợp Agent trả về 1 dòng duy nhất
     if "\n" not in md and "##" in md:
-        # Tách dựa trên pattern ## 
-        parts = re.split(r"(##\s+.+?)(?=##|$)", md)
-        for part in parts:
-            part = part.strip()
-            if not part: continue
-            # header_match = re.match(r"^##+\s+(.+?)$", part) # Trường hợp part chỉ là header (ít gặp)
-            header_content_match = re.match(r"^##+\s+(.+?)\s+(.*)", part, re.DOTALL)
-            if header_content_match:
-                if current_lines: flush()
-                current_heading = header_content_match.group(1).strip()
-                current_lines = [header_content_match.group(2).strip()]
-            else:
-                current_lines.append(part)
+        matches = list(re.finditer(r"##\s+(.+?)(?=\s+##|\s*$)", md))
+        for i, match in enumerate(matches):
+            if current_lines:
+                flush()
+            current_heading = match.group(1).strip()
+            start_idx = match.end()
+            end_idx = matches[i + 1].start() if i + 1 < len(matches) else len(md)
+            current_lines = [md[start_idx:end_idx].strip()]
     else:
-        # Xử lý theo dòng như bình thường
         for line in md.splitlines():
-            header_match = re.search(r"^(#+|##+)\s+(.+)", line.strip())
-            if header_match:
-                if current_lines: flush()
-                current_heading = header_match.group(2).strip()
+            m = re.match(r"^#+\s+(.+)", line.strip())
+            if m:
+                flush()
+                current_heading = m.group(1).strip()
             else:
                 current_lines.append(line)
-    
-    if current_lines:
-        flush()
-        
+
+    flush()
     return sections
 
 
-def _md_table_to_html(text: str) -> str:
-    """Chuyển bảng Markdown trong text thành bảng HTML."""
-    import re
-    lines = text.split("\n")
-    result, i = [], 0
-    while i < len(lines):
-        if "|" in lines[i] and i + 1 < len(lines) and re.match(r"[\|\-\s]+", lines[i + 1]):
-            headers = [c.strip() for c in lines[i].strip("|").split("|")]
-            i += 2  # skip separator
-            rows = []
-            while i < len(lines) and "|" in lines[i]:
-                rows.append([c.strip() for c in lines[i].strip("|").split("|")])
-                i += 1
-            th = "".join(f"<th>{h}</th>" for h in headers)
-            trs = "".join(
-                "<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>"
-                for r in rows
-            )
-            result.append(f'<table><thead><tr>{th}</tr></thead><tbody>{trs}</tbody></table>')
-        else:
-            result.append(lines[i])
-            i += 1
-    return "\n".join(result)
+def _extract_social_posts(md: str) -> list[dict]:
+    """
+    Trích xuất 03 mẫu bài đăng AIDA từ Markdown report.
+    Tìm phần 'MẬu 1', 'MẬu 2', 'MẬu 3' hoặc '## V.' trong báo cáo.
+    """
+    posts = []
+    # Tìm block phần V trong báo cáo
+    section_v = re.search(
+        r"##\s*(?:\ud83d\udcf1\s*)?V\..*?\n(.+?)(?=\n##\s|$)",
+        md, re.DOTALL | re.IGNORECASE
+    )
+    content = section_v.group(1) if section_v else md
 
+    # Tìm từng mẫu bài (phân cách bằng --- hoặc ## MẬu)
+    patterns = re.split(r"\n---\n|\n##\s+[\ud83d\udcf1\ud83d\udcaa\ud83d\udd25\ud83d\udca5]*\s*MẬu\s*\d+", content)
+    labels = ["Pain Point Attack 💥", "Flexing Mode 💪", "Deal Alert 🔥"]
 
+    for idx, block in enumerate(patterns):
+        block = block.strip()
+        if not block:
+            continue
+        hook = re.search(r"\[HOOK\][\*\*]*:?\*?\*?\s*(.+)", block)
+        cta  = re.search(r"\[CTA\][\*\*]*:?\*?\*?\s*(.+)", block)
+        tags = re.search(r"\[HASHTAGS\][\*\*]*:?\*?\*?\s*(.+)", block)
+        posts.append({
+            "label": labels[idx] if idx < len(labels) else f"Mẫu {idx+1}",
+            "hook":  hook.group(1).strip() if hook else "",
+            "cta":   cta.group(1).strip() if cta else "",
+            "hashtags": tags.group(1).strip() if tags else "",
+            "full_text": block,
+        })
+        if len(posts) == 3:
+            break
 
+    return posts
 
 
 # ---------------------------------------------------------------------------
@@ -392,13 +431,44 @@ async def list_reports():
 
 @app.get("/api/report/{filename}")
 async def read_report(filename: str):
-    """Đọc nội dung một report cụ thể."""
+    """Trả về nội dung report dưới dạng HTML đã render."""
     filepath = PROCESSED_DIR / filename
-    if not filepath.exists() or not filepath.suffix == ".md":
+    if not filepath.exists() or filepath.suffix != ".md":
         return {"error": "File not found"}
     content = filepath.read_text(encoding="utf-8")
     sections = _md_to_html_sections(content)
     return {"filename": filename, "content": content, "sections": sections}
+
+
+@app.get("/api/social-posts")
+async def get_social_posts():
+    """Trích xuất 03 mẫu bài đăng AIDA từ report mới nhất để hiển thị trên Dashboard."""
+    _, md_content = _read_latest_report()
+    if not md_content:
+        return {"posts": [], "message": "Chưa có report. Hãy chạy Pipeline trước."}
+    posts = _extract_social_posts(md_content)
+    return {"posts": posts, "count": len(posts)}
+
+
+@app.get("/api/report-html")
+async def get_report_html():
+    """Trả về toàn bộ report được render sang HTML để dùng trong modal."""
+    report_name, md_content = _read_latest_report()
+    if not md_content:
+        return {"html": "<p>Chưa có báo cáo nào.</p>", "filename": ""}
+    try:
+        import markdown as _md_lib
+        html = _md_lib.markdown(
+            md_content,
+            extensions=["tables", "fenced_code", "nl2br", "sane_lists"]
+        )
+    except ImportError:
+        # Fallback regex nếu chưa cài markdown
+        sections = _md_to_html_sections(md_content)
+        html = "".join(
+            f"<h2>{s['heading']}</h2>{s['body_html']}" for s in sections
+        )
+    return {"html": html, "filename": report_name}
 
 
 # ---------------------------------------------------------------------------
