@@ -20,7 +20,7 @@ Hệ thống không chỉ dừng lại ở việc tạo văn bản (Generative A
 *   **Zero Hallucination**: Ràng buộc AI phải sử dụng đúng định dạng tiền tệ (VNĐ) và các khu vực địa lý hợp lệ (`North, South, Central, Highlands`).
 
 ### 3. Đối sánh sản phẩm & Competitive Intelligence
-Tự động quét và phân tích thông số kỹ thuật (Spec-sheet) của Ta và Đối thủ (Apple, Samsung, Xiaomi...) để nhận diện **lợi thế cạnh tranh** và các "điểm yếu chí mạng" (Weaknesses) nhằm tối ưu hóa thông điệp tiếp thị.
+Tự động quét và phân tích thông số kỹ thuật (Spec-sheet) của Ta và Đối thủ (Apple, Samsung, Xiaomi...) để nhận diện **lợi thế cạnh tranh** và các điểm hạn chế (Weaknesses) nhằm tối ưu hóa thông điệp tiếp thị.
 
 ### 4. Gen Z Marketing Engine
 Khả năng chuyển đổi các số liệu tài chính khô khan thành nội dung mạng xã hội (Facebook, TikTok, Instagram) chuẩn mô hình **AIDA**, sử dụng ngôn ngữ hiện đại, thu hút nhưng vẫn đảm bảo tính chiến lược và đúng định hướng thương hiệu.
@@ -33,7 +33,7 @@ Tích hợp giao diện **FastAPI** chuyên nghiệp, hỗ trợ trình diễn b
 ## 🛠️ Công nghệ sử dụng (Tech Stack)
 
 *   **LLM Orchestration**: [CrewAI](https://crewai.com) (Điều phối Agent).
-*   **Cốt lõi trí tuệ**: Meta-Llama-3.3-70B-Instruct (NVIDIA NIM / OpenRouter).
+*   **Mô hình ngôn ngữ lớn (LLM)**: Meta-Llama-3.3-70B-Instruct (NVIDIA NIM / OpenRouter).
 *   **Backend Framework**: FastAPI (Phát triển API và Web Server).
 *   **Cơ sở dữ liệu**: SQLite (Lưu trữ dữ liệu kinh doanh và hiệu suất).
 *   **Frontend**: Vanilla HTML5, CSS3 (Google Stitch Design Style), Chart.js (Trực quan hóa).
@@ -43,15 +43,15 @@ Tích hợp giao diện **FastAPI** chuyên nghiệp, hỗ trợ trình diễn b
 
 ## 🧠 Kiến trúc tác nhân (Agent Architecture)
 
-1.  **Search Analyst (Intelligence Lead)**: Đóng vai trò "Trưởng phòng tình báo", chịu trách nhiệm truy quét dữ liệu thị trường và thực hiện Benchmarking đối thủ cạnh tranh.
-2.  **Content Strategist (Creative Director)**: Chuyên gia sáng tạo nội dung, chuyển hóa kết quả nghiên cứu thành các mẫu Content Viral chuẩn AIDA với tỷ lệ chuyển đổi cao.
-3.  **Business Reporter (Strategic Commander)**: Tác nhân tổng hợp cuối cùng, chốt hạ số liệu tài chính và ban hành "Kế hoạch tác chiến" 7 ngày với ngân sách chi tiết.
+1.  **Search Analyst (Intelligence Lead)**: Chịu trách nhiệm nghiên cứu thị trường, thu thập dữ liệu cạnh tranh và thực hiện phân tích đối sánh (Benchmarking).
+2.  **Content Strategist (Creative Lead)**: Hoạch định chiến lược nội dung, chuyển hóa các kết quả nghiên cứu thành thông điệp truyền thông theo mô hình AIDA.
+3.  **Business Reporter (Strategic Lead)**: Hợp nhất các luồng dữ liệu, thực hiện báo cáo hiệu suất tài chính và đề xuất kế hoạch triển khai chi tiết kèm phân bổ ngân sách.
 
 ---
 
 ## 🛡️ Tính toàn vẹn dữ liệu (Data Integrity)
 
-Hệ thống áp dụng các kỷ luật nghiêm ngặt để đảm bảo sự đồng bộ 100% giữa Dashboard và Logic AI:
+Hệ thống áp dụng các quy tắc nghiệp vụ chặt chẽ để đảm bảo sự đồng bộ 100% giữa Dashboard và Logic AI:
 *   **SQL Summation Logic**: Doanh thu luôn được tính bằng `SUM(units_sold * unit_price)` từ bảng sales thực tế.
 *   **Geographic Constraint**: Khóa cứng phạm vi hoạt động trong 4 khu vực (`North, South, Central, Highlands`), loại bỏ hoàn toàn các khu vực tự phát sinh.
 *   **Numerical Formatting**: Ép kiểu định dạng tiền tệ VNĐ (ví dụ: `48,000,000,000 VNĐ`) để đảm bảo tính chuyên nghiệp trong báo cáo tài chính.
@@ -80,7 +80,7 @@ OPENROUTER_API_KEY=your_api_key_here
 ### 3. Thực thi hệ thống
 ```powershell
 python src/init_db.py  # Khởi tạo dữ liệu mẫu
-python main.py         # Kích hoạt AI Agent Pipeline sinh báo cáo
+python main.py         # Khởi chạy quy trình AI Agent để tạo báo cáo
 uvicorn app:app --reload --port 8000 # Mở Dashboard Quản trị
 ```
 Truy cập: `http://localhost:8000`
