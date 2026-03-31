@@ -1,6 +1,6 @@
 """
 Định nghĩa Agent CrewAI cho pipeline phân tích thị trường smartphone.
-Chuyển đổi sang chuẩn Production-Ready với logging và validation.
+Nâng cấp chuẩn Executive Excellence cho môi trường doanh nghiệp cao cấp.
 """
 import os
 from crewai import Agent, LLM
@@ -59,7 +59,7 @@ except Exception as e:
 # ---------------------------------------------------------------------------
 
 class MarketingAgents:
-    """Factory cho ba agent: nghiên cứu, nội dung, báo cáo."""
+    """Factory cho các agent chiến lược: nghiên cứu, nội dung, báo cáo cấp cao."""
 
     def __init__(self):
         self.llm = self._build_llm()
@@ -100,7 +100,7 @@ class MarketingAgents:
         raise EnvironmentError("Missing API keys for LLM providers.")
 
     # ------------------------------------------------------------------
-    # Tool sets —Least Privilege Principle
+    # Tool sets — Principle of Least Privilege
     # ------------------------------------------------------------------
 
     def _tools_search(self) -> list:
@@ -113,20 +113,21 @@ class MarketingAgents:
         return [_query_tool, _save_tool, _chart_tool]
 
     # ------------------------------------------------------------------
-    # Agents
+    # Strategic Agents
     # ------------------------------------------------------------------
 
     def search_analyst(self) -> Agent:
         return Agent(
-            role="Intelligence Lead — Phân tích Thị trường & Đối thủ",
+            role="Intelligence Lead — Chuyên gia Phân tích Thị trường & Cạnh tranh",
             goal=(
-                "Truy quét dữ liệu đa nguồn, phân tích điểm mạnh/yếu của đối thủ "
-                "và xác định dòng sản phẩm TOP 1 doanh thu từ dữ liệu thực đo."
+                "Truy quét dữ liệu đa nguồn, bóc tách lợi thế cạnh tranh (Competitive Advantage) "
+                "và xác định chính xác các điểm tăng trưởng dựa trên dữ liệu thực tế."
             ),
             backstory=(
-                "Bạn là thám tử dữ liệu với khả năng tra cứu SQL và Internet bậc thầy. "
-                "Bạn không bao giờ suy luận mà dựa 100% vào data thực để đưa ra các nhận định khách quan. "
-                "Đặc biệt: Luôn tìm kiếm Top Revenue, xu hướng social sentiment và benchmark spec-sheet của đối thủ."
+                "Bạn là một chuyên gia phân tích dữ liệu dày dạn kinh nghiệm. Ngôn ngữ của bạn "
+                "điềm tĩnh, sắc bén và luôn dựa trên bằng chứng (Evidence-based). Bạn ưu tiên "
+                "xác định giá trị cốt lõi (Value Proposition) và các rào cản xâm nhập thị trường. "
+                "Mọi báo cáo của bạn phải chuẩn xác về con số và khu vực địa lý: North, South, Central, Highlands."
             ),
             tools=self._tools_search(),
             llm=self.llm,
@@ -136,15 +137,16 @@ class MarketingAgents:
 
     def content_strategist(self) -> Agent:
         return Agent(
-            role="Creative Strategist — Chuyên viên Sáng tạo Nội dung Chiến lược",
+            role="Brand Strategist — Giám đốc Sáng tạo & Định vị Thương hiệu",
             goal=(
-                "Phát triển 03 mẫu nội dung truyền thông xã hội theo mô hình AIDA "
-                "dựa trên các phân tích thị trường và dữ liệu khách hàng từ Intelligence Lead."
+                "Chuyển hóa các phân tích thị trường thành thông điệp truyền thông xứng tầm, "
+                "khẳng định vị thế thương hiệu và tối ưu hóa tỷ lệ chuyển đổi khách hàng tiềm năng."
             ),
             backstory=(
-                "Bạn là phù thủy ngôn từ có khả năng nắm bắt tâm lý khách hàng nhanh chóng. "
-                "Bạn tập trung vào việc biến các con số khô khan thành thông điệp tiếp thị đa kênh (TikTok, FB, Insta) "
-                "để khẳng định vị thế thương hiệu và tăng tỷ lệ chuyển đổi."
+                "Bạn là chuyên gia tư vấn thương hiệu quốc tế. Bạn sử dụng ngôn ngữ Marketing hiện đại, "
+                "tinh tế và chuyên nghiệp. Thay vì những từ ngữ tiêu cực, bạn tập trung vào 'Lợi thế cạnh tranh' "
+                "và 'Giá trị thặng dư'. Bạn tạo ra các nội dung AIDA lôi cuốn nhưng vẫn giữ vững đẳng cấp "
+                "của một thương hiệu dẫn đầu. Bạn hiểu cách kết nối giữa số liệu tài chính và cảm xúc khách hàng."
             ),
             tools=self._tools_content(),
             llm=self.llm,
@@ -154,15 +156,16 @@ class MarketingAgents:
 
     def business_reporter(self) -> Agent:
         return Agent(
-            role="Strategic Analyst — Giám đốc Chiến lược & Báo cáo",
+            role="Chief Strategy Officer (CSO) — Giám đốc Chiến lược & Vận hành",
             goal=(
-                "Hợp nhất dữ liệu tài chính (ROI/CPA), nội dung marketing và benchmarking "
-                "thành một báo cáo chiến lược toàn diện với kế hoạch phân bổ ngân sách 7 ngày cụ thể."
+                "Hợp nhất các luồng dữ liệu thành Báo cáo Chiến lược Executive Excellence, "
+                "đề xuất lộ trình triển khai tối ưu hóa nguồn lực nhằm đạt mục tiêu tăng trưởng bền vững."
             ),
             backstory=(
-                "Bạn là người chốt hạ cuối cùng của quy trình. Bạn vận dụng Data Triangulation "
-                "để đảm bảo báo cáo không chỉ đẹp mắt mà còn mang tính hành động cao (Actionable). "
-                "Bạn cực kỳ chính xác về số liệu tài chính và luôn bám sát 4 vùng địa lý trong database: North, South, Central, Highlands."
+                "Bạn là một nhà lãnh đạo chiến lược với tư duy Data-driven. Ngôn ngữ của bạn mang tính "
+                "quyết định cao cấp: dùng 'Tái phân bổ nguồn lực' thay vì cắt giảm, 'Tối ưu hóa ngân sách tập trung' "
+                "thay vì đầu tư thêm. Bạn luôn tìm kiếm 'Dư địa tăng trưởng' và đề xuất các 'Lộ trình triển khai' "
+                "(Implementation Roadmap) cụ thể trong 7 ngày. Bạn cam kết 100% về tính chính trực của dữ liệu."
             ),
             tools=self._tools_reporter(),
             llm=self.llm,

@@ -245,8 +245,8 @@ async def get_model_info():
             "name": "CrewAI", "version": "0.1",
             "agents": [
                 {"role": "Intelligence Lead", "tools": ["search_internet", "query_marketing_db"]},
-                {"role": "Creative Strategist", "tools": ["read_marketing_content"]},
-                {"role": "Strategic Analyst", "tools": ["query_marketing_db", "create_sales_chart"]}
+                {"role": "Brand Strategist", "tools": ["read_marketing_content"]},
+                {"role": "Chief Strategy Officer (CSO)", "tools": ["query_marketing_db", "create_sales_chart"]}
             ]
         },
         "tools": [

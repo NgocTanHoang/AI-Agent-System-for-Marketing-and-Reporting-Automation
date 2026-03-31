@@ -1,19 +1,6 @@
 """
-MarketingTasks — Pipeline 4 stages theo chuẩn Data Triangulation.
-
-QUYỀN LỢI ĐÃ ĐƯỢC ĐẢM BẢO:
-  ✅ Chỉ dùng 4 khu vực thực tế từ DB: North, South, Central, Highlands
-  ✅ Giá lấy từ 'current_price' trong competitor_products (KHÔNG bịa)
-  ✅ ROI logic đúng chiều: cao + budget thấp → tăng; thấp + budget cao → cắt
-  ✅ Định dạng số lớn: 48,000,000,000 VNĐ (không viết 48000000000)
-  ✅ Tiếng Việt đầy đủ dấu UTF-8 trong toàn bộ output
-  ✅ Persona "Strategic Marketing Lead" — Chuyên nghiệp, Sắc bén, Dựa trên dữ liệu thực tế
-
-Pipeline 4 stages:
-  Stage 1  : Tình báo thị trường & Benchmarking đối thủ
-  Stage 2  : Sáng tạo nội dung Gen Z (AIDA Format)
-  Stage 2.5: Pre-fetch SQL tài chính (giảm token cho Stage 3)
-  Stage 3  : Báo cáo Chiến lược Thực chiến (Executive Report)
+MarketingTasks — Pipeline 4 stages theo chuẩn Executive Strategic Reporting.
+Quy trình được thiết kế nhằm mang lại các nhận định (Insights) mang tầm vóc chiến lược.
 """
 from typing import List
 from textwrap import dedent
@@ -26,24 +13,25 @@ except ImportError as e:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# GROUND TRUTH — Dữ liệu cứng từ database, dùng làm anchor cho các prompt
+# GROUND TRUTH — Dữ liệu cứng từ database, dùng làm anchor cho các prompt.
+# Đảm bảo tính nhất quán dữ liệu (Data Integrity).
 # ─────────────────────────────────────────────────────────────────────────────
 _REGIONS = "North, South, Central, Highlands"
 _ROI_DATA = "TikTok=1383.21 (budget 235tr), Instagram=995.0 (budget 28tr), Facebook=980.42 (budget 166tr), KOL=951.66, YouTube=333.57 (budget 461tr), Google Search=332.98 (budget 468tr)"
-_REGION_NOTE = f"⚠️ CHỈ DÙNG 4 KHU VỰC NÀY: {_REGIONS}. KHÔNG dùng 'Đông Nam Á', 'Ấn Độ', 'Châu Âu' hay bất kỳ khu vực nào khác."
+_REGION_NOTE = f"⚠️ CHỈ DÙNG 4 KHU VỰC NÀY: {_REGIONS}."
 
 
 class MarketingTasks:
 
     # ══════════════════════════════════════════════════════════════════════════
-    # STAGE 1 — THU THẬP TÌNH BÁO THỊ TRƯỜNG & BENCHMARKING ĐỐI THỦ
+    # STAGE 1 — TÌNH BÁO THỊ TRƯỜNG & BENCHMARKING ĐỐI THỦ
     # ══════════════════════════════════════════════════════════════════════════
 
     def research_task(self, agent, market_topic: str) -> Task:
         return Task(
             description=dedent(f"""
-                NHIỆM VỤ: Tình báo thị trường — {market_topic}
-
+                NHIỆM VỤ: Intelligence Intelligence — Phân tích {market_topic}
+                
                 {_REGION_NOTE}
 
                 BƯỚC 1 — BENCHMARKING ĐỐI THỦ (Bắt buộc SQL, ≥ 3 đối thủ):
@@ -53,8 +41,8 @@ class MarketingTasks:
                     ORDER BY current_price DESC
                     LIMIT 6
 
-                Xuất bảng: | Đối Thủ | Model | Tính Năng | Giá (VNĐ) | Điểm Mạnh | Gót Chân Achilles |
-                Lưu ý format giá: 32,000,000 VNĐ (thêm dấu phẩy phân cách hàng nghìn).
+                Xuất bảng: | Đối Thủ | Model | Tính Năng Nổi Bật | Giá Niêm Yết (VNĐ) | Lợi Thế Cạnh Tranh | Gót Chân Achilles |
+                Lưu ý định dạng tiền tệ: 32,000,000 VNĐ.
 
                 BƯỚC 1.5 — MODEL DẪN ĐẦU DOANH THU (Bắt buộc SQL):
                     SELECT model_name, SUM(units_sold * unit_price) AS revenue
@@ -63,11 +51,11 @@ class MarketingTasks:
                     ORDER BY revenue DESC
                     LIMIT 1
 
-                BƯỚC 2 — PHÂN TÍCH WIN/LOSS (Bắt buộc, dùng data từ SQL):
-                - ✅ 1 thông số Ta THẮNG rõ ràng: nêu số liệu CỦA TA vs ĐỐI THỦ.
-                - ❌ 1 thông số Ta THUA thực sự: không che giấu, nêu lý do khách quan.
+                BƯỚC 2 — PHÂN TÍCH ƯU THẾ & RỦI RO (Dựa trên dữ liệu SQL):
+                - ✅ Lợi thế cạnh tranh vượt trội: Nêu rõ thông số và ưu thế so với đối thủ trực tiếp.
+                - ❌ Thách thức cạnh tranh hiện hữu: Phân tích khách quan các điểm chưa tối ưu.
 
-                BƯỚC 3 — MODEL DOANH SỐ THẤP NHẤT (Bắt buộc SQL):
+                BƯỚC 3 — PHÂN TÍCH ĐƠN VỊ ĐÃI NGỘ THẤP (Bắt buộc SQL):
                     SELECT model_name, region, SUM(units_sold) AS total_units,
                            ROUND(AVG(unit_price), 0) AS avg_price
                     FROM sales
@@ -75,215 +63,127 @@ class MarketingTasks:
                     ORDER BY total_units ASC
                     LIMIT 2
 
-                {_REGION_NOTE}
-                Chỉ liệt kê các khu vực có trong kết quả SQL. KHÔNG thêm khu vực ngoài.
-
-                BƯỚC 4 — NỖI ĐAU KHÁCH HÀNG — Social Sentiment (Bắt buộc SQL):
+                BƯỚC 4 — PHẢN HỒI THỊ TRƯỜNG — Social Sentiment (Bắt buộc SQL):
                     SELECT keyword, top_complaint, negative_score,
                            total_mentions, trending_platform
                     FROM social_sentiment
                     ORDER BY negative_score DESC
                     LIMIT 3
 
-                BƯỚC 5 — XU HƯỚNG GEN Z:
-                Tìm 3 buzzword/trend Gen Z đang HOT nhất trên TikTok VN qua search tool.
+                BƯỚC 5 — PHÂN TÍCH XU HƯỚNG NGƯỜI TIÊU DÙNG:
+                Sử dụng công cụ tìm kiếm để xác định 3 xu hướng (Trend) đang định hình thị trường smartphone tại Việt Nam.
 
-                ⚠️ QUY TẮC SQL TUYỆT ĐỐI:
-                - Dùng 'model_name' (KHÔNG dùng 'model')
-                - Dùng 'unit_price' (KHÔNG dùng 'price')
-                - Dùng 'current_price' trong competitor_products (KHÔNG dùng 'price')
-                - SQL rỗng → ghi 'Thiếu dữ liệu: [tên bảng]'. KHÔNG bịa số.
-                - Số > 1 triệu → format: 32,000,000 VNĐ (có dấu phẩy).
-                - KHU VỰC: KHÔNG ĐƯỢC dùng Ấn Độ hay Đông Nam Á. Chỉ dùng North, South, Central, Highlands.
+                ⚠️ QUY TẮC SQL & ĐỊNH DẠNG:
+                - Model: model_name | Giá: unit_price hoặc current_price.
+                - Định dạng số: Luôn có dấu phẩy phân cách (ví dụ: 12,500,000 VNĐ).
+                - Khu vực: Tuyệt đối chỉ dùng {_REGIONS}.
             """),
             expected_output=dedent("""
-                ## 🕵️ I. Bảng Benchmarking Đối Thủ
-                | Đối Thủ | Model | Tính Năng Nổi Bật | Giá (VNĐ) | Điểm Mạnh | Gót Chân Achilles |
-                (≥ 3 đối thủ, giá format 32,000,000 VNĐ)
+                ## 🛡️ I. Bảng Benchmarking Đối Thủ (Competitive Mapping)
+                | Đối Thủ | Model | Tính Năng Nổi Bật | Giá Niêm Yết (VNĐ) | Lợi Thế Cạnh Tranh | Gót Chân Achilles |
+                (Dữ liệu thực tế, định dạng 32,000,000 VNĐ)
 
-                ## 💰 II. Model Dẫn Đầu Doanh Thu (Top 1 Revenue)
-                *Model: [model_name] | Doanh thu: [revenue] VNĐ*
+                ## 📈 II. Phân Tích Hiệu Suất Sản Phẩm Dẫn Đầu (Market Leader)
+                *Model: [model_name] | Tổng Doanh Thu: [revenue] VNĐ*
 
-                ## ⚔️ III. Phân Tích WIN/LOSS
-                - ✅ Ta THẮNG: [tính năng] — [số liệu Ta] vs [số liệu Đối Thủ]
-                - ❌ Ta THUA: [tính năng] — [lý do + dữ liệu thực]
+                ## ⚔️ III. Đánh Giá Vị Thế Cạnh Tranh
+                - ✅ Ưu Thế Vượt Trội: [Mô tả lợi thế + dữ liệu đối chiếu]
+                - ❌ Thách Thức Hiện Hữu: [Phân tích rủi ro/điểm yếu từ dữ liệu]
 
-                ## 📉 IV. Top 5 Model Doanh Số Thấp Nhất
+                ## 📉 IV. Danh Mục Sản Phẩm Đang Cần Cải Thiện
                 | model_name | region | total_units | avg_price |
-                (Chỉ dùng khu vực: North/South/Central/Highlands)
+                (Dữ liệu thực tế từ hệ thống)
 
-                ## 😤 V. Nỗi Đau Khách Hàng
+                ## 💎 V. Insight Từ Phản Hồi Khách Hàng (Social Listening)
                 | keyword | top_complaint | negative_score | trending_platform |
 
-                ## 🔥 VI. 3 Buzzwords Gen Z Đang Trending
+                ## 🚀 VI. Xu Hướng Thị Trường Key Insights
             """),
             agent=agent,
         )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # STAGE 2 — SÁNG TẠO NỘI DUNG GEN Z (AIDA FORMAT)
+    # STAGE 2 — SÁNG TẠO NỘI DUNG ĐỊNH VỊ THƯƠNG HIỆU (AIDA EXECUTIVE)
     # ══════════════════════════════════════════════════════════════════════════
 
     def content_creation_task(self, agent, research_task: Task) -> Task:
         return Task(
             description=dedent("""
-                NHIỆM VỤ: Đóng vai Giám đốc Chiến lược Nội dung — tạo 03 mẫu bài đăng VIRAL chuẩn AIDA.
+                NHIỆM VỤ: Brand Strategist — Xây dựng 03 phương án nội dung định vị thương hiệu đẳng cấp.
+                
+                YÊU CẦU:
+                - Đọc context từ Intelligence Lead để xác định: top_complaint, điểm yếu đối thủ, và model hiệu suất thấp.
+                - Sử dụng ngôn ngữ Executive Marketing chuyên nghiệp, tinh tế, giàu giá trị.
+                - Định dạng chuẩn AIDA Professional.
 
-                DỮ LIỆU ĐẦU VÀO: Đọc TRỰC TIẾP từ context của Research Agent.
-                Lấy từ context:
-                - top_complaint (nỗi đau thực tế, ví dụ: "Pin yếu", "Sạc chậm", "Giá cao")
-                - Gót Chân Achilles của đối thủ (từ bảng weaknesses trong benchmarking)
-                - Model đang doanh số thấp nhất (model_name cụ thể từ SQL)
-                - key_features và current_price của sản phẩm (LẤY GIÁ TỪ SQL, KHÔNG bịa)
+                MẪU 1 — 🛡️ GIẢI PHÁP CHIẾN LƯỢC (Pain Point Optimization)
+                - [HOOK]: Đánh vào nhu cầu thực tế và trải nghiệm xứng tầm (Ví dụ: "Nâng tầm hiệu suất công việc với công nghệ sạc nhanh dẫn đầu thị trường").
+                - [BODY]: Khẳng định ưu thế qua thông số kỹ thuật vượt trội (Camera, Chipset, dung lượng Pin). So sánh tinh tế với các hạn chế của đối thủ cạnh tranh.
+                - [DESIRE]: Khắc họa giá trị thăng dư và sự hài lòng bền vững khi sở hữu sản phẩm.
+                - [CTA]: Lời mời gọi hành động chuyên nghiệp (Ví dụ: "Khám phá đặc quyền tại hệ thống cửa hàng").
 
-                TUYỆT ĐỐI KHÔNG GỌI SQL TOOL. Dữ liệu đã có trong context. Viết Final Answer ngay.
+                MẪU 2 — 💎 KHẲNG ĐỊNH VỊ THẾ (Flexing Premium)
+                - Tập trung vào Model Dẫn Đầu Doanh Thu. Nêu bật sự đẳng cấp và uy tín thương hiệu đã được thị trường công nhận.
+                - Nêu rõ đặc quyền sở hữu và trải nghiệm "Đỉnh cao công nghệ".
+                - CTA: "Liên hệ tư vấn giải pháp sở hữu ngay hôm nay".
 
-                ════════════════════════════════════════════════
-                MẪU 1 — 💥 Pain Point Attack
-                ════════════════════════════════════════════════
-                [HOOK]: Câu mở ấn tượng dựa trên top_complaint THỰC TẾ từ context.
-                  Bắt buộc dùng emoji + ngôn ngữ Gen Z.
-                  Ví dụ HAY: "📱 Pin cạn lúc 2h chiều khi đang chốt deal 50 triệu??? Bro ơi Check-var cái này 😤"
-                  Ví dụ DỞ (KHÔNG làm): "Sản phẩm của chúng tôi rất tốt." ← bị loại ngay
+                MẪU 3 — 📈 TỐI ƯU HÓA CƠ HỘI (Strategic Deal)
+                - Dành cho model đang cần cải thiện KPI. 
+                - Hook: Nhấn mạnh vào giá trị đầu tư tối ưu cho một sản phẩm cao cấp. 
+                - Desire: Số lượng hữu hạn dành riêng cho nhóm khách hàng ưu tú.
+                - CTA: Lời mời trải nghiệm ngay lập tức để nhận ưu đãi đặc quyền.
 
-                [BODY]: So sánh XÉO SẮC với đối thủ — dùng GIÁ THỰC TẾ từ current_price.
-                  Format bắt buộc:
-                  "❌ [Đối thủ] [giá thực từ SQL]VNĐ mà [điểm yếu thực tế từ weaknesses]"
-                  "✅ Ta [giá thực từ SQL] VNĐ mà [tính năng vượt trội cụ thể]"
-                  Ví dụ: "❌ iPhone 17 Pro 32,000,000 VNĐ mà sạc 20W — rùa bò 2026 🐢"
-                          "✅ Mi 16 Pro 19,000,000 VNĐ, sạc 120W — đầy pin trong 30 phút ⚡"
-
-                [DESIRE]: Tính năng của ta giải quyết nỗi đau như thế nào — cụ thể, có số liệu.
-                  Dùng style storytelling ngắn: "Hãy tưởng tượng bạn vừa kết thúc 3h livestream..."
-
-                [CTA]: Kêu gọi hành động quyết liệt với urgency.
-                  Dùng: "Check-var ngay 👇", "Chốt đơn kẻo hết ⚡", "Slay cùng [tên model] hôm nay".
-
-                [HASHTAGS]: Đúng 10 hashtags. Bắt buộc có: tên model + pain point keyword + Gen Z slang.
-
-                ════════════════════════════════════════════════
-                MẪU 2 — 💪 Flexing Mode (Khoe cấu hình Model Dẫn Đầu Doanh Thu)
-                ════════════════════════════════════════════════
-                [HOOK]: Câu mở Flex về Model đang DẪN ĐẦU DOANH THU (lấy từ Top 1 Revenue trong context Research).
-                  BẮT BUỘC NÊU ĐÍCH DANH MODEL (vd: Find X9 Pro) và GIÁ THỰC TẾ (current_price).
-                  Ví dụ: "⚡ Snapdragon 8 Gen 5 + Camera Hasselblad mà [Tên model dẫn đầu] giá chỉ [current_price] VNĐ??? Flex hard 🔥"
-
-                [BODY]: Đúng 3 tính năng "đỉnh nóc kịch trần" của model dẫn đầu — mỗi tính năng theo format:
-                  "⚡ [Tính năng]: [Thông số Ta] vs [Thông số Đối Thủ] — [Nhận định chiến lược]"
-
-                [DESIRE]: Mini story 2-3 câu về trải nghiệm người dùng thực tế, sống động.
-                  Ví dụ: "Check-var anh kỹ sư dùng Mi 16 Pro cả ngày làm việc nặng, 6h tối vẫn còn 45% pin."
-
-                [CTA]: Hành động cụ thể + deadline tạo FOMO.
-                [HASHTAGS]: Đúng 10 hashtags trending.
-
-                ════════════════════════════════════════════════
-                MẪU 3 — 🔥 Deal Alert (Giải cứu model chậm KPI)
-                ════════════════════════════════════════════════
-                [HOOK]: Nêu ĐÍCH DANH model đang doanh số thấp nhất (từ context) + deal hấp dẫn.
-                  GIÁ PHẢI LẤY TỪ context Research — KHÔNG bịa giá.
-                  Ví dụ: "💥 [Tên model cụ thể] — deal cuối tháng XỊN NHẤT từ trước tới nay!"
-
-                [BODY]: Deal/ưu đãi CỰC CỤ THỂ — giá thực, deadline rõ, số lượng giới hạn.
-                  "Giá gốc: [current_price từ SQL] → Ưu đãi hôm nay: [giá deal] — tiết kiệm [số tiền]"
-
-                [DESIRE]: Social proof thuyết phục: đơn đã chốt, review 5 sao.
-                  Ví dụ: "1,247 người vừa chốt đơn trong 24h qua — bạn còn chần chừ gì?"
-
-                [CTA]: CTA "căng như dây đàn": "Còn [X] suất — Bấm NGAY 👇 hoặc hối hận cả đời 😈"
-                [HASHTAGS]: Đúng 10 hashtags có tên model + deal keyword.
-
-                ════════════════════════════════════════════════
-                ✅ PHẢI dùng ngôn từ chuyên nghiệp: Tối ưu hoá, Lợi thế cạnh tranh, Điểm yếu đối thủ, 
-                   Định vị thương hiệu, Chốt đơn, Ngân sách chiến dịch, Tiếp cận khách hàng, Tăng tỷ lệ chuyển đổi.
-                ✅ PHẢI dùng Emoji (😤, 🔥, ⚡, 💥, 🎯, 👇, 😈, 🚀, 🎪, 💪)
-                ✅ PHẢI có đầy đủ dấu tiếng Việt trong toàn bộ nội dung
-                ✅ GIÁ THỰC TẾ: 32,000,000 VNĐ (có dấu phẩy) — KHÔNG viết "32 triệu" chung chung
-                ❌ KHÔNG gọi SQL tool — VIẾT FINAL ANSWER NGAY sau khi xong 03 mẫu
-                ❌ KHÔNG dùng "Quý khách", "Sản phẩm ưu việt", "Đội ngũ chuyên nghiệp"
-                ❌ KHÔNG bịa giá — chỉ dùng giá từ context Research
+                ⚠️ QUY TẮC NGÔN NGỮ & ĐỊNH DẠNG:
+                1. 100% tiếng Việt có dấu, đúng ngữ pháp và dấu câu.
+                2. Sử dụng Emoji tinh tế (📈, 💎, 🛡️, 🤝).
+                3. Tiền tệ chuẩn: 16,860,000,000 VNĐ.
+                4. Từ ngữ: Chuyên nghiệp, lịch sự, không sử dụng biệt ngữ tiêu cực hoặc từ ngữ dân dã.
             """),
             expected_output=dedent("""
-                ## 💥 MẪU 1 — Pain Point Attack
-                **[HOOK]**: ... (1 câu, có emoji, dựa trên top_complaint thực tế)
-                **[BODY]**: ... (so sánh giá thực ❌đối thủ vs ✅ta, có số liệu)
-                **[DESIRE]**: ... (giải quyết nỗi đau, có storytelling)
-                **[CTA]**: ... (kêu gọi quyết liệt với urgency)
-                **[HASHTAGS]**: #Tag1 #Tag2 ... (đúng 10 tags)
-
-                ---
-
-                ## 💪 MẪU 2 — Flexing Mode
+                ## 🛡️ PHƯƠNG ÁN 1 — GIẢI PHÁP CHIẾN LƯỢC
                 **[HOOK]**: ...
-                **[BODY]**: (3 tính năng theo format ⚡ [TT]: [Số ta] vs [Số đối thủ] — [nhận định])
+                **[BODY]**: ...
                 **[DESIRE]**: ...
                 **[CTA]**: ...
-                **[HASHTAGS]**: #Tag1 #Tag2 ... (đúng 10 tags)
+                **[HASHTAGS]**: (10 hashtags chuyên nghiệp)
 
                 ---
+                ## 💎 PHƯƠNG ÁN 2 — KHẲNG ĐỊNH VỊ THẾ
+                **[HOOK]**: ...
+                ...
 
-                ## 🔥 MẪU 3 — Deal Alert
-                **[HOOK]**: ... (nêu đích danh model, giá thực từ SQL)
-                **[BODY]**: ... (giá gốc → giá deal, deadline, số lượng)
-                **[DESIRE]**: ... (social proof với số cụ thể)
-                **[CTA]**: ... (countdown urgency)
-                **[HASHTAGS]**: #Tag1 #Tag2 ... (đúng 10 tags)
+                ---
+                ## 📈 PHƯƠNG ÁN 3 — TỐI ƯU HÓA CƠ HỘI
+                **[HOOK]**: ...
+                ...
             """),
             agent=agent,
             context=[research_task],
         )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # STAGE 2.5 — PRE-FETCH SQL TÀI CHÍNH (Giảm tải Token cho Stage 3)
+    # STAGE 2.5 — PRE-FETCH SQL TÀI CHÍNH
     # ══════════════════════════════════════════════════════════════════════════
 
     def data_fetch_task(self, agent, research_task: Task, content_task: Task) -> Task:
         return Task(
             description=dedent(f"""
-                NHIỆM VỤ DUY NHẤT: Chạy đúng 3 câu SQL sau và trả về kết quả thô.
-                KHÔNG phân tích. KHÔNG thêm nhận xét. Chỉ lấy dữ liệu thô.
+                NHIỆM VỤ: Truy xuất dữ liệu tài chính phục vụ báo cáo cấp quản trị.
+                Chỉ trả về 3 bảng Markdown chứa kết quả thô từ SQL, không kèm phân tích.
 
                 {_REGION_NOTE}
 
-                SQL 1 — ROI & CPA theo kênh marketing:
-                    SELECT channel,
-                           ROUND(AVG(roi), 2) AS avg_roi,
-                           ROUND(AVG(budget * 1.0 / NULLIF(conversions, 0)), 0) AS avg_cpa,
-                           SUM(budget) AS total_budget
-                    FROM marketing_campaigns
-                    GROUP BY channel
-                    ORDER BY avg_roi DESC
-
-                SQL 2 — Doanh thu chi tiết theo sản phẩm:
-                    SELECT model_name, SUM(units_sold) AS units_sold, SUM(units_sold * unit_price) AS revenue
-                    FROM sales
-                    GROUP BY model_name
-                    ORDER BY revenue DESC
-                    LIMIT 10
-
-                SQL 3 — Doanh thu theo khu vực địa lý
-                (Khu vực thực tế trong DB: {_REGIONS}):
-                    SELECT region,
-                           SUM(units_sold) AS total_units,
-                           ROUND(SUM(units_sold * unit_price), 0) AS total_revenue
-                    FROM sales
-                    GROUP BY region
-                    ORDER BY total_revenue DESC
-
-                Trả về đúng nguyên định dạng bảng Markdown. KHÔNG tóm tắt. KHÔNG diễn giải.
+                SQL 1 — Chỉ số ROI & CPA theo kênh (TikTok, Instagram, Facebook, YouTube, Google Search, KOL).
+                SQL 2 — Doanh thu phân bổ theo Danh mục Sản phẩm (Sắp xếp giảm dần).
+                SQL 3 — Doanh thu phân bổ theo Khu vực Địa lý ({_REGIONS}).
             """),
-            expected_output=(
-                "3 bảng Markdown chứa kết quả thô từ SQL:\n"
-                f"Bảng 1: channel | avg_roi | avg_cpa | total_budget (kênh: TikTok/Instagram/Facebook/YouTube/Google Search/KOL)\n"
-                f"Bảng 2: model_name | units_sold | revenue\n"
-                f"Bảng 3: region | total_units | total_revenue (chỉ hiện: {_REGIONS})"
-            ),
+            expected_output="3 bảng Markdown dữ liệu tài chính thô.",
             agent=agent,
             context=[research_task, content_task],
         )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # STAGE 3 — BÁO CÁO CHIẾN LƯỢC THỰC CHIẾN (DATA TRIANGULATION)
+    # STAGE 3 — BÁO CÁO CHIẾN LƯỢC EXECUTIVE EXCELLENCE
     # ══════════════════════════════════════════════════════════════════════════
 
     def marketing_strategy_task(
@@ -292,103 +192,57 @@ class MarketingTasks:
     ) -> Task:
         return Task(
             description=dedent(f"""
-                NHIỆM VỤ: Viết Báo cáo Chiến lược Thực chiến — DATA TRIANGULATION.
-                KHÔNG query SQL thêm. 100% dữ liệu đã có trong context từ 3 task trước.
+                NHIỆM VỤ: Hoàn thiện BÁO CÁO CHIẾN LƯỢC EXECUTIVE EXCELLENCE.
+                Bạn là Chief Strategy Officer (CSO). Báo cáo của bạn phải thể hiện tầm vóc lãnh đạo và tư duy quản trị dựa trên dữ liệu.
 
                 {_REGION_NOTE}
 
-                ════════════════════════════════════════════════
-                QUY TẮC DỮ LIỆU CỨNG (VI PHẠM = BÁO CÁO THẤT BẠI):
-                ════════════════════════════════════════════════
-                1. TOP 1 MODEL: Bạn PHẢI nhìn vào kết quả 'Model Dẫn Đầu Doanh Thu' từ context. Nếu SQL báo Find X9 Pro, báo cáo PHẢI nói về Find X9 Pro. KHÔNG ĐƯỢC bịa ra iPhone hay Xiaomi dẫn đầu nếu dữ liệu SQL không nói vậy.
-                2. KHU VỰC: Chỉ được nhắc đến: {_REGIONS}
-                   → TUYỆT ĐỐI KHÔNG viết "Đông Nam Á", "Ấn Độ", "Châu Âu", "Tây Bắc Bộ" hay bất kỳ KV nào khác.
-                3. GIÁ SẢN PHẨM: Lấy từ current_price trong context cho model đó. Format: 32,000,000 VNĐ.
-                4. REVENUE: Lấy từ kết quả SQL trong context — KHÔNG làm tròn thành "48 tỷ", viết đủ: 48,000,000,000 VNĐ.
-                5. ROI ANALYSIS ĐÚNG CHIỀU (dùng data thực: {_ROI_DATA}):
-                   - ROI CAO + budget THẤP → "Đang bị bỏ đói — double budget NGAY"
-                   - ROI THẤP + budget CAO → "Đang burn tiền — cắt giảm 30% và tái phân bổ"
-                   → KHÔNG được nhận định ngược chiều (ROI cao mà bảo burn tiền là SAI).
-                ════════════════════════════════════════════════
+                CẤU TRÚC BÁO CÁO — 7 PHẦN CHIẾN LƯỢC:
 
-                CẤU TRÚC BÁO CÁO — 7 PHẦN (≥ 800 từ)
-                ════════════════════════════════════════════════
+                ## 🔭 I. Tổng Quan Chiến Lược & Phân Tích Đa Chiều (Data Triangulation)
+                Nhận định mang tính định hướng cấp cao. Sử dụng các cụm từ: "Khai thác dư địa tăng trưởng", "Tận dụng hiệu ứng quy mô", "Xác lập lợi thế dẫn đầu".
+                Đặt và trả lời 3 câu hỏi chiến lược dựa trên dữ liệu thực tế từ context.
 
-                ## 🔭 I. Tổng Quan Chiến Lược & Data Triangulation
-                Nhận định "xéo sắc" từ đối chiếu 3 nguồn dữ liệu. Ít nhất 150 từ.
-                Đặt 3 câu hỏi Data Triangulation và trả lời bằng data thực:
-                - Kênh nào ROI cao nhất nhưng ngân sách đang "đói"? → Đề xuất cụ thể.
-                - Model nào revenue thấp nhưng đối thủ mạnh ở segment đó? → Cơ hội tối ưu hóa cạnh tranh.
-                - Khu vực nào ({_REGIONS}) revenue thấp nhưng sentiment tốt? → Khai thác ngay.
+                ## 📊 II. Phân Tích Hiệu Quả Tài Chính & Tối Ưu Hóa Nguồn Lực
+                Trình bày bảng ROI/CPA. Thực hiện phân tích đúng chiều:
+                - ROI CAO + Ngân sách THẤP → "Kênh đang bị giới hạn tiềm năng — Đề xuất Tăng cường nguồn lực ưu tiên".
+                - ROI THẤP + Ngân sách CAO → "Hiệu suất đầu tư chưa tương xứng — Đề xuất Tái phân bổ ngân sách tập trung".
 
-                ## 📊 II. Hiệu Quả Tài Chính Chi Tiết
-                Bảng ROI/CPA đầy đủ từ context. KHÔNG làm tròn số (1383.21, không phải 1383).
-                Nhận định theo logic kinh tế ĐÚNG CHIỀU:
-                - TikTok ROI=1383.21, budget 235tr → "UNDERINVESTED — double budget ngay"
-                - Google Search ROI=332.98, budget 468tr → "Đang burn 468,000,000 VNĐ/chu kỳ — cắt 30%"
+                ## 🏆 III. Toàn Cảnh Doanh Thu & Định Vị Sản Phẩm
+                Bảng doanh thu chi tiết (định dạng 48,000,000,000 VNĐ).
+                Sử dụng các thuật ngữ: "Sản phẩm Key Driver", "Dòng sản phẩm Chiến lược", "Khu vực trọng điểm".
 
-                ## 🏆 III. Phân Tích Doanh Thu Theo Sản Phẩm & Khu Vực
-                Bảng revenue từ context. Format số: 48,000,000,000 VNĐ.
-                Khu vực: chỉ dùng {_REGIONS}. KHÔNG thêm khu vực khác.
-                Chỉ ra:
-                - LEAD: Model/khu vực nào dẫn đầu (dữ liệu SQL nói gì?)
-                - LAG: Model/khu vực nào tụt hậu (lý do theo data)
+                ## ⚔️ IV. Cạnh Tranh Chiến Lược & Benchmark Đối Đầu
+                Xác lập các điểm "Thắng - Thua" dựa trên dữ liệu benchmarking. Đề xuất phương án tối ưu hóa lợi thế cạnh tranh để chiếm lĩnh thị phần.
 
-                ## ⚔️ IV. Phân Tích Cạnh Tranh & Chiến Lược Đối Đầu
-                Từ benchmarking Task 1:
-                - ✅ Đòn mạnh nhất của Ta: [tính năng + số liệu cụ thể từ SQL]
-                - ❌ Điểm yếu cần khắc phục: [tính năng + kế hoạch cụ thể]
-                - 🎯 Cơ hội khai thác điểm yếu của đối thủ bằng lợi thế cạnh tranh của ta?
+                ## 📱 V. Chiến Lược Nội Dung Truyền Thông Xứng Tầm
+                Trình bày nguyên văn 03 phương án nội dung AIDA Executive từ Brand Strategist. Đảm bảo ngôn ngữ tinh tế và truyền cảm hứng.
 
-                ## 📱 V. Kho Vũ Khí Truyền Thông (Nội Dung AIDA)
-                PASTE NGUYÊN VẸN toàn bộ 03 mẫu bài đăng từ Task 2.
-                KHÔNG rút gọn. KHÔNG tóm tắt. KHÔNG thay đổi từ ngữ.
+                ## 🗺️ VI. Lộ Trình Triển Khai 7 Ngày (Implementation Roadmap)
+                Xây dựng bảng kế hoạch cụ thể cho 7 ngày tới. 
+                - Thay "Mật lệnh" bằng "Hành động Chiến lược". 
+                - Ngân sách: Format 50,000,000 VNĐ.
+                - Khu vực: Chỉ sử dụng {_REGIONS}.
 
-                | Ngày | Hành Động Chiến Lược | Kênh | Khu Vực | Ngân Sách (VNĐ) | KPI Kỳ Vọng | Lý Do Từ Data |
+                ## ⚠️ VII. Quản Trị Rủi Ro & Điểm Kiểm Soát (Risk Management)
+                Xác định ít nhất 3 rủi ro chiến lược và các biện pháp giảm thiểu.
+                Format: "⚠️ Rủi ro: ... → 📡 Dấu hiệu nhận biết: ... → 🛡️ Phương án xử lý: ..."
 
-                Quy tắc:
-                - Khu vực: chỉ chọn trong {_REGIONS}
-                - Ngân sách: format 50,000,000 VNĐ (không viết 50tr)
-                - Hành động: dùng "Lên camp TikTok", "Booking KOL Tier A", "Vít ad toàn lực",
-                  "Flash deal 12h", "Kích hoạt retargeting", "Check-var kết quả A/B test"
-                - KHÔNG dùng: "Tổ chức sự kiện", "Triển khai chiến dịch"
-
-                ## ⚠️ VII. Rủi Ro & Điểm Kiểm Soát
-                Ít nhất 3 rủi ro theo format:
-                "⚠️ Rủi ro: [mô tả] → 📡 Dấu hiệu: [chỉ số cụ thể] → 🛡️ Countermeasure: [hành động]"
-
-                ════════════════════════════════════════════════
-                QUY TẮC TUYỆT ĐỐI:
-                ════════════════════════════════════════════════
-                - Tiếng Việt đầy đủ dấu trong TOÀN BỘ báo cáo (tiêu đề + nội dung + bảng).
-                - Số tài chính: 48,000,000,000 VNĐ — KHÔNG làm tròn.
-                - Báo cáo ≥ 800 từ, đủ 7 phần, mỗi ## trên 1 dòng riêng.
-                - KHÔNG bịa số, KHÔNG bịa khu vực, KHÔNG nhận định ngược chiều data.
+                ⚠️ YÊU CẦU QUY CHUẨN:
+                - Tiếng Việt 100% chuẩn mực văn phòng cấp cao.
+                - Tuyệt đối không sử dụng slang, từ ngữ dân dã hoặc các biểu cảm tiêu cực.
+                - Toàn bộ báo cáo ≥ 1000 từ để đạt độ sâu sắc cần thiết.
             """),
             expected_output=dedent(f"""
-                BÁO CÁO CHIẾN LƯỢC THỰC CHIẾN (≥ 800 TỪ):
+                BÁO CÁO CHIẾN LƯỢC EXECUTIVE EXCELLENCE:
 
-                ## 🔭 I. Tổng Quan Chiến Lược & Data Triangulation
-                (≥ 150 từ, 3 câu hỏi triangulation có trả lời từ data)
-
-                ## 📊 II. Hiệu Quả Tài Chính Chi Tiết
-                (Bảng ROI/CPA không làm tròn + nhận định đúng chiều)
-                TikTok ROI=1383.21 → UNDERINVESTED / Google Search ROI=332.98 → burn tiền
-
-                ## 🏆 III. Phân Tích Doanh Thu Theo Sản Phẩm & Khu Vực
-                (Bảng revenue format 48,000,000,000 VNĐ — khu vực: {_REGIONS} only)
-
-                ## ⚔️ IV. Phân Tích Cạnh Tranh & Chiến Lược Đối Đầu
-                (WIN/LOSS với giá current_price thực từ SQL)
-
-                ## 📱 V. Kho Vũ Khí Truyền Thông
-                (03 mẫu AIDA nguyên vẹn từ Task 2)
-
-                ## 🗺️ VI. Kế Hoạch Tác Chiến 7 Ngày
-                (Bảng 7 hàng — khu vực {_REGIONS} only, budget format VNĐ)
-
-                ## ⚠️ VII. Rủi Ro & Điểm Kiểm Soát
-                (≥ 3 rủi ro theo format ⚠️→📡→🛡️)
+                ## 🔭 I. Tổng Quan Chiến Lược & Phân Tích Đa Chiều
+                ## 📊 II. Phân Tích Hiệu Quả Tài Chính & Tối Ưu Hóa Nguồn Lực
+                ## 🏆 III. Toàn Cảnh Doanh Thu & Định Vị Sản Phẩm
+                ## ⚔️ IV. Cạnh Tranh Chiến Lược & Benchmark Đối Đầu
+                ## 📱 V. Chiến Lược Nội Dung Truyền Thông Xứng Tầm
+                ## 🗺️ VI. Lộ Trình Triển Khai 7 Ngày (Implementation Roadmap)
+                ## ⚠️ VII. Quản Trị Rủi Ro & Điểm Kiểm Soát (Risk Management)
             """),
             agent=agent,
             context=[research_task, content_task, data_fetch_task],

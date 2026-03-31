@@ -1,1 +1,0 @@
-Báo cáo chiến lược thực chiến đã được hoàn thành.
