@@ -1,39 +1,44 @@
 """
-Entry point cho AI Marketing Agent pipeline.
-Quy trình: Nghiên cứu -> Phân tích Sentiment -> Báo cáo Chiến lược & Xuất bản.
+Entry point cho AI Marketing Agent pipeline - Production Version.
 """
 import os
 import sys
+import time
+from datetime import datetime
 
+# Windows encoding fix
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
-from datetime import datetime
-from crewai import Crew, Process
+from src.config import setup_logging, validate_config, PROCESSED_DATA_DIR, MAX_RETRIES
 from src.agents import MarketingAgents
 from src.tasks import MarketingTasks
-from src.tools import create_sales_chart
+from crewai import Crew, Process
 
+# Initialize logger for main process
+logger = setup_logging("pipeline_main")
 
 def run_smartphone_intelligence_system():
     """
-    Khởi chạy pipeline 3 agent tuần tự:
-    1. Search Analyst     — nghiên cứu thị trường
-    2. Content Strategist — thiết kế marketing
-    3. Business Reporter  — tổng hợp báo cáo cục bộ
+    Khởi chạy pipeline 3 agent tuần tự với cơ chế Error Resilience.
     """
+    # 1. Validation bước đầu
+    validate_config()
+    
+    logger.info("Khởi tạo các thành phần hệ thống...")
+    try:
+        agents_factory = MarketingAgents()
+        tasks_factory  = MarketingTasks()
+        
+        search_analyst     = agents_factory.search_analyst()
+        content_strategist = agents_factory.content_strategist()
+        business_reporter  = agents_factory.business_reporter()
+    except Exception as e:
+        logger.critical(f"Lỗi khởi tạo Agent Factory: {e}")
+        raise
 
-    # 1. Khởi tạo factory
-    agents_factory = MarketingAgents()   # load_dotenv() được gọi bên trong __init__
-    tasks_factory  = MarketingTasks()
-
-    # 2. Khởi tạo agents
-    search_analyst     = agents_factory.search_analyst()
-    content_strategist = agents_factory.content_strategist()
-    business_reporter  = agents_factory.business_reporter()
-
-    # 3. Khởi tạo tasks với context chaining 4 stages
+    # 2. Xây dựng Task Pipeline
     research_task = tasks_factory.research_task(
         agent=search_analyst,
         market_topic="Xu hướng smartphone 2026 và thị trường AI Phone",
@@ -42,7 +47,6 @@ def run_smartphone_intelligence_system():
         agent=content_strategist,
         research_task=research_task,
     )
-    # Stage 2.5: Pre-fetch SQL data để giảm tải token cho Stage 3
     data_task = tasks_factory.data_fetch_task(
         agent=business_reporter,
         research_task=research_task,
@@ -56,76 +60,63 @@ def run_smartphone_intelligence_system():
         tools=business_reporter.tools,
     )
 
-    # 4. Thiết lập Crew
+    # 3. Cấu hình Crew
     crew = Crew(
         agents=[search_analyst, content_strategist, business_reporter],
         tasks=[research_task, content_task, data_task, report_task],
         process=Process.sequential,
-        memory=False,   # tắt để tránh phụ thuộc Embedder ngoài
+        memory=False,
         verbose=True,
     )
 
-    # 5. Chạy pipeline — tự động retry khi gặp Timeout / 5xx (NVIDIA NIM 504)
-    import time
-
-    print("\n" + "=" * 60)
-    print("🚀 SMARTPHONE INTELLIGENCE SYSTEM — BẮT ĐẦU")
-    print(f"   Thời gian : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"   Mục tiêu  : Biến dữ liệu thô thành Báo cáo Chiến lược")
-    print("=" * 60 + "\n")
-
-    _MAX_RETRIES = 3
-    _retry_delay = 30   # giây — bắt đầu 30s, tăng gấp đôi mỗi lần (exponential backoff)
+    logger.info("=" * 40)
+    logger.info("🚀 BẮT ĐẦU PIPELINE CHIẾN LƯỢC")
+    logger.info("=" * 40)
 
     result = None
-    for attempt in range(1, _MAX_RETRIES + 1):
+    retry_delay = 30
+    
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
-            print(f"\n⚡ Lần chạy #{attempt}/{_MAX_RETRIES}...")
+            logger.info(f"⚡ Thôi thi hành Lần #{attempt}...")
             result = crew.kickoff()
-            print(f"\n[DEBUG]: Độ dài báo cáo: {len(result.raw)} ký tự")
-            break   # Thành công → thoát vòng lặp retry
-
+            break 
         except Exception as e:
             err_str = str(e)
             is_retryable = any(k in err_str for k in [
-                "Timeout", "504", "502", "503", "ConnectionError", "ReadTimeout",
-                "NvidiaException", "litellm.Timeout"
+                "Timeout", "504", "502", "503", "ConnectionError", "ReadTimeout", "litellm.Timeout"
             ])
-            if is_retryable and attempt < _MAX_RETRIES:
-                print(f"\n⚠️  Lần #{attempt} gặp lỗi timeout/5xx: {err_str[:120]}")
-                print(f"   Thử lại sau {_retry_delay}s...")
-                time.sleep(_retry_delay)
-                _retry_delay *= 2   # 30s → 60s → 120s
+            if is_retryable and attempt < MAX_RETRIES:
+                logger.warning(f"Lỗi mạng/Timeout: {err_str[:100]}. Thử lại sau {retry_delay}s...")
+                time.sleep(retry_delay)
+                retry_delay *= 2
             else:
-                raise   # Lỗi logic hoặc hết retry → cho nổi lên
+                logger.error(f"Lỗi nghiêm trọng không thể tự phục hồi: {e}")
+                raise
 
-    if result is None:
-        raise RuntimeError("Pipeline thất bại sau tất cả các lần retry.")
+    if not result:
+        raise RuntimeError("Pipeline kết thúc mà không có kết quả.")
 
-
-    # --- Lưu báo cáo cục bộ ---
-    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "processed")
-    os.makedirs(output_dir, exist_ok=True)
-    report_path = os.path.join(output_dir, f"Smartphone_Strategic_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(result.raw)
-
-    print("\n" + "=" * 60)
-    print("✅ PIPELINE HOÀN TẤT")
-    print(f"   Thời gian : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("   Báo cáo đã được lưu rại data/processed/ và sẵn sàng hiển thị trên Web UI.")
-    print("=" * 60 + "\n")
+    # 4. Lưu sản phẩm cuối cùng
+    try:
+        report_filename = f"Smartphone_Strategic_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        report_path = PROCESSED_DATA_DIR / report_filename
+        
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(result.raw)
+            
+        logger.info("=" * 40)
+        logger.info("✅ PIPELINE HOÀN TẤT THÀNH CÔNG")
+        logger.info(f"📁 Báo cáo: {report_path.name}")
+        logger.info("=" * 40)
+    except Exception as e:
+        logger.error(f"Lỗi khi lưu báo cáo cuối cùng: {e}")
 
     return result
-
 
 if __name__ == "__main__":
     try:
         run_smartphone_intelligence_system()
-    except EnvironmentError as e:
-        # Thiếu API key hoặc credentials
-        print(f"\n❌ Lỗi cấu hình môi trường:\n   {e}")
-        sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Pipeline thất bại:\n   {e}")
+        logger.error(f"Hệ thống dừng do lỗi: {e}")
         sys.exit(1)
