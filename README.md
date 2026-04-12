@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI Marketing Intelligence & Reporting Automation
 
 **Hệ thống Multi-Agent hỗ trợ tự động hóa luồng phân tích dữ liệu và báo cáo Marketing chiến lược.**
@@ -7,6 +8,21 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-22C55E?style=for-the-badge)
+=======
+<p align="center">
+  <h1 align="center">🧠 AI Marketing Intelligence & Reporting Automation</h1>
+  <p align="center">
+    <strong>Hệ điều hành Marketing thế hệ mới — Nơi Dữ liệu Điều khiển Sáng tạo, AI Triệt tiêu Ảo giác.</strong>
+  </p>
+  <p align="center">
+    <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="https://www.python.org/downloads/release/python-3100/">
+    <img src="https://img.shields.io/badge/CrewAI-Multi--Agent-FF6B6B?style=for-the-badge&logo=robot&logoColor=white" alt="CrewAI">
+    <img src="https://img.shields.io/badge/LLM-Llama--3.3--70B-7C3AED?style=for-the-badge&logo=meta&logoColor=white" alt="LLM">
+    <img src="https://img.shields.io/badge/FastAPI-Dashboard-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+    <img src="https://img.shields.io/badge/license-MIT-22C55E?style=for-the-badge" alt="License">
+  </p>
+</p>
+>>>>>>> 13e9d5e8962d591164e245edabc550a1092760d2
 
 ---
 
