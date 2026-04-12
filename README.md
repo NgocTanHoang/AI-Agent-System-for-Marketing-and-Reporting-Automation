@@ -4,7 +4,7 @@
     <strong>Hệ điều hành Marketing thế hệ mới — Nơi Dữ liệu Điều khiển Sáng tạo, AI Triệt tiêu Ảo giác.</strong>
   </p>
   <p align="center">
-    <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+    <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="https://www.python.org/downloads/release/python-3100/">
     <img src="https://img.shields.io/badge/CrewAI-Multi--Agent-FF6B6B?style=for-the-badge&logo=robot&logoColor=white" alt="CrewAI">
     <img src="https://img.shields.io/badge/LLM-Llama--3.3--70B-7C3AED?style=for-the-badge&logo=meta&logoColor=white" alt="LLM">
     <img src="https://img.shields.io/badge/FastAPI-Dashboard-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
