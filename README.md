@@ -1,415 +1,386 @@
-<p align="center">
-  <h1 align="center">🧠 AI Marketing Intelligence & Reporting Automation</h1>
-  <p align="center">
-    <strong>Hệ điều hành Marketing thế hệ mới — Nơi Dữ liệu Điều khiển Sáng tạo, AI Triệt tiêu Ảo giác.</strong>
-  </p>
-  <p align="center">
-    <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-    <img src="https://img.shields.io/badge/CrewAI-Multi--Agent-FF6B6B?style=for-the-badge&logo=robot&logoColor=white" alt="CrewAI">
-    <img src="https://img.shields.io/badge/LLM-Llama--3.3--70B-7C3AED?style=for-the-badge&logo=meta&logoColor=white" alt="LLM">
-    <img src="https://img.shields.io/badge/FastAPI-Dashboard-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
-    <img src="https://img.shields.io/badge/license-MIT-22C55E?style=for-the-badge" alt="License">
-  </p>
-</p>
+# AI Marketing Intelligence & Reporting Automation
+
+**Hệ thống Multi-Agent hỗ trợ tự động hóa luồng phân tích dữ liệu và báo cáo Marketing chiến lược.**
+
+![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![CrewAI](https://img.shields.io/badge/CrewAI-Multi--Agent-FF6B6B?style=for-the-badge)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-22C55E?style=for-the-badge)
 
 ---
 
-## 📖 Mục lục
+## Mục lục
 
-- [Tổng quan & Giá trị cốt lõi](#-tổng-quan--giá-trị-cốt-lõi)
-- [Kiến trúc Hệ thống](#-kiến-trúc-hệ-thống)
-- [Đội ngũ Agent](#-đội-ngũ-agent--multi-agent-workforce)
-- [Pipeline 6 giai đoạn](#-pipeline-6-giai-đoạn--creative-operating-loop)
-- [Tính năng Kỹ thuật Đặc sắc](#-tính-năng-kỹ-thuật-đặc-sắc)
-- [Công nghệ Sử dụng](#-công-nghệ-sử-dụng)
-- [Cài đặt & Thiết lập](#-cài-đặt--thiết-lập)
-- [Hướng dẫn Sử dụng](#-hướng-dẫn-sử-dụng)
-- [Cấu trúc Dự án](#-cấu-trúc-dự-án)
-- [Lộ trình Phát triển](#-lộ-trình-phát-triển)
-- [Đóng góp & Bản quyền](#-đóng-góp--bản-quyền)
-
----
-
-## 🎯 Tổng quan & Giá trị cốt lõi
-
-### Vấn đề
-
-Phần lớn các giải pháp AI Marketing hiện nay hoạt động như một **Content Engine đơn giản**: nhận prompt → xuất văn bản. Kết quả thường mắc phải ba lỗ hổng nghiêm trọng:
-
-| # | Lỗ hổng | Hậu quả |
-|---|---------|---------|
-| 1 | **Hallucination** — AI tự bịa số liệu, tên sản phẩm | Báo cáo sai lệch, mất uy tín trước CEO/CMO |
-| 2 | **Language Bleeding** — Trả về ký tự Trung/Nhật/Hàn trong nội dung Tiếng Việt | Output không thể sử dụng được trong môi trường doanh nghiệp |
-| 3 | **Zero Memory** — Mỗi lần chạy là một trang giấy trắng, không tích lũy tri thức | Không có khả năng tự cải thiện qua các chu kỳ |
-
-### Giải pháp
-
-Hệ thống này được xây dựng theo triết lý **Marketing Strategy & Operations (MSO)** — một vòng lặp vận hành khép kín, nơi:
-
-> **Dữ liệu SQL thực → Điều hướng Quyết định sáng tạo → Sản xuất Nội dung → Báo cáo cấp C-Level → Tích lũy bài học → Tối ưu chu kỳ tiếp theo.**
-
-Đây không phải là một chatbot tạo nội dung. Đây là **hệ điều hành** cho toàn bộ lifecycle Marketing — từ nghiên cứu thị trường, ra quyết định chiến lược, đến báo cáo cấp quản trị và tự học.
+- [Bối cảnh Kỹ thuật](#bối-cảnh-kỹ-thuật)
+- [Giải pháp Kỹ thuật](#giải-pháp-kỹ-thuật)
+- [Kiến trúc Hệ thống](#kiến-trúc-hệ-thống)
+- [Agent & Task Workflow](#agent--task-workflow)
+- [Chi tiết Triển khai](#chi-tiết-triển-khai)
+- [Công nghệ](#công-nghệ)
+- [Cài đặt & Chạy thử](#cài-đặt--chạy-thử)
+- [Cấu trúc Thư mục](#cấu-trúc-thư-mục)
+- [Giới hạn Hiện tại & Lộ trình](#giới-hạn-hiện-tại--lộ-trình)
+- [Bản quyền](#bản-quyền)
 
 ---
 
-## 🏗 Kiến trúc Hệ thống
+## Bối cảnh Kỹ thuật
+
+Khi sử dụng Large Language Models (LLMs) để tạo báo cáo marketing trong môi trường doanh nghiệp, có ba vấn đề kỹ thuật cần kiểm soát:
+
+| Vấn đề | Mô tả | Biểu hiện cụ thể |
+|:---|:---|:---|
+| **Hallucination** | LLM tạo ra số liệu, tên sản phẩm, hoặc chỉ số tài chính không tồn tại trong nguồn dữ liệu gốc | Output chứa tên model sai, doanh thu bịa, hoặc gom sản phẩm vào danh mục chung (`"Điện tử"`, `"Smartphone"`) thay vì dùng tên model cụ thể |
+| **Language Bleeding** | LLM đa ngôn ngữ vô tình trộn ký tự CJK (Trung, Nhật, Hàn) vào output Tiếng Việt | Các ký tự như `面臨`, `市場` xuất hiện xen giữa đoạn văn Tiếng Việt |
+| **Context Drift** | Qua nhiều bước suy luận dài, LLM dần mất bám sát dữ liệu đầu vào và bắt đầu viết theo pattern chung | Báo cáo lặp lại các câu tổng quát, thiếu số liệu cụ thể từ database |
+
+Hệ thống này là một bản MVP nhằm **giảm thiểu** các vấn đề trên thông qua kiến trúc Multi-Agent kết hợp các lớp guardrails ở cả tầng prompt lẫn tầng post-processing.
+
+---
+
+## Giải pháp Kỹ thuật
+
+Ý tưởng chính: thay vì dùng một LLM duy nhất xử lý toàn bộ, hệ thống chia luồng công việc thành 6 task tuần tự, mỗi task do một Agent chuyên biệt phụ trách. Dữ liệu được **neo (anchor)** vào SQLite qua các lần gọi tool bắt buộc, và output cuối cùng đi qua một lớp sanitization bằng Python trước khi lưu file.
+
+Ba cơ chế chính:
+
+1. **Data Grounding** — Agent được yêu cầu (qua prompt) gọi tool `query_marketing_db` để truy vấn SQL thay vì tự sinh dữ liệu. Lớp tool chỉ cho phép `SELECT` và chạy ở chế độ read-only (`PRAGMA query_only = ON`).
+
+2. **Post-processing Sanitization** — Sau khi LLM sinh output, hàm `sanitize_vietnamese_text()` trong Python quét và loại bỏ ký tự CJK bằng Regex, đồng thời tra cứu SQL để thay thế các danh mục chung chung bằng `model_name` thực tế.
+
+3. **Programmatic Fallback** — Ở những điểm LLM có thể không thực thi đúng (ví dụ: không gọi tool `signal_update`), `main.py` chạy logic Python dự phòng để đảm bảo dữ liệu vẫn được ghi.
+
+> **Lưu ý:** Các cơ chế trên giúp kiểm soát và giảm thiểu lỗi, nhưng không đảm bảo loại bỏ 100% hallucination ở mọi trường hợp. Chất lượng output phụ thuộc đáng kể vào khả năng của model LLM được sử dụng.
+
+---
+
+## Kiến trúc Hệ thống
 
 ```mermaid
 graph TB
-    subgraph "🗄️ DATA LAYER"
-        DB[(marketing_intelligence.db)]
-        WEB[🌐 DuckDuckGo Search]
-        CMS[📁 Marketing Content Files]
+    subgraph "Data Layer"
+        DB[(SQLite: marketing_intelligence.db)]
+        WEB["DuckDuckGo Search API"]
+        CMS["Marketing Content Files (.txt)"]
     end
 
-    subgraph "🤖 AGENT LAYER — CrewAI Orchestration"
-        A1["🔍 Search Analyst<br/><i>Intelligence Lead</i>"]
-        A2["🎨 Creative Director<br/><i>Decision Maker</i>"]
-        A3["✍️ Content Strategist<br/><i>Brand Strategist</i>"]
-        A4["📊 Business Reporter<br/><i>Chief Strategy Officer</i>"]
+    subgraph "Agent Layer — CrewAI Sequential Process"
+        A1["Search Analyst"]
+        A2["Creative Director"]
+        A3["Content Strategist"]
+        A4["Business Reporter"]
     end
 
-    subgraph "🛡️ GUARDRAILS LAYER"
-        S1[Vietnamese Sanitizer<br/>CJK Regex Filter]
-        S2[SQL-based Revert<br/>Category Hallucination Fix]
-        S3[Programmatic Fallback<br/>Signal Guarantee]
+    subgraph "Guardrails Layer — Python Post-processing"
+        S1["CJK Regex Filter"]
+        S2["SQL-based Category Revert"]
+        S3["Programmatic Signal Fallback"]
     end
 
-    subgraph "📤 OUTPUT LAYER"
-        RPT[📄 McKinsey-grade Report .md]
-        CHART[📊 Sales Charts .png]
-        SIGNAL[📡 learning_signals DB]
-        DASH[🖥️ FastAPI Dashboard]
+    subgraph "Output Layer"
+        RPT["Report (.md)"]
+        CHART["Charts (.png)"]
+        SIGNAL["learning_signals (SQLite)"]
+        DASH["FastAPI Dashboard"]
     end
 
     DB --> A1
     WEB --> A1
-    A1 -->|Research Data| A2
+    A1 -->|"research context"| A2
     DB --> A2
-    A2 -->|Creative Brief| A3
+    A2 -->|"creative brief"| A3
     CMS --> A3
-    A3 -->|AIDA Content| A4
+    A3 -->|"AIDA content"| A4
     DB --> A4
 
     A4 --> S1 --> S2 --> RPT
     A4 --> CHART
     A4 --> S3 --> SIGNAL
     RPT --> DASH
-    SIGNAL -.->|Feedback Loop| A1
-
-    style A1 fill:#3B82F6,stroke:#1E40AF,color:#fff
-    style A2 fill:#8B5CF6,stroke:#5B21B6,color:#fff
-    style A3 fill:#F59E0B,stroke:#B45309,color:#fff
-    style A4 fill:#EF4444,stroke:#B91C1C,color:#fff
-    style S1 fill:#10B981,stroke:#065F46,color:#fff
-    style S2 fill:#10B981,stroke:#065F46,color:#fff
-    style S3 fill:#10B981,stroke:#065F46,color:#fff
+    SIGNAL -.->|"available for future cycles"| A1
 ```
+
+**Luồng thực thi:** CrewAI điều phối 4 Agent chạy tuần tự (`Process.sequential`). Mỗi Agent nhận context từ task trước đó, gọi tool để lấy dữ liệu, và sinh output truyền cho Agent kế tiếp. Output cuối cùng đi qua lớp guardrails trước khi lưu file.
 
 ---
 
-## 🤖 Đội ngũ Agent — Multi-Agent Workforce
+## Agent & Task Workflow
 
-Hệ thống vận hành 4 Agent chuyên biệt, mỗi Agent được phân quyền công cụ riêng theo nguyên tắc **Principle of Least Privilege**:
+### Agents
 
-| Agent | Vai trò | Công cụ được phép | Nhiệm vụ cốt lõi |
+Mỗi Agent được cấp một tập tool riêng, tuân theo nguyên tắc Least Privilege:
+
+| Agent | Role | Tools | Input | Output |
+|:---|:---|:---|:---|:---|
+| **Search Analyst** | Phân tích thị trường & cạnh tranh | `search_internet`, `query_marketing_db` | Topic nghiên cứu (hardcoded trong `main.py`) | Bảng benchmarking đối thủ, top/bottom model, sentiment data, xu hướng thị trường |
+| **Creative Director** | Ra quyết định định hướng sáng tạo | `query_marketing_db` | Context từ Search Analyst | Creative Brief: tone, angles, personas, key messages, kênh ưu tiên |
+| **Content Strategist** | Thực thi nội dung | `read_marketing_content` | Creative Brief + nội dung marketing nội bộ (.txt) | 3 phương án nội dung theo cấu trúc AIDA |
+| **Business Reporter** | Báo cáo chiến lược & feedback loop | `query_marketing_db`, `save_report`, `create_sales_chart`, `signal_update` | Toàn bộ context từ các Agent trước | Báo cáo 7 phần + biểu đồ + learning signals |
+
+### Task Pipeline
+
+| Stage | Task | Agent | Mô tả |
 |:---:|:---|:---|:---|
-| 🔍 **Search Analyst** | Intelligence Lead — Chuyên gia Phân tích Thị trường & Cạnh tranh | `search_internet`, `query_marketing_db` | Quét đa nguồn (Internet + SQL), xây dựng bản đồ cạnh tranh, xác định lợi thế và rủi ro dựa trên dữ liệu thực |
-| 🎨 **Creative Director** | Decision Maker — Giám đốc Sáng tạo & Ra quyết định | `query_marketing_db` | Phân tích insight từ dữ liệu, xuất **Creative Brief** (Tone, Angles, Personas, Key Messages) — Không viết nội dung, chỉ chỉ huy |
-| ✍️ **Content Strategist** | Brand Strategist — Định vị Thương hiệu | `read_marketing_content` | Thực thi Creative Brief thành 3 phương án nội dung AIDA đẳng cấp, tuân thủ 100% định hướng từ Creative Director |
-| 📊 **Business Reporter** | Chief Strategy Officer (CSO) — Phong cách McKinsey/BCG | `query_marketing_db`, `save_report`, `create_sales_chart`, `signal_update` | Sản xuất báo cáo Executive Excellence 7 phần, vận hành BCG Matrix, quản trị rủi ro, ghi nhận Learning Signals |
-
-> 💡 **Tại sao 4 Agent thay vì 1?** Mỗi Agent có chuyên môn riêng và chỉ truy cập vào đúng loại dữ liệu cần thiết. Search Analyst không thể lưu file. Content Strategist không thể truy vấn SQL tài chính. Điều này ngăn chặn "nhiễu" và tăng chất lượng output từng giai đoạn.
-
----
-
-## 🔄 Pipeline 6 Giai đoạn — Creative Operating Loop
-
-```mermaid
-graph LR
-    S1["<b>Stage 1</b><br/>🔍 Intelligence<br/>Gathering"]
-    S15["<b>Stage 1.5</b><br/>🎨 Creative<br/>Decision"]
-    S2["<b>Stage 2</b><br/>✍️ Content<br/>Execution"]
-    S25["<b>Stage 2.5</b><br/>💰 Financial<br/>Pre-fetch"]
-    S3["<b>Stage 3</b><br/>📊 Executive<br/>Reporting"]
-    S4["<b>Stage 4</b><br/>📡 Signal<br/>Update"]
-
-    S1 --> S15 --> S2 --> S25 --> S3 --> S4
-    S4 -.->|"♻️ Feedback Loop"| S1
-
-    style S1 fill:#3B82F6,stroke:#1E40AF,color:#fff
-    style S15 fill:#8B5CF6,stroke:#5B21B6,color:#fff
-    style S2 fill:#F59E0B,stroke:#B45309,color:#fff
-    style S25 fill:#6366F1,stroke:#3730A3,color:#fff
-    style S3 fill:#EF4444,stroke:#B91C1C,color:#fff
-    style S4 fill:#10B981,stroke:#065F46,color:#fff
-```
-
-| Giai đoạn | Tên | Agent phụ trách | Mô tả |
-|:-:|:---|:---|:---|
-| **1** | Intelligence Gathering | 🔍 Search Analyst | Quét Internet + Truy vấn SQL → Benchmarking đối thủ, phân tích sentiment, xác định model dẫn đầu/yếu nhất |
-| **1.5** | Creative Decision | 🎨 Creative Director | Chuyển hóa dữ liệu thô thành **Creative Brief** → Giọng điệu, Góc tiếp cận, Personas, Key Messages |
-| **2** | Content Execution | ✍️ Content Strategist | Thực thi Creative Brief → 3 phương án nội dung AIDA (Pain Point, Flexing, Opportunity) |
-| **2.5** | Financial Pre-fetch | 📊 Business Reporter | Truy xuất dữ liệu tài chính SQL thuần (ROI, CPA, Revenue theo khu vực) phục vụ báo cáo |
-| **3** | Executive Reporting | 📊 Business Reporter | Soạn báo cáo 7 phần chuẩn McKinsey: Executive Summary → Tài chính → BCG Matrix → Cạnh tranh → Nội dung → Lộ trình 7 ngày → Quản trị Rủi ro |
-| **4** | Signal Update | 📊 Business Reporter | Ghi nhận ≥3 Learning Signals (`low_performer`, `budget_realloc`, `trend_alert`) vào database |
+| 1 | `research_task` | Search Analyst | Truy vấn SQL (competitor\_products, sales, social\_sentiment) + tìm kiếm Internet. Xuất bảng benchmarking, top/bottom products, sentiment |
+| 1.5 | `creative_decision_task` | Creative Director | Phân tích research context → xuất Creative Brief gồm tone, angles, personas, messages. Có thể truy vấn SQL bổ sung để kiểm chứng |
+| 2 | `content_creation_task` | Content Strategist | Thực thi Creative Brief → 3 phương án AIDA (Pain Point, Flexing, Opportunity) |
+| 2.5 | `data_fetch_task` | Business Reporter | Pre-fetch 3 bảng dữ liệu tài chính thuần (ROI/CPA theo kênh, doanh thu theo model, doanh thu theo khu vực) |
+| 3 | `marketing_strategy_task` | Business Reporter | Tổng hợp → báo cáo 7 phần: Executive Summary, Tài chính, BCG Matrix, Cạnh tranh, Nội dung, Lộ trình 7 ngày, Rủi ro |
+| 4 | `signal_update_task` | Business Reporter | Ghi ≥3 learning signals (`low_performer`, `budget_realloc`, `trend_alert`) vào bảng `learning_signals` |
 
 ---
 
-## 💎 Tính năng Kỹ thuật Đặc sắc
+## Chi tiết Triển khai
 
-### 🛡️ 1. Strict Data Grounding — Chống Hallucination bằng SQL
+### 1. Data Grounding — SQL-backed Tool Layer
 
-Thay vì yêu cầu LLM "tự nghĩ ra" số liệu, mọi Agent đều **bắt buộc** phải gọi `query_marketing_db` để lấy dữ liệu thực từ SQLite trước khi đưa ra nhận định. Lớp bảo vệ SQL gồm:
+Agent truy vấn dữ liệu thông qua `EnterpriseDataTools.query_marketing_db()`. Lớp này có các rào cản:
 
 ```
-Lớp 1: Chỉ cho phép câu lệnh SELECT (whitelist)
-Lớp 2: PRAGMA query_only = ON (database-level read-only)
-Lớp 3: Quét từ khóa nguy hiểm (DROP, DELETE, UPDATE, INSERT, ALTER)
-Lớp 4: Hướng dẫn tự sửa lỗi — Agent nhận được gợi ý khi dùng sai tên cột
+Lớp 1: Whitelist — Chỉ chấp nhận câu lệnh bắt đầu bằng SELECT
+Lớp 2: Database-level — PRAGMA query_only = ON
+Lớp 3: Blacklist — Quét từ khóa DROP, DELETE, UPDATE, INSERT, ALTER, TRUNCATE
+Lớp 4: Error guidance — Trả về gợi ý khi Agent dùng sai tên cột
+         (VD: "model" → gợi ý dùng "model_name", "price" → gợi ý dùng "unit_price")
 ```
 
-> **Ví dụ**: Nếu Agent dùng `SELECT model FROM sales`, hệ thống sẽ trả về: *"Lỗi: Dùng `model_name` thay vì `model`."* — Thay vì crash, Agent tự sửa và thử lại.
+Output mặc định là Markdown table, hỗ trợ thêm format JSON khi cần tạo biểu đồ.
 
-### 🚫 2. Programmatic Guardrails — Rào chắn mã nguồn
+### 2. Post-processing Sanitization
 
-Hai cơ chế bảo vệ hoạt động **sau khi** LLM đã sinh output, đảm bảo chất lượng 100% trước khi lưu file:
+Hàm `sanitize_vietnamese_text()` trong `src/tools.py` chạy **sau khi** LLM đã hoàn thành output:
 
-**a) Vietnamese Sanitizer** (`sanitize_vietnamese_text`)
-- Sử dụng Regex quét toàn bộ output, phát hiện và loại bỏ **tuyệt đối** ký tự CJK (Trung Quốc: `\u4e00-\u9fff`, Nhật: `\u3040-\u30ff`, Hàn: `\uac00-\ud7af`).
-- Ngăn chặn hiện tượng **Language Bleeding** — một lỗi phổ biến khi LLM đa ngôn ngữ vô tình trộn lẫn hệ ký tự.
-
-**b) SQL-based Category Revert**
-- Nếu output chứa danh mục chung chung như "Điện tử", "Smartphone", "Electronics", hệ thống sẽ:
-  1. Tra cứu SQL để lấy `model_name` thực tế (VD: `Galaxy S26 Ultra`).
-  2. Tự động thay thế danh mục chung bằng tên model cụ thể.
-- Đảm bảo 100% Data Integrity trong mọi báo cáo.
-
-### 🔄 3. Feedback Loop — Vòng lặp Tự cải thiện
-
-Bảng `learning_signals` trong SQLite lưu trữ các bài học chiến lược sau mỗi chu kỳ:
-
-```sql
-CREATE TABLE learning_signals (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp        TEXT NOT NULL,
-    insight_type     TEXT NOT NULL,    -- 'low_performer' | 'budget_realloc' | 'trend_alert'
-    learning_content TEXT NOT NULL     -- Mô tả chi tiết kèm số liệu
-);
+**a) CJK Filter:**
+```python
+# Regex quét và xóa ký tự Trung (U+4E00–9FFF), Nhật (U+3040–30FF), Hàn (U+AC00–D7AF)
+cjk_pattern = re.compile(r'[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]')
+text = cjk_pattern.sub('', text)
 ```
 
-Cơ chế đảm bảo **double-safety**:
-1. **LLM-driven**: Agent `Business Reporter` gọi tool `signal_update` ≥3 lần trong Stage 4.
-2. **Programmatic Fallback**: Nếu LLM không gọi tool (hoặc gọi < 3 lần), hàm `_ensure_signal_updates()` trong `main.py` sẽ tự động trích xuất và ghi bổ sung signals.
+**b) Category Hallucination Revert:**
+```python
+# Nếu phát hiện danh mục chung ("Điện tử", "Electronics", ...):
+# 1. Tra cứu SQL → lấy model_name có units_sold cao nhất
+# 2. Thay thế danh mục chung bằng model_name thực tế
+```
 
-### ⚡ 4. Error Resilience — Cơ chế tự phục hồi
+Cơ chế revert này hoạt động như một safety net. Nó xử lý được trường hợp phổ biến nhất (thay thế bằng top model), nhưng chưa xử lý được trường hợp LLM gán sai model vào sai vị trí trong bảng.
 
-Pipeline được trang bị **Exponential Backoff Retry**:
+### 3. Programmatic Signal Fallback
+
+Hàm `_ensure_signal_updates()` trong `main.py` kiểm tra sau khi pipeline hoàn tất:
+
+```
+1. Query bảng learning_signals: đếm signals được ghi trong 10 phút gần nhất
+2. Nếu ≥ 3 signals → LLM đã thực hiện đúng → bỏ qua fallback
+3. Nếu < 3 signals → Python tự ghi bổ sung 3 signals mặc định (extractive, từ report content)
+```
+
+Đây là pattern **"trust but verify"** — tin tưởng LLM sẽ thực thi tool, nhưng luôn có logic Python dự phòng.
+
+### 4. Error Resilience
+
+Pipeline wrapper trong `main.py` triển khai Exponential Backoff:
 
 ```python
-# Tự nhận diện lỗi mạng/timeout và retry với delay tăng dần
-retry_delay = 30s → 60s → 120s  (tối đa 3 lần)
-# Nhận diện: Timeout, 504, 502, 503, 429, RateLimitError, ConnectionError
+retry_delay = 30  # giây
+for attempt in range(1, MAX_RETRIES + 1):  # MAX_RETRIES = 3
+    try:
+        result = crew.kickoff()
+        break
+    except Exception as e:
+        if is_retryable(e) and attempt < MAX_RETRIES:
+            time.sleep(retry_delay)
+            retry_delay *= 2  # 30s → 60s → 120s
 ```
 
+Các lỗi được nhận diện để retry: `Timeout`, `504`, `502`, `503`, `429`, `RateLimitError`, `ConnectionError`, `ReadTimeout`.
+
+### 5. LLM Provider Fallback
+
+`MarketingAgents._build_llm()` ưu tiên provider theo thứ tự:
+
+```
+1. NVIDIA NIM  (nvidia_nim/meta/llama-3.3-70b-instruct)  — nếu có NVIDIA_API_KEY
+2. OpenRouter   (openrouter/meta-llama/llama-3.3-70b-instruct:free) — nếu có OPENROUTER_API_KEY
+3. Raise EnvironmentError — nếu cả hai đều thiếu
+```
+
+Tham số chung: `temperature=0.3`, `timeout=600s`, `max_tokens=4096`.
+
 ---
 
-## 🔧 Công nghệ Sử dụng
+## Công nghệ
 
-| Phân loại | Công nghệ | Chi tiết |
+| Thành phần | Công nghệ | Ghi chú |
 |:---|:---|:---|
-| **Ngôn ngữ** | Python 3.10+ | Type hints, pathlib, dataclasses |
-| **Orchestration** | [CrewAI](https://www.crewai.com/) | Sequential Process, multi-agent coordination |
-| **LLM** | Llama-3.3-70B | Primary: NVIDIA NIM, Fallback: OpenRouter (Free tier) |
-| **Database** | SQLite | `marketing_intelligence.db` — 5 bảng, ~100+ records |
-| **Backend** | FastAPI + Uvicorn | REST API, Background Tasks, Jinja2 Templates |
-| **Frontend** | HTML5, CSS, JavaScript | Dashboard trực quan với KPI cards, biểu đồ, report viewer |
-| **Search** | DuckDuckGo (ddgs) | Quét xu hướng Internet real-time |
-| **Visualization** | Matplotlib + Pandas | Auto-generate biểu đồ doanh số `.png` |
-| **Logging** | Python `logging` | File + Console, centralized config |
+| Ngôn ngữ | Python 3.10+ | |
+| Orchestration | CrewAI | Sequential process, 4 agents, 6 tasks |
+| LLM | Llama-3.3-70B | Qua NVIDIA NIM hoặc OpenRouter |
+| Database | SQLite | 5 bảng, dữ liệu synthetic (~100 sales records) |
+| API Server | FastAPI + Uvicorn | REST endpoints, background task execution |
+| Frontend | HTML/CSS/JS + Jinja2 | Dashboard UI (server-rendered) |
+| Web Search | DuckDuckGo (`ddgs`) | Tìm kiếm xu hướng thị trường |
+| Visualization | Matplotlib + Pandas | Bar charts từ dữ liệu SQL |
+| Logging | Python `logging` | File (`logs/system.log`) + Console |
 
 ---
 
-## 🚀 Cài đặt & Thiết lập
+## Cài đặt & Chạy thử
 
-### Yêu cầu Hệ thống
+### Yêu cầu
 
 - Python ≥ 3.10
-- pip (trình quản lý gói Python)
-- API Key từ **NVIDIA NIM** hoặc **OpenRouter** (một trong hai)
+- API Key từ [NVIDIA NIM](https://build.nvidia.com/) hoặc [OpenRouter](https://openrouter.ai/) (cần ít nhất một trong hai)
 
-### Bước 1 — Clone Repository
+### Bước 1 — Clone & tạo Virtual Environment
 
 ```bash
 git clone https://github.com/NgocTanHoang/AI-Marketing-Intelligence.git
 cd "01_AI Agent System for Marketing and Reporting Automation"
-```
 
-### Bước 2 — Khởi tạo Virtual Environment
-
-```bash
 python -m venv venv
-
 # Windows
 venv\Scripts\activate
-
 # macOS / Linux
 source venv/bin/activate
 ```
 
-### Bước 3 — Cài đặt Dependencies
+### Bước 2 — Cài đặt dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Bước 4 — Cấu hình Environment
+### Bước 3 — Cấu hình environment
 
-Tạo file `.env` tại thư mục gốc dự án:
+Tạo file `.env` tại thư mục gốc:
 
 ```env
-# ===== LLM PROVIDER (Chọn ít nhất 1) =====
+# Ít nhất 1 trong 2 key sau phải được cung cấp.
+# Hệ thống ưu tiên NVIDIA NIM, fallback sang OpenRouter.
 
-# Primary — NVIDIA NIM (Khuyến nghị: ổn định, nhanh)
 NVIDIA_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxx
-
-# Fallback — OpenRouter (Miễn phí, dự phòng khi NVIDIA hết quota)
 OPENROUTER_API_KEY=sk-or-xxxxxxxxxxxxxxxxxxxx
 ```
 
-> 💡 **Gợi ý**: Hệ thống tự động ưu tiên NVIDIA NIM. Nếu không có `NVIDIA_API_KEY`, sẽ chuyển sang OpenRouter. Nếu cả hai đều thiếu, pipeline sẽ dừng và thông báo lỗi rõ ràng.
-
-### Bước 5 — Khởi tạo Database
+### Bước 4 — Khởi tạo database
 
 ```bash
 python src/init_db.py
 ```
 
-Lệnh này tạo `data/raw/marketing_intelligence.db` với 5 bảng dữ liệu synthetic:
+Tạo `data/raw/marketing_intelligence.db` với dữ liệu synthetic:
 
-| Bảng | Records | Mô tả |
-|------|---------|-------|
-| `sales` | ~100 | Dữ liệu bán hàng: model, giá, khu vực, nhóm tuổi, phương thức thanh toán |
-| `competitor_products` | 8 | Benchmarking đối thủ: Apple, Samsung, Xiaomi, Oppo, Google, Vivo, Realme, Sony |
-| `marketing_campaigns` | 14 | Chiến dịch marketing: budget, reach, conversions, ROI theo kênh |
-| `social_sentiment` | 8 | Phản hồi thị trường: keyword trends, positive/negative scores, complaints |
-| `sales_performance` | 10 | Hiệu suất bán hàng tổng hợp theo tháng |
+| Bảng | Records | Nội dung |
+|:---|:---:|:---|
+| `sales` | ~100 | Giao dịch bán hàng: brand, model, giá, khu vực, nhóm tuổi, phương thức thanh toán |
+| `competitor_products` | 8 | Thông tin đối thủ: Apple, Samsung, Xiaomi, Oppo, Google, Vivo, Realme, Sony |
+| `marketing_campaigns` | 14 | Chiến dịch: channel, budget, reach, conversions, ROI |
+| `social_sentiment` | 8 | Phản hồi thị trường: keywords, scores, complaints, platforms |
+| `sales_performance` | 10 | Hiệu suất tổng hợp theo tháng |
 
----
-
-## 📈 Hướng dẫn Sử dụng
-
-### Chạy Pipeline AI (Core)
+### Bước 5 — Chạy pipeline
 
 ```bash
 python main.py
 ```
 
-Pipeline sẽ tuần tự thực thi 6 giai đoạn. Thời gian trung bình: **3–8 phút** (phụ thuộc vào tốc độ API).
+Thời gian thực thi: **3–8 phút** (phụ thuộc tốc độ API). Output:
 
-Kết quả được lưu tại:
-- 📄 **Báo cáo**: `data/processed/Smartphone_Strategic_Report_YYYYMMDD_HHMMSS.md`
-- 📊 **Biểu đồ**: `data/processed/*.png`
-- 📡 **Signals**: Tự động ghi vào bảng `learning_signals` trong SQLite
-- 📝 **Logs**: `logs/system.log`
+| File | Vị trí |
+|:---|:---|
+| Báo cáo Markdown | `data/processed/Smartphone_Strategic_Report_YYYYMMDD_HHMMSS.md` |
+| Biểu đồ (nếu có) | `data/processed/*.png` |
+| System log | `logs/system.log` |
+| Learning signals | Bảng `learning_signals` trong SQLite |
 
-### Khởi chạy Dashboard (Web UI)
+### Bước 6 (tuỳ chọn) — Khởi chạy Dashboard
 
 ```bash
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Truy cập: **http://localhost:8000**
-
-Dashboard cung cấp:
-
-| Module | Mô tả |
-|--------|--------|
-| 📊 KPI Summary | Tổng doanh thu, Units sold, ROI trung bình, Sentiment score |
-| 🏆 Performance Ranking | Top 5 / Bottom 5 sản phẩm theo doanh thu & số lượng bán |
-| 💳 Payment Dynamics | Phân bổ phương thức thanh toán, Cross-tab Tuổi × Thanh toán |
-| 📈 Marketing Efficiency | ROI & CPA theo từng kênh marketing |
-| 📄 Report Viewer | Đọc báo cáo chiến lược trực tiếp trên dashboard |
-| 🚀 Pipeline Control | Kích hoạt pipeline từ UI, theo dõi trạng thái & logs real-time |
-| 🔍 Smart Filters | Lọc dữ liệu theo Brand và Region |
+Truy cập `http://localhost:8000`. Dashboard hỗ trợ:
+- Xem KPI tổng hợp (doanh thu, units, ROI, sentiment)
+- Ranking sản phẩm (top/bottom theo doanh thu & số lượng)
+- Phân bổ phương thức thanh toán theo nhóm tuổi
+- ROI & CPA theo kênh marketing
+- Đọc báo cáo trực tiếp
+- Kích hoạt pipeline từ UI + theo dõi logs
+- Lọc theo Brand và Region
 
 ---
 
-## 📂 Cấu trúc Dự án
+## Cấu trúc Thư mục
 
 ```
-📦 AI-Marketing-Intelligence/
-├── 📄 main.py                    # Entry point — Khởi chạy CrewAI Pipeline 6 giai đoạn
-├── 📄 app.py                     # FastAPI Server — Dashboard Web UI & REST APIs
-├── 📄 requirements.txt           # Dependencies (14 packages)
-├── 📄 .env                       # API Keys (không track trong Git)
-├── 📄 LICENSE                    # MIT License
+├── main.py                          # Entry point — Pipeline orchestration, retry logic, fallback
+├── app.py                           # FastAPI server — Dashboard UI & REST API endpoints
+├── requirements.txt                 # 14 Python dependencies
+├── .env                             # API keys (git-ignored)
+├── LICENSE                          # MIT
 │
-├── 📁 src/                       # Core Application Logic
-│   ├── agents.py                 # 🤖 Định nghĩa 4 Agents + LLM Factory (NVIDIA/OpenRouter)
-│   ├── tasks.py                  # 📋 Cấu hình 6 Tasks với prompt engineering chuyên sâu
-│   ├── tools.py                  # 🔧 Enterprise Tools: SQL, Search, Sanitizer, Charts, Signals
-│   ├── config.py                 # ⚙️ Centralized Config: paths, logging, validation
-│   └── init_db.py                # 🗄️ Database Initializer (5 bảng, dữ liệu synthetic)
+├── src/
+│   ├── agents.py                    # 4 Agent definitions + LLM factory (NVIDIA/OpenRouter fallback)
+│   ├── tasks.py                     # 6 Task definitions với structured prompts
+│   ├── tools.py                     # Tool implementations: SQL query, search, sanitizer, chart, signal
+│   ├── config.py                    # Centralized paths, logging, environment validation
+│   └── init_db.py                   # Database seeder (5 tables, synthetic data)
 │
-├── 📁 data/
-│   ├── 📁 raw/
-│   │   ├── marketing_intelligence.db    # SQLite Database chính
-│   │   └── 📁 marketing_content/        # 6 file .txt nội dung marketing nội bộ
-│   ├── 📁 processed/                    # Output: Reports (.md) + Charts (.png)
-│   └── pipeline.log                     # Log chạy pipeline từ Dashboard
+├── data/
+│   ├── raw/
+│   │   ├── marketing_intelligence.db   # SQLite database chính
+│   │   └── marketing_content/          # 6 file .txt — nội dung marketing nội bộ
+│   ├── processed/                      # Output: reports (.md), charts (.png)
+│   └── pipeline.log                    # Pipeline execution log (từ Dashboard)
 │
-├── 📁 templates/                 # Jinja2 Templates cho Dashboard
-│   ├── index.html                # Giao diện chính (54KB — full-featured SPA)
-│   ├── style.css                 # Stylesheet
-│   └── script.js                 # Client-side logic
+├── templates/
+│   ├── index.html                   # Dashboard UI (Jinja2 template)
+│   ├── style.css
+│   └── script.js
 │
-├── 📁 logs/                      # System logs
-│   └── system.log
+├── logs/
+│   └── system.log                   # Centralized application log
 │
-├── 📁 notebooks/                 # Jupyter Notebooks thử nghiệm
+├── notebooks/                       # Jupyter notebooks thử nghiệm
 │   ├── experiments.ipynb
 │   └── checklist.ipynb
 │
-├── 📁 image/README/              # Ảnh minh họa cho README
-└── 📁 config/                    # Cấu hình bổ sung (reserved)
+└── image/README/                    # Ảnh minh họa cho README
 ```
 
 ---
 
-## 🗺️ Lộ trình Phát triển
+## Giới hạn Hiện tại & Lộ trình
 
-| Ưu tiên | Tính năng | Trạng thái | Mô tả |
-|:---:|:---|:---:|:---|
-| 🔴 | **Dockerization** | 📋 Planned | Đóng gói Docker Container + `docker-compose.yml` cho one-click deployment |
-| 🔴 | **Async Pipeline** | 📋 Planned | Chuyển sang `asyncio` + `aiohttp` cho xử lý song song, giảm thời gian pipeline |
-| 🟡 | **Long-term Memory** | 📋 Planned | Tích hợp Vector Database (ChromaDB/Pinecone) để Agents ghi nhớ insight xuyên suốt nhiều tháng |
-| 🟡 | **UI/UX Enhancement** | 📋 Planned | Nâng cấp Dashboard: Dark mode, interactive charts (Chart.js/D3.js), export PDF |
-| 🟢 | **Multi-Market Support** | 💭 Exploring | Mở rộng hỗ trợ đa thị trường (Thailand, Indonesia) với schema linh hoạt |
-| 🟢 | **A/B Testing Module** | 💭 Exploring | So sánh hiệu quả giữa các phương án nội dung AIDA bằng dữ liệu thực tế |
+### Giới hạn
 
----
+| # | Giới hạn | Chi tiết |
+|:---:|:---|:---|
+| 1 | **Dữ liệu synthetic** | Database hiện tại chứa dữ liệu demo được sinh ngẫu nhiên, không phản ánh thị trường thực tế |
+| 2 | **Sequential processing** | Pipeline chạy tuần tự — thời gian thực thi phụ thuộc hoàn toàn vào tốc độ API của LLM provider |
+| 3 | **Sanitizer coverage** | Category Revert chỉ thay thế bằng top-selling model — chưa xử lý được ánh xạ chính xác model vào đúng vị trí ngữ cảnh |
+| 4 | **Feedback Loop chưa khép kín** | Bảng `learning_signals` được ghi nhưng chưa được đọc tự động ở chu kỳ tiếp theo (cần tích hợp vào prompt context) |
+| 5 | **Single market** | Cấu trúc hiện tại hardcode cho thị trường Việt Nam (4 regions: North, South, Central, Highlands) |
+| 6 | **Không có test suite** | Chưa có unit/integration tests |
 
-## 🤝 Đóng góp & Bản quyền
+### Lộ trình
 
-### Đóng góp
-
-Mọi đóng góp đều được chào đón! Quy trình đề xuất:
-
-1. **Fork** repository
-2. Tạo **feature branch** (`git checkout -b feature/ten-tinh-nang`)
-3. **Commit** thay đổi (`git commit -m 'feat: mô tả ngắn gọn'`)
-4. **Push** lên branch (`git push origin feature/ten-tinh-nang`)
-5. Tạo **Pull Request** với mô tả chi tiết
-
-### Bản quyền
-
-Dự án được phân phối theo **MIT License** — © 2026 [Hoàng Ngọc Tân](https://github.com/NgocTanHoang).
-
-Xem chi tiết tại file [LICENSE](./LICENSE).
+| Ưu tiên | Mục tiêu | Trạng thái |
+|:---:|:---|:---:|
+| P0 | **Dockerization** — `Dockerfile` + `docker-compose.yml` cho reproducible deployment | Planned |
+| P0 | **Async Pipeline** — Chuyển sang xử lý bất đồng bộ để giảm thời gian thực thi | Planned |
+| P1 | **Closed-loop Feedback** — Đọc `learning_signals` vào prompt context ở đầu mỗi chu kỳ | Planned |
+| P1 | **Long-term Memory** — Tích hợp Vector Database (ChromaDB) cho cross-cycle context | Planned |
+| P2 | **Test Suite** — Unit tests cho tools, integration tests cho pipeline | Planned |
+| P2 | **Dashboard Enhancement** — Interactive charts, dark mode, PDF export | Planned |
 
 ---
 
-<p align="center">
-  <sub>Được xây dựng với ❤️ bởi <b>Hoàng Ngọc Tân</b> — Kiến trúc sư AI & Marketing Automation.</sub>
-</p>
+## Bản quyền
+
+MIT License — © 2026 [Hoàng Ngọc Tân](https://github.com/NgocTanHoang)
+
+Xem chi tiết tại [LICENSE](./LICENSE).
