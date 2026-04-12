@@ -4,6 +4,7 @@
 [![Framework](https://img.shields.io/badge/CrewAI-Agentic%20Orchestration-red)](https://www.crewai.com/)
 [![Intelligence](https://img.shields.io/badge/LLM-Meta--Llama--3.3--70B-purple)](https://www.nvidia.com/en-us/ai/nim/)
 [![Backend](https://img.shields.io/badge/FastAPI-Enterprise--Level-009688)](https://fastapi.tiangolo.com/)
+[![Architecture](https://img.shields.io/badge/Pipeline-Creative%20Operating%20Loop-orange)]()
 
 **AI Marketing Intelligence Hub** là hệ thống đa tác nhân (Multi-Agent System) tiên tiến, được thiết kế để tự động hóa hoàn toàn quy trình phân tích thị trường, đối chiếu dữ liệu doanh nghiệp và xây dựng kế hoạch truyền thông chiến lược. Hệ thống giải quyết triệt để bài toán sai lệch dữ liệu trong AI (Data Hallucination) bằng cơ chế **Data Grounding** trực tiếp vào hệ quản trị cơ sở dữ liệu doanh nghiệp.
 
@@ -41,11 +42,17 @@ Tích hợp giao diện **FastAPI** chuyên nghiệp, hỗ trợ trình diễn b
 
 ---
 
-## 🧠 Kiến trúc tác nhân (Agent Architecture)
+## 🧠 Kiến trúc tác nhân (Agent Architecture — Creative Operating Loop)
 
 1.  **Search Analyst (Intelligence Lead)**: Chịu trách nhiệm nghiên cứu thị trường, thu thập dữ liệu cạnh tranh và thực hiện phân tích đối sánh (Benchmarking).
-2.  **Content Strategist (Creative Lead)**: Hoạch định chiến lược nội dung, chuyển hóa các kết quả nghiên cứu thành thông điệp truyền thông theo mô hình AIDA.
-3.  **Business Reporter (Strategic Lead)**: Hợp nhất các luồng dữ liệu, thực hiện báo cáo hiệu suất tài chính và đề xuất kế hoạch triển khai chi tiết kèm phân bổ ngân sách.
+2.  **Creative Director (Decision Maker)**: Tầng ra quyết định sáng tạo — phân tích dữ liệu từ Research, áp dụng Brand Guidelines và xuất Creative Brief (Tone, Angles, Target Personas, Key Messages).
+3.  **Content Strategist (Creative Lead)**: Hoạch định chiến lược nội dung, thực thi Creative Brief thành thông điệp truyền thông chuẩn AIDA.
+4.  **Business Reporter (Strategic Lead)**: Hợp nhất dữ liệu, báo cáo hiệu suất tài chính, đề xuất kế hoạch triển khai và ghi nhận bài học chiến lược (Feedback Loop).
+
+### Pipeline: 5-Stage Creative Operating Loop
+```
+Research → Creative Decision → Content Creation → Data Fetch → Executive Report + Signal Update
+```
 
 ---
 
@@ -91,4 +98,4 @@ Truy cập: `http://localhost:8000`
 > Dự án này không chỉ là một ứng dụng AI đơn thuần, mà là một hệ thống **Business Intelligence thế hệ mới**, nơi AI thực sự làm việc dựa trên số liệu kinh doanh cốt lõi của doanh nghiệp.
 
 **Tác giả**: [Ngọc Tân Hoàng](https://github.com/NgocTanHoang)
-**Phiên bản**: 3.0.0 - *Enterprise Readiness*
+**Phiên bản**: 4.0.0 - *Creative Operating Loop*

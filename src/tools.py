@@ -5,7 +5,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import io
 import time
+from datetime import datetime
 from ddgs import DDGS
+from crewai.tools import BaseTool
+from pydantic import Field
 from src.config import setup_logging, DATABASE_PATH, PROCESSED_DATA_DIR, RAW_DATA_DIR, HTTP_TIMEOUT, MAX_RETRIES
 
 # Initialize logger
@@ -48,9 +51,50 @@ def search_internet(query: str):
     return f"Không tìm thấy kết quả cho: {query}"
 
 
+import re
+
+def sanitize_vietnamese_text(text: str) -> str:
+    """
+    Sanitize text bằng Python trước khi lưu file Markdown.
+    Ngăn chặn tuyệt đối Language Bleeding và Category Hallucination.
+    """
+    # 1. Zero tolerance for CJK characters (Tiếng Trung, Nhật, Hàn)
+    # \u4e00-\u9fff: Chinese, \u3040-\u30ff: Japanese, \uac00-\ud7af: Korean
+    cjk_pattern = re.compile(r'[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]')
+    if cjk_pattern.search(text):
+        logger.warning("🚨 [SANITIZER] Phát hiện ký tự ngoại lai (Tiếng Trung/Nhật/Hàn). Đang tiến hành loại bỏ...")
+        text = cjk_pattern.sub('', text)
+
+    # 2. Xóa bỏ Category Hallucinations
+    # Tra cứu các model hợp lệ đang có trong DB
+    try:
+        with sqlite3.connect(DATABASE_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT DISTINCT model_name FROM sales ORDER BY units_sold DESC LIMIT 1")
+            top_model = cursor.fetchone()
+            fallback_model = top_model[0] if top_model else "Galaxy S26 Ultra"
+            
+        generic_categories = ['Điện tử', 'Thời trang', 'Hàng gia dụng', 'Smartphone', 'Electronics', 'Thiết bị điện tử']
+        for cat in generic_categories:
+            if cat in text or cat.lower() in text.lower():
+                logger.warning(f"🚨 [SANITIZER] Phát hiện danh mục chung '{cat}'. Force-revert về model_name...")
+                # Repalce with the top actual model name just to break the hallucination
+                # case-insensitive replace
+                pattern = re.compile(re.escape(cat), re.IGNORECASE)
+                text = pattern.sub(f"{fallback_model} (Sanitized from '{cat}')", text)
+
+    except Exception as e:
+        logger.error(f"[SANITIZER] Lỗi khi xử lý category: {e}")
+
+    return text
+
+
 def save_report(content: str, filename: str):
     """Lưu báo cáo xuống định dạng Markdown (.md) an toàn."""
     try:
+        # Chạy sanitizer chặn đứng hallucination
+        content = sanitize_vietnamese_text(content)
+        
         # Sanitize filename
         filename = os.path.basename(filename)
         full_path = PROCESSED_DATA_DIR / filename
@@ -194,3 +238,70 @@ class EnterpriseDataTools:
         except Exception as e:
             logger.error(f"Lỗi hệ thống SQL không xác định: {e}")
             return f"❌ Lỗi hệ thống SQL: {str(e)}"
+
+
+# ---------------------------------------------------------------------------
+# 5. SIGNAL UPDATE TOOL — Feedback Loop for Continuous Learning
+# ---------------------------------------------------------------------------
+
+class SignalUpdateTool(BaseTool):
+    """
+    Công cụ ghi nhận các bài học chiến lược (Learning Signals) sau mỗi chu kỳ pipeline.
+    Cho phép hệ thống tích lũy tri thức theo thời gian, phục vụ vòng lặp cải tiến liên tục.
+    """
+    name: str = "signal_update"
+    description: str = (
+        "Ghi nhận một bài học chiến lược (Learning Signal) vào database. "
+        "Sử dụng công cụ này để lưu lại các nhận định quan trọng sau mỗi báo cáo, "
+        "ví dụ: kênh marketing hiệu suất thấp, sản phẩm cần tái định vị, "
+        "hoặc xu hướng thị trường mới cần theo dõi. "
+        "Tham số: insight_type (ví dụ: 'low_performer', 'budget_realloc', 'trend_alert', 'content_adjustment') "
+        "và learning_content (mô tả chi tiết bài học)."
+    )
+    db_path: str = Field(default_factory=lambda: str(DATABASE_PATH))
+
+    def _ensure_table(self) -> None:
+        """Tạo bảng learning_signals nếu chưa tồn tại."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS learning_signals (
+                        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp        TEXT NOT NULL,
+                        insight_type     TEXT NOT NULL,
+                        learning_content TEXT NOT NULL
+                    )
+                """)
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Lỗi khi tạo bảng learning_signals: {e}")
+            raise
+
+    def _run(self, insight_type: str = "general", learning_content: str = "") -> str:
+        """
+        Ghi một bài học chiến lược vào bảng learning_signals.
+        """
+        if not learning_content.strip():
+            return "❌ Lỗi: learning_content không được để trống."
+
+        try:
+            self._ensure_table()
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "INSERT INTO learning_signals (timestamp, insight_type, learning_content) VALUES (?, ?, ?)",
+                    (timestamp, insight_type.strip(), learning_content.strip()),
+                )
+                conn.commit()
+
+            logger.info(f"✅ Signal Update: [{insight_type}] {learning_content[:80]}...")
+            return (
+                f"✅ Bài học chiến lược đã được ghi nhận thành công.\n"
+                f"   Thời gian: {timestamp}\n"
+                f"   Loại: {insight_type}\n"
+                f"   Nội dung: {learning_content[:120]}..."
+            )
+        except Exception as e:
+            logger.error(f"Lỗi ghi Signal Update: {e}")
+            return f"❌ Lỗi hệ thống khi ghi bài học: {str(e)}"
