@@ -1,307 +1,262 @@
 import os
-import json
+import re
+import time
 import sqlite3
+import logging
 import pandas as pd
 import matplotlib.pyplot as plt
-import io
-import time
-from datetime import datetime
+from typing import List, Optional, Any
 from ddgs import DDGS
-from crewai.tools import BaseTool
-from pydantic import Field
-from src.config import setup_logging, DATABASE_PATH, PROCESSED_DATA_DIR, RAW_DATA_DIR, HTTP_TIMEOUT, MAX_RETRIES
+from dotenv import load_dotenv
+from crewai.tools import BaseTool, tool
+from pydantic import Field, PrivateAttr
 
-# Initialize logger
-logger = setup_logging("enterprise_tools")
+load_dotenv()
 
-# --- 1. KHỞI TẠO DECORATOR ---
-try:
-    from crewai.tools import tool
-except ImportError:
-    try:
-        from crewai import tool
-    except ImportError:
-        logger.error("Không thể import CrewAI tool decorator. Đảm bảo 'crewai[tools]' đã được cài đặt.")
-        raise ImportError("Không thể import CrewAI tool decorator.")
+# --- 1. CONFIG & LOGGING ---
+logger = logging.getLogger("marketing_tools")
 
-# --- 2. CÁC HÀM STANDALONE ---
+# --- 2. ERROR RESILIENCE: EXPONENTIAL BACKOFF ---
 
-def search_internet(query: str):
+def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0, backoff_factor: float = 2.0):
     """
-    Quét internet để lấy tin tức mới nhất về xu hướng công nghệ hoặc đối thủ.
-    Sử dụng DuckDuckGo với cơ chế retry đơn giản.
+    Decorator implementation of Exponential Backoff for API calls.
     """
-    logger.info(f"Đang tìm kiếm xu hướng: {query}")
-    
-    for attempt in range(MAX_RETRIES):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            last_exception = None
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt == max_retries:
+                        break
+                    
+                    err_msg = str(e)
+                    is_retryable = any(k in err_msg for k in [
+                        "Timeout", "504", "502", "503", "429", "RateLimit", "Connection"
+                    ])
+                    
+                    if not is_retryable:
+                        raise e
+                        
+                    logger.warning(f"Tool {func.__name__} failed (Attempt {attempt+1}/{max_retries+1}). Retrying in {delay}s...")
+                    time.sleep(delay)
+                    delay *= backoff_factor
+            raise last_exception
+        return wrapper
+    return decorator
+
+# --- 3. LANGUAGE SANITIZATION ---
+
+def sanitize_vietnamese_text(text: str, db_path: Optional[str] = None) -> str:
+    """
+    1. Removes CJK characters (Chinese, Japanese, Korean).
+    2. Category Hallucination Revert: Replaces generic categories with top model_name from DB.
+    3. Trims whitespace.
+    """
+    if not text: return ""
+
+    # a) CJK Filter (Chinese, Japanese, Korean blocks)
+    cjk_pattern = re.compile(f'[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]')
+    text = cjk_pattern.sub('', text)
+
+    # b) Category Hallucination Revert (Anchor to SQL Ground Truth)
+    # If LLM says "Smartphone" or "Electronics", we revert to the actual top seller in the DB.
+    hallucination_terms = ["Điện tử", "Electronics", "Smartphone", "Điện thoại", "Thiết bị di động"]
+    if any(term in text for term in hallucination_terms):
         try:
-            ddgs_client = DDGS(timeout=HTTP_TIMEOUT)
-            results = list(ddgs_client.text(query, max_results=5))
-            if results:
-                logger.info(f"Tìm thấy {len(results)} kết quả.")
-                return results
-            logger.warning(f"Không tìm thấy kết quả cho: {query}. Thử lại #{attempt + 1}")
-        except Exception as e:
-            logger.error(f"Lỗi tìm kiếm DuckDuckGo lần {attempt + 1}: {e}")
-            if attempt < MAX_RETRIES - 1:
-                time.sleep(2)
-            else:
-                return f"Lỗi hệ thống tìm kiếm sau {MAX_RETRIES} lần thử: {e}"
-                
-    return f"Không tìm thấy kết quả cho: {query}"
-
-
-import re
-
-def sanitize_vietnamese_text(text: str) -> str:
-    """
-    Sanitize text bằng Python trước khi lưu file Markdown.
-    Ngăn chặn tuyệt đối Language Bleeding và Category Hallucination.
-    """
-    # 1. Zero tolerance for CJK characters (Tiếng Trung, Nhật, Hàn)
-    # \u4e00-\u9fff: Chinese, \u3040-\u30ff: Japanese, \uac00-\ud7af: Korean
-    cjk_pattern = re.compile(r'[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]')
-    if cjk_pattern.search(text):
-        logger.warning("🚨 [SANITIZER] Phát hiện ký tự ngoại lai (Tiếng Trung/Nhật/Hàn). Đang tiến hành loại bỏ...")
-        text = cjk_pattern.sub('', text)
-
-    # 2. Xóa bỏ Category Hallucinations
-    # Tra cứu các model hợp lệ đang có trong DB
-    try:
-        with sqlite3.connect(DATABASE_PATH) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT DISTINCT model_name FROM sales ORDER BY units_sold DESC LIMIT 1")
-            top_model = cursor.fetchone()
-            fallback_model = top_model[0] if top_model else "Galaxy S26 Ultra"
+            if not db_path:
+                from src.config import DATABASE_PATH
+                db_path = str(DATABASE_PATH)
             
-        generic_categories = ['Điện tử', 'Thời trang', 'Hàng gia dụng', 'Smartphone', 'Electronics', 'Thiết bị điện tử']
-        for cat in generic_categories:
-            if cat in text or cat.lower() in text.lower():
-                logger.warning(f"🚨 [SANITIZER] Phát hiện danh mục chung '{cat}'. Force-revert về model_name...")
-                # Repalce with the top actual model name just to break the hallucination
-                # case-insensitive replace
-                pattern = re.compile(re.escape(cat), re.IGNORECASE)
-                text = pattern.sub(f"{fallback_model} (Sanitized from '{cat}')", text)
-
-    except Exception as e:
-        logger.error(f"[SANITIZER] Lỗi khi xử lý category: {e}")
-
-    return text
-
-
-def save_report(content: str, filename: str):
-    """Lưu báo cáo xuống định dạng Markdown (.md) an toàn."""
-    try:
-        # Chạy sanitizer chặn đứng hallucination
-        content = sanitize_vietnamese_text(content)
-        
-        # Sanitize filename
-        filename = os.path.basename(filename)
-        full_path = PROCESSED_DATA_DIR / filename
-        
-        with open(full_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        
-        logger.info(f"Báo cáo đã được lưu: {full_path}")
-        return f"Báo cáo đã được lưu thành công tại: {full_path}"
-    except Exception as e:
-        logger.error(f"Lỗi lưu báo cáo: {e}")
-        return f"❌ Lỗi lưu báo cáo: {e}"
-
-
-def create_sales_chart(data_json: str, chart_name: str = "sales_report.png", y_col: str = "units_sold"):
-    """
-    Chuyển đổi dữ liệu JSON từ SQL thành biểu đồ cột (Bar Chart).
-    """
-    logger.info(f"Đang vẽ biểu đồ {chart_name} cho cột {y_col}")
-    try:
-        try:
-            df = pd.read_json(io.StringIO(data_json))
+            with sqlite3.connect(db_path) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT model_name FROM sales GROUP BY model_name ORDER BY SUM(units_sold) DESC LIMIT 1")
+                top_model = cur.fetchone()
+                if top_model:
+                    for term in hallucination_terms:
+                        text = text.replace(term, top_model[0])
         except Exception as e:
-            logger.error(f"Dữ liệu JSON vẽ biểu đồ không hợp lệ: {e}")
-            return "❌ Lỗi: Dữ liệu truyền vào vẽ biểu đồ không phải JSON hợp lệ. Hãy gọi SQL query trước."
+            logger.error(f"Sanitizer Revert failed: {e}")
 
-        if 'model_name' not in df.columns or y_col not in df.columns:
-            logger.warning(f"JSON thiếu cột yêu cầu. Hiện có: {list(df.columns)}")
-            return f"❌ Lỗi: Thiếu cột 'model_name' hoặc '{y_col}'."
+    return text.strip()
 
-        plt.figure(figsize=(10, 6))
-        color = 'skyblue' if y_col == 'units_sold' else 'orange'
-        y_label = 'Số lượng bán' if y_col == 'units_sold' else 'Doanh thu (VNĐ)'
-        
-        plt.bar(df['model_name'], df[y_col], color=color)
-        plt.title(f'Phân tích {y_label}')
-        plt.xlabel('Model')
-        plt.ylabel(y_label)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-
-        output_path = PROCESSED_DATA_DIR / chart_name
-        plt.savefig(output_path)
-        plt.close()
-        
-        logger.info(f"Đã lưu biểu đồ thành công: {output_path}")
-        return f"✅ Biểu đồ đã được lưu tại: {output_path}"
-    except Exception as e:
-        plt.close()
-        logger.error(f"Lỗi vẽ biểu đồ: {e}")
-        return f"❌ Lỗi vẽ biểu đồ: {str(e)}"
-
-
-def read_marketing_content(dummy_arg: str = "") -> str:
-    """Đọc toàn bộ nội dung trong thư mục data/raw/marketing_content/ (.txt)"""
-    logger.info("Đang đọc dữ liệu marketing nội bộ.")
-    content_dir = RAW_DATA_DIR / "marketing_content"
-    
-    if not content_dir.exists():
-        logger.warning(f"Thư mục Content không tồn tại: {content_dir}")
-        return f"❌ Thông tin: Thư mục {content_dir} hiện trống hoặc chưa được khởi tạo."
-    
-    result = []
-    try:
-        for file in os.listdir(content_dir):
-            if file.endswith(".txt"):
-                path = content_dir / file
-                with open(path, "r", encoding="utf-8") as f:
-                    result.append(f"--- NỘI DUNG FILE: {file} ---\n" + f.read().strip() + "\n")
-        
-        return "\n".join(result) if result else "Tra về chuỗi rỗng vì không có file nào."
-    except Exception as e:
-        logger.error(f"Lỗi đọc file content: {e}")
-        return f"❌ Lỗi hệ thống khi đọc dữ liệu: {e}"
-
-
-# --- Đóng gói CrewAI tools ---
-search_internet = tool(search_internet)
-read_marketing_content = tool(read_marketing_content)
-save_report = tool(save_report)
-create_sales_chart = tool(create_sales_chart)
-
-
-# --- 4. TRUY VẤN DATABASE (PARAMETRIZED QUERIES) ---
+# --- 4. ENTERPRISE DATA TOOLS ---
 
 class EnterpriseDataTools:
-    def __init__(self, db_path=None):
-        self.db_path = str(db_path or DATABASE_PATH)
+    def __init__(self, db_path: Optional[str] = None):
+        if db_path is None:
+            from src.config import DATABASE_PATH
+            self.db_path = str(DATABASE_PATH)
+        else:
+            self.db_path = db_path
 
-    def query_marketing_db(self, query: str, output_format: str = "markdown"):
+    def _validate_query(self, query: str) -> str:
         """
-        Truy vấn SQLite marketing_intelligence.db với cơ chế bảo mật Production.
+        Principal Engineer's Guardrail:
+        1. Prevents SQL Injection by whitelisting SELECT.
+        2. Enforces LIMIT to prevent memory overflow or infinite reading.
+        3. Simple blacklist for destructive commands.
         """
-        # Lớp bảo vệ 1: Chỉ cho phép SELECT
-        normalized = query.strip().upper()
-        if not normalized.startswith("SELECT"):
-            logger.warning(f"Phát hiện truy vấn không hợp lệ: {query}")
-            return "❌ Bảo mật: Chỉ cho phép câu lệnh xem dữ liệu (SELECT)."
-
-        logger.info(f"Thực thi truy vấn SQL: {query[:100]}...")
+        q = query.strip().upper()
         
+        # Guard 1: Read-only check
+        if not q.startswith("SELECT"):
+            raise ValueError("Chỉ chấp nhận lệnh SELECT để đảm bảo an toàn dữ liệu.")
+        
+        # Guard 2: Destructive keyword blacklist
+        destructive = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "EXEC", "CREATE"]
+        if any(re.search(rf"\b{word}\b", q) for word in destructive):
+            raise ValueError(f"Phát hiện từ khóa bị cấm: {destructive}")
+        
+        # Guard 3: Multiple statements check
+        if ";" in query:
+             # Allow if it's the last char, but block if multiple
+             if query.rstrip().count(";") > 1 or not query.rstrip().endswith(";"):
+                 raise ValueError("Chỉ chấp nhận một câu lệnh SQL duy nhất.")
+
+        # Guard 4: Enforce LIMIT
+        if "LIMIT" not in q:
+            query = query.rstrip().rstrip(";") + " LIMIT 50"
+        
+        return query
+
+    def query_marketing_db(self, query: str, output_format: str = "markdown") -> str:
+        """Truy vấn SQLite Marketing Intelligence với lớp bảo mật Validated Execution."""
         try:
-            # Lớp bảo vệ 2: Database-level Read-Only & Context Management
+            validated_query = self._validate_query(query)
+            
             with sqlite3.connect(self.db_path) as conn:
+                # database-level read-only
                 conn.execute("PRAGMA query_only = ON")
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
                 
-                # Để hỗ trợ LLM linh hoạt hơn nhưng vẫn an toàn, 
-                # chúng ta thực hiện rà soát các từ khóa nguy hiểm
-                forbidden = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE"]
-                if any(word in normalized for word in forbidden):
-                    logger.warning(f"Phát hiện từ khóa nguy hiểm trong SQL: {query}")
-                    return "❌ Bảo mật: Phát hiện từ khóa bị cấm."
-
-                cursor.execute(query) # SQL Injection protection as this is read-only schema
-                rows = cursor.fetchall()
-
-            if not rows:
-                logger.info("Truy vấn SQL không trả về kết quả.")
-                return "❌ Thông tin: Không tìm thấy dữ liệu phù hợp trong SQL doanh nghiệp."
-
-            columns = rows[0].keys()
-
-            if output_format.lower() == "json":
-                return json.dumps([dict(row) for row in rows], ensure_ascii=False)
-
-            # Mặc định: Trả về định dạng Markdown Table
-            header = "| " + " | ".join(columns) + " |"
-            separator = "| " + " | ".join(["---"] * len(columns)) + " |"
-            body = "\n".join(["| " + " | ".join(map(str, row)) + " |" for row in rows])
-            return f"\n{header}\n{separator}\n{body}\n"
-
-        except sqlite3.OperationalError as e:
-            err = str(e).lower()
-            logger.error(f"Lỗi vận hành SQL: {err}")
-            # Giải pháp hướng dẫn cho AI Agent
-            if "no such column: model" in err: return "Lỗi: Dùng 'model_name' thay vì 'model'."
-            if "no such column: price" in err: return "Lỗi: Dùng 'unit_price' hoặc 'current_price'."
-            return f"❌ Lỗi SQL: {err}"
+                df = pd.read_sql_query(validated_query, conn)
+                
+                if df.empty:
+                    return "Không tìm thấy kết quả nào trong Database."
+                
+                if output_format == "markdown":
+                    return df.to_markdown(index=False)
+                return df.to_json(orient="records")
+                
         except Exception as e:
-            logger.error(f"Lỗi hệ thống SQL không xác định: {e}")
-            return f"❌ Lỗi hệ thống SQL: {str(e)}"
+            # Error guidance for the Agent
+            err_msg = str(e)
+            if "no such column: model" in err_msg.lower():
+                return "Lỗi: Không có cột 'model'. Gợi ý: Hãy dùng 'model_name'."
+            if "no such column: price" in err_msg.lower():
+                return "Lỗi: Không có cột 'price'. Gợi ý: Dùng 'unit_price' trong bảng sales hoặc 'current_price' trong competitor_products."
+            return f"SQL Error: {err_msg}"
 
+# --- 5. STANDALONE TOOLS ---
 
-# ---------------------------------------------------------------------------
-# 5. SIGNAL UPDATE TOOL — Feedback Loop for Continuous Learning
-# ---------------------------------------------------------------------------
+@tool("search_internet")
+@retry_with_backoff(max_retries=3)
+def search_internet(query: str) -> str:
+    """Quét internet để lấy tin tức mới nhất về xu hướng công nghệ hoặc đối thủ."""
+    try:
+        ddgs_client = DDGS()
+        results = list(ddgs_client.text(query, max_results=5))
+        if not results: return f"Không tìm thấy kết quả cho: {query}"
+        
+        formatted = []
+        for r in results:
+            formatted.append(f"Tiêu đề: {r['title']}\nURL: {r['href']}\nBody: {r['body']}\n")
+        return "\n---\n".join(formatted)
+    except Exception as e:
+        logger.error(f"Search failed: {e}")
+        return f"Lỗi tìm kiếm (API Timeout): {e}"
+
+@tool("read_marketing_content")
+def read_marketing_content(file_name: str) -> str:
+    """Đọc tài liệu marketing nội bộ từ data/raw/marketing_content/."""
+    from src.config import RAW_DATA_DIR
+    content_dir = RAW_DATA_DIR / "marketing_content"
+    
+    # Path traversal protection
+    safe_name = os.path.basename(file_name)
+    file_path = content_dir / safe_name
+    
+    if not file_path.exists():
+        # List available files to help the Agent
+        available = [f.name for f in content_dir.glob("*.txt")]
+        return f"File '{safe_name}' không tồn tại. File khả dụng: {available}"
+    
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except Exception as e:
+        return f"Lỗi đọc nội dung: {e}"
+
+@tool("save_report")
+def save_report(content: str, filename: str) -> str:
+    """Lưu báo cáo chiến lược xuống định dạng Markdown (.md) sau khi đã làm sạch ngôn ngữ."""
+    from src.config import PROCESSED_DATA_DIR
+    
+    sanitized_content = sanitize_vietnamese_text(content)
+    
+    safe_name = os.path.basename(filename)
+    if not safe_name.endswith(".md"): safe_name += ".md"
+    
+    full_path = PROCESSED_DATA_DIR / safe_name
+    try:
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(sanitized_content)
+        return f"Báo cáo đã được lưu an toàn tại: {full_path.name}"
+    except Exception as e:
+        return f"Lỗi lưu file: {e}"
+
+@tool("create_sales_chart")
+def create_sales_chart(data_json: str, title: str, chart_type: str = "bar") -> str:
+    """Tạo biểu đồ PNG từ dữ liệu JSON (keys: label, value). Trả về đường dẫn file."""
+    from src.config import PROCESSED_DATA_DIR
+    import json
+    
+    try:
+        data = json.loads(data_json)
+        df = pd.DataFrame(data)
+        
+        if df.empty or len(df.columns) < 2:
+            return "Lỗi: Dữ liệu JSON không hợp lệ để tạo biểu đồ."
+        
+        plt.figure(figsize=(10, 6))
+        # Assuming first col is label, second is numerical
+        cols = df.columns
+        plt.bar(df[cols[0]], df[cols[1]], color='skyblue')
+        plt.title(title)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        
+        filename = f"chart_{int(time.time())}.png"
+        save_path = PROCESSED_DATA_DIR / filename
+        plt.savefig(save_path)
+        plt.close()
+        
+        return f"Biểu đồ đã được tạo: {filename}"
+    except Exception as e:
+        return f"Lỗi tạo biểu đồ: {e}"
+
+# --- 6. CLASSES AS TOOLS (CrewAI Style) ---
 
 class SignalUpdateTool(BaseTool):
-    """
-    Công cụ ghi nhận các bài học chiến lược (Learning Signals) sau mỗi chu kỳ pipeline.
-    Cho phép hệ thống tích lũy tri thức theo thời gian, phục vụ vòng lặp cải tiến liên tục.
-    """
     name: str = "signal_update"
-    description: str = (
-        "Ghi nhận một bài học chiến lược (Learning Signal) vào database. "
-        "Sử dụng công cụ này để lưu lại các nhận định quan trọng sau mỗi báo cáo, "
-        "ví dụ: kênh marketing hiệu suất thấp, sản phẩm cần tái định vị, "
-        "hoặc xu hướng thị trường mới cần theo dõi. "
-        "Tham số: insight_type (ví dụ: 'low_performer', 'budget_realloc', 'trend_alert', 'content_adjustment') "
-        "và learning_content (mô tả chi tiết bài học)."
-    )
-    db_path: str = Field(default_factory=lambda: str(DATABASE_PATH))
-
-    def _ensure_table(self) -> None:
-        """Tạo bảng learning_signals nếu chưa tồn tại."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS learning_signals (
-                        id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp        TEXT NOT NULL,
-                        insight_type     TEXT NOT NULL,
-                        learning_content TEXT NOT NULL
-                    )
-                """)
-                conn.commit()
-        except Exception as e:
-            logger.error(f"Lỗi khi tạo bảng learning_signals: {e}")
-            raise
-
-    def _run(self, insight_type: str = "general", learning_content: str = "") -> str:
+    description: str = "Ghi nhận bài học chiến lược (learning signals) vào database để Agent chu kỳ sau tham khảo."
+    
+    def _run(self, insight_type: str, learning_content: str) -> str:
         """
-        Ghi một bài học chiến lược vào bảng learning_signals.
+        Lưu ý: insight_type nên thuộc: 'low_performer', 'budget_realloc', 'trend_alert'.
         """
-        if not learning_content.strip():
-            return "❌ Lỗi: learning_content không được để trống."
-
+        from src.config import DATABASE_PATH
         try:
-            self._ensure_table()
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute(
-                    "INSERT INTO learning_signals (timestamp, insight_type, learning_content) VALUES (?, ?, ?)",
-                    (timestamp, insight_type.strip(), learning_content.strip()),
+            with sqlite3.connect(str(DATABASE_PATH)) as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO learning_signals (insight_type, learning_content) VALUES (?, ?)",
+                    (insight_type, sanitize_vietnamese_text(learning_content))
                 )
                 conn.commit()
-
-            logger.info(f"✅ Signal Update: [{insight_type}] {learning_content[:80]}...")
-            return (
-                f"✅ Bài học chiến lược đã được ghi nhận thành công.\n"
-                f"   Thời gian: {timestamp}\n"
-                f"   Loại: {insight_type}\n"
-                f"   Nội dung: {learning_content[:120]}..."
-            )
+            return f"✅ Đã ghi nhận signal [{insight_type}] thành công."
         except Exception as e:
-            logger.error(f"Lỗi ghi Signal Update: {e}")
-            return f"❌ Lỗi hệ thống khi ghi bài học: {str(e)}"
+            return f"Lỗi ghi signal: {e}"

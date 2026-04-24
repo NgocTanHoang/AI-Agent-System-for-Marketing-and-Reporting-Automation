@@ -16,6 +16,7 @@ lib-cov
 
 # Coverage directory used by tools like istanbul
 coverage
+.pytest_cache/
 
 # nyc data
 .nyc_output

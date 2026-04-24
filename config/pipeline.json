@@ -1,0 +1,12 @@
+{
+  "pipeline": {
+    "market_topic": "Xu huong smartphone 2026 va thi truong AI Phone",
+    "report_prefix": "Smartphone_Strategic_Report",
+    "feedback_signal_limit": 5,
+    "feedback_lookback_days": 30,
+    "signal_recent_window_minutes": 10
+  },
+  "analysis": {
+    "allowed_regions": ["North", "South", "Central", "Highlands"]
+  }
+}

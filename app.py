@@ -18,10 +18,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config import setup_logging, DATABASE_PATH, PROCESSED_DATA_DIR, PROJECT_ROOT
+from src.config import DATABASE_PATH, PROCESSED_DATA_DIR, PROJECT_ROOT, load_pipeline_settings, setup_logging
+from src.runtime_data import build_social_posts, get_dashboard_model_info
 
 # Initialize logger
 logger = setup_logging("fastapi_app")
+SETTINGS = load_pipeline_settings()
 
 app = FastAPI(title="AI Marketing Intelligence Dashboard")
 
@@ -234,32 +236,45 @@ async def get_report(filename: str):
     sections = _get_sections(content)
     return {"filename": filename, "content": content, "sections": sections}
 
+from pydantic import BaseModel
+import uuid
+
+class RateRequest(BaseModel):
+    filename: str
+    rating: str
+
+@app.post("/api/rate-report")
+async def rate_report(req: RateRequest):
+    if req.rating != "up":
+        return {"status": "ignored", "message": "Only thumbs up are saved to Vector DB."}
+        
+    path = PROCESSED_DATA_DIR / req.filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    content = path.read_text(encoding="utf-8")
+    
+    try:
+        from src.vector_db import ReportHistoryDB
+        vector_db = ReportHistoryDB()
+        vector_db.add_report(
+            report_id=str(uuid.uuid4()),
+            content=content,
+            topic=SETTINGS['pipeline']['market_topic']
+        )
+        logger.info(f"📚 Đã lưu báo cáo {req.filename} vào Vector DB (Được đánh giá Tốt).")
+        return {"status": "success", "message": "Saved to Vector DB as few-shot example."}
+    except Exception as e:
+        logger.error(f"Lỗi khi lưu vào Vector DB: {e}")
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
 @app.get("/api/model-info")
 async def get_model_info():
-    return {
-        "primary_model": {
-            "name": "Llama 3.3 70B", "provider": "NVIDIA NIM", "model_id": "meta/llama-3.3-70b-instruct",
-            "parameters": "70B", "temperature": 0.3, "context_window": "128K", "api_connected": True
-        },
-        "orchestrator": {
-            "name": "CrewAI", "version": "0.1",
-            "agents": [
-                {"role": "Intelligence Lead", "tools": ["search_internet", "query_marketing_db"]},
-                {"role": "Brand Strategist", "tools": ["read_marketing_content"]},
-                {"role": "Chief Strategy Officer (CSO)", "tools": ["query_marketing_db", "create_sales_chart"]}
-            ]
-        },
-        "tools": [
-            {"name": "search_internet", "type": "Web", "desc": "Tìm kiếm xu hướng"},
-            {"name": "query_marketing_db", "type": "SQL", "desc": "Truy xuất dữ liệu"},
-            {"name": "create_sales_chart", "type": "Chart", "desc": "Vẽ biểu đồ"}
-        ],
-        "backup_provider": {"name": "OpenRouter", "api_connected": True}
-    }
+    return get_dashboard_model_info(settings=SETTINGS)
 
 @app.get("/api/social-posts")
 async def social_posts():
-    return {"posts": []} # Fallback
+    return {"posts": build_social_posts(limit=SETTINGS["dashboard"]["social_post_limit"])}
 
 if __name__ == "__main__":
     import uvicorn

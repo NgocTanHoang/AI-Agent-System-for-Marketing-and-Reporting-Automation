@@ -1,6 +1,7 @@
 """
 MarketingTasks — Pipeline 4 stages theo chuẩn Executive Strategic Reporting.
-Quy trình được thiết kế nhằm mang lại các nhận định (Insights) mang tầm vóc chiến lược.
+Nâng cấp: Chain-of-Thought Reasoning, SWOT/PESTEL/Forecasting,
+          Segment-based Content (Gen Z / Doanh nhân / Phổ thông).
 """
 from typing import List
 from textwrap import dedent
@@ -24,54 +25,113 @@ _REGION_NOTE = f"⚠️ CHỈ DÙNG 4 KHU VỰC NÀY: {_REGIONS}."
 class MarketingTasks:
 
     # ══════════════════════════════════════════════════════════════════════════
-    # STAGE 1 — TÌNH BÁO THỊ TRƯỜNG & BENCHMARKING ĐỐI THỦ
+    # STAGE 1 — TÌNH BÁO THỊ TRƯỜNG & COMPETITOR BENCHMARKING
     # ══════════════════════════════════════════════════════════════════════════
 
     def research_task(self, agent, market_topic: str) -> Task:
         return Task(
             description=dedent(f"""
-                NHIỆM VỤ: Intelligence Intelligence — Phân tích {market_topic}
-                
+                NHIỆM VỤ: Competitor Benchmarking & Market Intelligence — Phân tích {market_topic}
+
                 {_REGION_NOTE}
 
-                BƯỚC 1 — BENCHMARKING ĐỐI THỦ (Bắt buộc SQL, ≥ 3 đối thủ):
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought — Tuân thủ nghiêm ngặt):
+                Với MỖI bước bên dưới, bạn PHẢI suy luận theo 3 giai đoạn:
+                  (a) THU THẬP: Gọi SQL hoặc Search để lấy dữ liệu thô.
+                  (b) PHÂN TÍCH: Đọc dữ liệu → xác định pattern, anomaly, và gap.
+                  (c) KẾT LUẬN: Đưa ra 1 nhận định chiến lược dựa trên bằng chứng.
+
+                ═══════════════════════════════════════════════
+                BƯỚC 1 — BENCHMARKING ĐỐI THỦ (Bắt buộc SQL + Internet Search)
+                ═══════════════════════════════════════════════
+
+                1A. Truy vấn SQL — Dữ liệu nội bộ:
                     SELECT brand, model_name, key_features, current_price,
                            strengths, weaknesses
                     FROM competitor_products
                     ORDER BY current_price DESC
-                    LIMIT 6
+                    LIMIT 8
 
-                Xuất bảng: | Đối Thủ | Model | Tính Năng Nổi Bật | Giá Niêm Yết (VNĐ) | Lợi Thế Cạnh Tranh | Gót Chân Achilles |
-                Lưu ý định dạng tiền tệ: 32,000,000 VNĐ.
+                1B. Internet Search — Dữ liệu thị trường VN thực tế:
+                    Tìm kiếm CỤ THỂ 3 chủ đề sau (mỗi chủ đề 1 lần search riêng):
+                    - "Giá bán thực tế [model_name] tại Việt Nam 2026 Shopee TGDĐ"
+                    - "Đánh giá [model_name] review người dùng Việt Nam"
+                    - "So sánh cấu hình smartphone flagship 2026 Việt Nam"
 
-                BƯỚC 1.5 — MODEL DẪN ĐẦU DOANH THU (Bắt buộc SQL):
-                    SELECT model_name, SUM(units_sold * unit_price) AS revenue
+                1C. Suy luận — Đối chiếu nội bộ vs thị trường:
+                    - Giá nội bộ (current_price) khác giá thực tế bao nhiêu %?
+                    - Điểm mạnh/yếu trong SQL có khớp với phản hồi người dùng thực tế không?
+
+                Xuất bảng ENRICHED (kết hợp SQL + Search):
+                | Đối Thủ | Model | Cấu hình (Chip/Camera/Pin) | Giá Niêm Yết (VNĐ) | Giá Thực Tế VN | Lợi Thế | Gót Chân Achilles | Phản hồi Người dùng VN |
+
+                ═══════════════════════════════════════════════
+                BƯỚC 2 — MODEL DẪN ĐẦU DOANH THU (Bắt buộc SQL)
+                ═══════════════════════════════════════════════
+
+                    SELECT model_name, SUM(units_sold * unit_price) AS revenue,
+                           SUM(units_sold) AS total_units
                     FROM sales
                     GROUP BY model_name
                     ORDER BY revenue DESC
-                    LIMIT 1
+                    LIMIT 5
 
-                BƯỚC 2 — PHÂN TÍCH ƯU THẾ & RỦI RO (Dựa trên dữ liệu SQL):
-                - ✅ Lợi thế cạnh tranh vượt trội: Nêu rõ thông số và ưu thế so với đối thủ trực tiếp.
-                - ❌ Thách thức cạnh tranh hiện hữu: Phân tích khách quan các điểm chưa tối ưu.
+                Suy luận:
+                → Model #1 dẫn đầu vì lý do gì? (Giá cao? Volume lớn? Cả hai?)
+                → Gap giữa #1 và #2 có đáng lo ngại về Concentration Risk không?
 
-                BƯỚC 3 — PHÂN TÍCH ĐƠN VỊ ĐÃI NGỘ THẤP (Bắt buộc SQL):
+                ═══════════════════════════════════════════════
+                BƯỚC 3 — CẤU HÌNH KỸ THUẬT CHI TIẾT (Internet Search)
+                ═══════════════════════════════════════════════
+
+                Tìm kiếm và tổng hợp bảng so sánh cấu hình (≥4 models từ Bước 1):
+                | Model | Chipset (AnTuTu) | Camera Chính | Pin (mAh) + Sạc (W) | Màn hình (Hz/nits) | RAM/ROM |
+
+                Suy luận:
+                → Model nào có cấu hình vượt trội nhất ở MỖI tiêu chí?
+                → Model nào "thua" về spec nhưng thắng về doanh thu? Tại sao?
+
+                ═══════════════════════════════════════════════
+                BƯỚC 4 — PHẢN HỒI NGƯỜI DÙNG VIỆT NAM (SQL + Search)
+                ═══════════════════════════════════════════════
+
+                4A. SQL — Social Sentiment nội bộ:
+                    SELECT keyword, top_complaint, negative_score,
+                           positive_score, total_mentions, trending_platform
+                    FROM social_sentiment
+                    ORDER BY negative_score DESC
+                    LIMIT 5
+
+                4B. Internet Search — Review thực tế:
+                    Tìm "phàn nàn phổ biến nhất [top model] tại Việt Nam 2026"
+
+                4C. Suy luận — Tổng hợp phản hồi:
+                    Xuất bảng:
+                    | Model | Top 3 Lời khen | Top 3 Phàn nàn | Điểm đánh giá TB | Nguồn |
+
+                ═══════════════════════════════════════════════
+                BƯỚC 5 — SẢN PHẨM HIỆU SUẤT THẤP (Bắt buộc SQL)
+                ═══════════════════════════════════════════════
+
                     SELECT model_name, region, SUM(units_sold) AS total_units,
                            ROUND(AVG(unit_price), 0) AS avg_price
                     FROM sales
                     GROUP BY model_name, region
                     ORDER BY total_units ASC
-                    LIMIT 2
-
-                BƯỚC 4 — PHẢN HỒI THỊ TRƯỜNG — Social Sentiment (Bắt buộc SQL):
-                    SELECT keyword, top_complaint, negative_score,
-                           total_mentions, trending_platform
-                    FROM social_sentiment
-                    ORDER BY negative_score DESC
                     LIMIT 3
 
-                BƯỚC 5 — PHÂN TÍCH XU HƯỚNG NGƯỜI TIÊU DÙNG:
-                Sử dụng công cụ tìm kiếm để xác định 3 xu hướng (Trend) đang định hình thị trường smartphone tại Việt Nam.
+                Suy luận:
+                → Model nào đang underperform? Tại khu vực nào?
+                → Nguyên nhân có phải do giá, do kênh phân phối, hay do đối thủ?
+
+                ═══════════════════════════════════════════════
+                BƯỚC 6 — XU HƯỚNG THỊ TRƯỜNG (Internet Search)
+                ═══════════════════════════════════════════════
+
+                Tìm 3 xu hướng đang định hình thị trường smartphone Việt Nam:
+                - Xu hướng 1: Công nghệ (AI Phone, foldable, satellite, v.v.)
+                - Xu hướng 2: Hành vi tiêu dùng (mua trả góp, TMĐT, v.v.)
+                - Xu hướng 3: Chính sách/Pháp lý (thuế nhập khẩu, bảo hành, v.v.)
 
                 ⚠️ QUY TẮC SQL & ĐỊNH DẠNG:
                 - Model: model_name | Giá: unit_price hoặc current_price.
@@ -79,25 +139,30 @@ class MarketingTasks:
                 - Khu vực: Tuyệt đối chỉ dùng {_REGIONS}.
             """),
             expected_output=dedent("""
-                ## 🛡️ I. Bảng Benchmarking Đối Thủ (Competitive Mapping)
-                | Đối Thủ | Model | Tính Năng Nổi Bật | Giá Niêm Yết (VNĐ) | Lợi Thế Cạnh Tranh | Gót Chân Achilles |
+                ## 🛡️ I. Bảng Benchmarking Đối Thủ Enriched (SQL + Market Data)
+                | Đối Thủ | Model | Cấu hình | Giá Niêm Yết | Giá Thực Tế VN | Lợi Thế | Gót Chân Achilles | Phản hồi VN |
                 (Dữ liệu thực tế, định dạng 32,000,000 VNĐ)
 
-                ## 📈 II. Phân Tích Hiệu Suất Sản Phẩm Dẫn Đầu (Market Leader)
-                *Model: [model_name] | Tổng Doanh Thu: [revenue] VNĐ*
+                ## 📈 II. Bảng Xếp hạng Doanh Thu (Top 5 Models)
+                | Model | Doanh Thu | Số lượng | Phân tích Gap |
+                *Suy luận: [Model #1] dẫn đầu vì [lý do] — Gap vs #2 là [X]%*
 
-                ## ⚔️ III. Đánh Giá Vị Thế Cạnh Tranh
-                - ✅ Ưu Thế Vượt Trội: [Mô tả lợi thế + dữ liệu đối chiếu]
-                - ❌ Thách Thức Hiện Hữu: [Phân tích rủi ro/điểm yếu từ dữ liệu]
+                ## ⚙️ III. So Sánh Cấu Hình Kỹ Thuật Chi Tiết
+                | Model | Chipset | Camera | Pin + Sạc | Màn hình | RAM/ROM |
+                *Suy luận: [Model X] vượt trội về [Y] nhưng thua [Z] về [W]*
 
-                ## 📉 IV. Danh Mục Sản Phẩm Đang Cần Cải Thiện
+                ## 👥 IV. Phản Hồi Người Dùng Việt Nam (Social Listening + Review)
+                | Model | Top 3 Lời khen | Top 3 Phàn nàn | Điểm TB | Nguồn |
+                *Suy luận: Pain point phổ biến nhất là [X] — cơ hội khai thác: [Y]*
+
+                ## 📉 V. Danh Mục Sản Phẩm Cần Cải Thiện
                 | model_name | region | total_units | avg_price |
-                (Dữ liệu thực tế từ hệ thống)
-
-                ## 💎 V. Insight Từ Phản Hồi Khách Hàng (Social Listening)
-                | keyword | top_complaint | negative_score | trending_platform |
+                *Suy luận: [Model] đang underperform tại [Region] vì [lý do]*
 
                 ## 🚀 VI. Xu Hướng Thị Trường Key Insights
+                - Xu hướng 1 (Công nghệ): [Mô tả + Impact]
+                - Xu hướng 2 (Hành vi): [Mô tả + Impact]
+                - Xu hướng 3 (Chính sách): [Mô tả + Impact]
             """),
             agent=agent,
         )
@@ -107,56 +172,79 @@ class MarketingTasks:
     # ══════════════════════════════════════════════════════════════════════════
 
     def creative_decision_task(self, agent, research_task: Task) -> Task:
-        """Decision Layer: Chuyển hóa dữ liệu thô thành Creative Brief chuẩn xác."""
+        """Decision Layer: Chuyển hóa dữ liệu thô thành Creative Brief theo phân khúc."""
         return Task(
             description=dedent(f"""
-                NHIỆM VỤ: Creative Director — Phân tích kết quả nghiên cứu và ra quyết định định hướng sáng tạo.
+                NHIỆM VỤ: Creative Director — Phân tích kết quả nghiên cứu và ra quyết định
+                định hướng sáng tạo THEO PHÂN KHÚC KHÁCH HÀNG.
 
                 Bạn KHÔNG viết nội dung marketing. Bạn CHỈ ra quyết định chiến lược sáng tạo.
                 Đọc kỹ toàn bộ output từ Intelligence Lead (research_task) và xây dựng một CREATIVE BRIEF
-                có cấu trúc chặt chẽ để định hướng cho Brand Strategist thực thi.
+                có cấu trúc chặt chẽ, PHÂN TÁCH RÕ RÀNG cho 3 phân khúc.
 
                 {_REGION_NOTE}
 
-                PHÂN TÍCH BẮT BUỘC:
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought):
+                BƯỚC 1: Đọc research context → Liệt kê 5 data points quan trọng nhất.
+                BƯỚC 2: Phân loại từng data point: "Insight này hấp dẫn nhất với phân khúc nào?"
+                BƯỚC 3: Thiết kế Tone/Angle/Message RIÊNG cho từng phân khúc.
+                BƯỚC 4: Xuất Creative Brief có cấu trúc rõ ràng.
+
+                ═══════════════════════════════════════════════
+                PHÂN TÍCH BẮT BUỘC
+                ═══════════════════════════════════════════════
 
                 A. DATA INSIGHT EXTRACTION (Rút trích Insight từ dữ liệu):
                    - Xác định Top 1 model dẫn đầu doanh thu và lý do (từ context).
                    - Xác định Top 1 model hiệu suất thấp nhất và nguyên nhân (từ context).
                    - Xác định Top 1 complaint nghiêm trọng nhất từ Social Sentiment (từ context).
                    - Xác định 1-2 điểm yếu nổi bật nhất của đối thủ (từ benchmarking context).
+                   - Xác định cấu hình kỹ thuật nào là lợi thế vượt trội nhất (từ spec comparison).
+                   - Tổng hợp phản hồi người dùng VN: Pain point + Delight factor chung.
 
-                B. STRATEGIC CREATIVE DECISIONS:
-                   1. GIỌNG ĐIỆU (Tone of Voice): Chọn 1 trong các hướng sau và giải thích lý do dựa trên dữ liệu:
-                      - "Confident Premium" (Tự tin đẳng cấp) — Phù hợp khi sản phẩm dẫn đầu doanh thu.
-                      - "Empathetic Problem-Solver" (Thấu hiểu - Giải pháp) — Phù hợp khi có pain point rõ ràng.
-                      - "Bold Challenger" (Thách thức táo bạo) — Phù hợp khi đối thủ có điểm yếu để khai thác.
+                B. CREATIVE DECISIONS THEO 3 PHÂN KHÚC:
 
-                   2. GÓC TIẾP CẬN (Content Angles) — Chọn 3 góc, mỗi góc phải có cơ sở dữ liệu:
-                      - Góc 1: Dựa trên ưu thế kỹ thuật vượt trội so với đối thủ.
-                      - Góc 2: Dựa trên pain point / top complaint từ Social Listening.
-                      - Góc 3: Dựa trên cơ hội thị trường (model cần cải thiện KPI).
+                   ═══════════════════════════════════════
+                   PHÂN KHÚC 1: 🎯 GEN Z (18-25 tuổi)
+                   ═══════════════════════════════════════
+                   - Đặc điểm: Digital native, theo trend, coi trọng thiết kế & camera,
+                     mua hàng qua TMĐT, thanh toán trả góp, bị ảnh hưởng bởi KOL.
+                   - Giọng điệu khuyến nghị: Năng động, ngang hàng, dùng số liệu wow.
+                   - Góc tiếp cận: Từ benchmarking, chọn angle nào hấp dẫn Gen Z nhất?
+                   - Kênh ưu tiên: TikTok (ROI {_ROI_DATA.split(',')[0]}), Instagram.
+                   - Key Message: Câu ngắn, gây tò mò, dễ share.
 
-                   3. ĐỐI TƯỢNG MỤC TIÊU (Target Personas) — Xác định 2 personas ưu tiên:
-                      - Mô tả: Tên persona, độ tuổi, hành vi mua hàng, kênh tiếp cận ưu tiên.
-                      - Cơ sở: Dựa trên dữ liệu customer_age_group và payment_method từ context.
+                   ═══════════════════════════════════════
+                   PHÂN KHÚC 2: 💼 DOANH NHÂN (30-45 tuổi)
+                   ═══════════════════════════════════════
+                   - Đặc điểm: Coi trọng hiệu suất, bảo mật, đẳng cấp & hệ sinh thái,
+                     sẵn sàng trả giá cao, mua tại cửa hàng brand, thanh toán thẻ tín dụng.
+                   - Giọng điệu khuyến nghị: Tinh tế, premium, nhấn mạnh productivity.
+                   - Góc tiếp cận: Từ benchmarking, chọn angle nào thuyết phục Doanh nhân?
+                   - Kênh ưu tiên: YouTube (long-form review), Google Search (intent-based).
+                   - Key Message: Nhấn mạnh ROI cá nhân, thời gian tiết kiệm, đẳng cấp.
 
-                   4. THÔNG ĐIỆP CHỦ ĐẠO (Key Messages) — Chính xác 3 thông điệp:
-                      - Message gắn với Model dẫn đầu (Flexing).
-                      - Message gắn với Pain Point (Solution).
-                      - Message gắn với Model cần cải thiện (Opportunity).
+                   ═══════════════════════════════════════
+                   PHÂN KHÚC 3: 👨‍👩‍👧‍👦 PHỔ THÔNG (25-40 tuổi)
+                   ═══════════════════════════════════════
+                   - Đặc điểm: Coi trọng giá trị/giá tiền, bền bỉ, pin trâu,
+                     so sánh kỹ trước khi mua, bị ảnh hưởng bởi review YouTube & Facebook.
+                   - Giọng điệu khuyến nghị: Thực tế, so sánh rõ ràng, dễ hiểu.
+                   - Góc tiếp cận: Từ benchmarking, chọn angle nào thuyết phục Phổ thông?
+                   - Kênh ưu tiên: Facebook (ROI {_ROI_DATA.split(',')[2]}), KOL review.
+                   - Key Message: "Được nhiều hơn, trả ít hơn" — value proposition rõ ràng.
 
-                   5. KÊNH TRUYỀN THÔNG ƯU TIÊN:
-                      - Dựa trên dữ liệu ROI có sẵn: {_ROI_DATA}
-                      - Xếp hạng 3 kênh ưu tiên để phân bổ nội dung, kèm lý do.
+                C. TỔNG HỢP KÊNH TRUYỀN THÔNG:
+                   - Dựa trên dữ liệu ROI: {_ROI_DATA}
+                   - Phân bổ kênh theo phân khúc — KHÔNG dùng 1 kênh cho tất cả.
 
                 ⚠️ QUY TẮC:
                 - Mọi quyết định PHẢI trích dẫn số liệu cụ thể từ context.
                 - KHÔNG viết nội dung marketing, KHÔNG viết post, KHÔNG viết caption.
-                - Đầu ra là một Creative Brief dạng bảng có cấu trúc rõ ràng.
+                - Đầu ra là một Creative Brief dạng bảng có cấu trúc rõ ràng THEO PHÂN KHÚC.
             """),
             expected_output=dedent("""
-                # 🎯 CREATIVE BRIEF — CHIẾN LƯỢC ĐỊNH HƯỚNG SÁNG TẠO
+                # 🎯 CREATIVE BRIEF — CHIẾN LƯỢC ĐỊNH HƯỚNG SÁNG TẠO THEO PHÂN KHÚC
 
                 ## A. DATA INSIGHTS DASHBOARD
                 | Chỉ số | Giá trị | Nguồn |
@@ -165,80 +253,124 @@ class MarketingTasks:
                 | Model hiệu suất thấp | [model_name] — [units] units | SQL: sales |
                 | Top complaint | [complaint] — Score: [score] | SQL: social_sentiment |
                 | Điểm yếu đối thủ chiến lược | [brand] — [weakness] | SQL: competitor_products |
+                | Cấu hình vượt trội nhất | [model] — [spec detail] | Internet Search |
+                | Phản hồi người dùng VN | [Top khen] / [Top phàn nàn] | Review + SQL |
 
-                ## B. QUYẾT ĐỊNH SÁNG TẠO
-
-                ### 1. Giọng Điệu (Tone)
-                **[Tone đã chọn]** — Lý do: [giải thích dựa trên dữ liệu]
-
-                ### 2. Góc Tiếp Cận (Angles)
-                | # | Góc | Cơ sở dữ liệu |
+                ## B. CREATIVE BRIEF — PHÂN KHÚC GEN Z 🎯
+                | Yếu tố | Quyết định | Cơ sở dữ liệu |
                 |---|---|---|
-                | 1 | [Angle 1] | [Data backing] |
-                | 2 | [Angle 2] | [Data backing] |
-                | 3 | [Angle 3] | [Data backing] |
+                | Tone | [Tone cho Gen Z] | [Data backing] |
+                | Angle | [Angle cho Gen Z] | [Data backing] |
+                | Key Message | [Message cho Gen Z] | [Data backing] |
+                | Kênh ưu tiên | TikTok, Instagram | ROI data |
+                | CTA Style | [Mô tả] | Persona insight |
 
-                ### 3. Target Personas
-                | Persona | Độ tuổi | Hành vi | Kênh ưu tiên |
-                |---|---|---|---|
-                | [Persona 1] | ... | ... | ... |
-                | [Persona 2] | ... | ... | ... |
+                ## C. CREATIVE BRIEF — PHÂN KHÚC DOANH NHÂN 💼
+                | Yếu tố | Quyết định | Cơ sở dữ liệu |
+                |---|---|---|
+                | Tone | [Tone cho Doanh nhân] | [Data backing] |
+                | Angle | [Angle cho Doanh nhân] | [Data backing] |
+                | Key Message | [Message cho Doanh nhân] | [Data backing] |
+                | Kênh ưu tiên | YouTube, Google Search | ROI data |
+                | CTA Style | [Mô tả] | Persona insight |
 
-                ### 4. Key Messages
-                - 💎 Flexing: [Message cho model dẫn đầu]
-                - 🛡️ Solution: [Message cho pain point]
-                - 📈 Opportunity: [Message cho model cần cải thiện]
-
-                ### 5. Kênh Ưu Tiên
-                | Hạng | Kênh | ROI | Lý do |
-                |---|---|---|---|
+                ## D. CREATIVE BRIEF — PHÂN KHÚC PHỔ THÔNG 👨‍👩‍👧‍👦
+                | Yếu tố | Quyết định | Cơ sở dữ liệu |
+                |---|---|---|
+                | Tone | [Tone cho Phổ thông] | [Data backing] |
+                | Angle | [Angle cho Phổ thông] | [Data backing] |
+                | Key Message | [Message cho Phổ thông] | [Data backing] |
+                | Kênh ưu tiên | Facebook, KOL | ROI data |
+                | CTA Style | [Mô tả] | Persona insight |
             """),
             agent=agent,
             context=[research_task],
         )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # STAGE 2 — SÁNG TẠO NỘI DUNG ĐỊNH VỊ THƯƠNG HIỆU (AIDA EXECUTIVE)
+    # STAGE 2 — SÁNG TẠO NỘI DUNG THEO PHÂN KHÚC KHÁCH HÀNG (AIDA EXECUTIVE)
     # ══════════════════════════════════════════════════════════════════════════
 
     def content_creation_task(self, agent, creative_decision_task: Task) -> Task:
-        """Content execution giờ đây tuân theo Creative Brief, không tự diễn giải dữ liệu thô."""
+        """Content execution theo phân khúc: Gen Z, Doanh nhân, Phổ thông."""
         return Task(
             description=dedent("""
-                NHIỆM VỤ: Brand Strategist — Xây dựng 03 phương án nội dung định vị thương hiệu đẳng cấp.
+                NHIỆM VỤ: Brand Strategist — Xây dựng 03 BỘ NỘI DUNG AIDA RIÊNG BIỆT
+                cho 3 phân khúc khách hàng: Gen Z, Doanh nhân, Người dùng Phổ thông.
 
                 ⚠️ QUAN TRỌNG: Bạn PHẢI tuân thủ 100% Creative Brief từ Creative Director.
                 KHÔNG tự diễn giải dữ liệu thô. Mọi quyết định về giọng điệu, góc tiếp cận,
                 đối tượng mục tiêu và thông điệp đã được Creative Director quyết định.
-                Nhiệm vụ của bạn là THỰC THI xuất sắc các quyết định đó thành nội dung hoàn chỉnh.
 
-                YÊU CẦU:
-                - Đọc Creative Brief từ Creative Director để nắm: Tone, Angles, Personas, Key Messages.
-                - Áp dụng đúng giọng điệu (Tone) đã được chỉ định.
-                - Mỗi phương án nội dung phải gắn với 1 góc tiếp cận (Angle) từ Brief.
-                - Sử dụng ngôn ngữ Executive Marketing chuyên nghiệp, tinh tế, giàu giá trị.
-                - Định dạng chuẩn AIDA Professional.
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought):
+                BƯỚC 1: Đọc Creative Brief → Liệt kê quyết định cho từng phân khúc.
+                BƯỚC 2: Tự hỏi "Persona này quan tâm điều gì NHẤT?" → Ưu tiên yếu tố đó trong Hook.
+                BƯỚC 3: Viết AIDA với ngôn ngữ PHÙ HỢP persona — Gen Z ≠ Doanh nhân ≠ Phổ thông.
+                BƯỚC 4: Chọn kênh + CTA phù hợp với hành vi mua hàng của từng persona.
 
-                MẪU 1 — 🛡️ GIẢI PHÁP CHIẾN LƯỢC (Pain Point Optimization)
-                - Góc tiếp cận: Angle từ Creative Brief liên quan đến Pain Point / Top Complaint.
-                - [HOOK]: Đánh vào nhu cầu thực tế và trải nghiệm xứng tầm (Ví dụ: "Nâng tầm hiệu suất công việc với công nghệ sạc nhanh dẫn đầu thị trường").
-                - [BODY]: Khẳng định ưu thế qua thông số kỹ thuật vượt trội (Camera, Chipset, dung lượng Pin). So sánh tinh tế với các hạn chế của đối thủ cạnh tranh.
-                - [DESIRE]: Khắc họa giá trị thặng dư và sự hài lòng bền vững khi sở hữu sản phẩm.
-                - [CTA]: Lời mời gọi hành động chuyên nghiệp (Ví dụ: "Khám phá đặc quyền tại hệ thống cửa hàng").
-                - [CHANNEL]: Nêu rõ kênh ưu tiên từ Creative Brief và lý do.
+                ═══════════════════════════════════════════════════
+                PHÂN KHÚC 1: 🎯 GEN Z (18-25 tuổi)
+                ═══════════════════════════════════════════════════
+                *Tuân theo Creative Brief — Phân khúc Gen Z*
 
-                MẪU 2 — 💎 KHẲNG ĐỊNH VỊ THẾ (Flexing Premium)
-                - Góc tiếp cận: Angle từ Creative Brief liên quan đến Model dẫn đầu doanh thu.
-                - Tập trung vào Model Dẫn Đầu Doanh Thu. Nêu bật sự đẳng cấp và uy tín thương hiệu đã được thị trường công nhận.
-                - Nêu rõ đặc quyền sở hữu và trải nghiệm "Đỉnh cao công nghệ".
-                - CTA: "Liên hệ tư vấn giải pháp sở hữu ngay hôm nay".
+                Đặc điểm ngôn ngữ Gen Z:
+                - Ngắn gọn, punchy, dùng số liệu WOW ngay câu đầu.
+                - Tone ngang hàng, không lên lớp, không quá formal.
+                - Dùng emoji tự nhiên, hashtags viral.
+                - Tập trung vào: Camera, Design, Gaming, Social media experience.
 
-                MẪU 3 — 📈 TỐI ƯU HÓA CƠ HỘI (Strategic Deal)
-                - Góc tiếp cận: Angle từ Creative Brief liên quan đến Model cần cải thiện KPI.
-                - Dành cho model đang cần cải thiện KPI.
-                - Hook: Nhấn mạnh vào giá trị đầu tư tối ưu cho một sản phẩm cao cấp.
-                - Desire: Số lượng hữu hạn dành riêng cho nhóm khách hàng ưu tú.
-                - CTA: Lời mời trải nghiệm ngay lập tức để nhận ưu đãi đặc quyền.
+                **[HOOK]**: 3-4 câu — Mở bằng con số gây sốc hoặc câu hỏi provocative.
+                    VD: "97% Gen Z chọn điện thoại vì camera — nhưng chỉ 1 model vừa phá kỷ lục DxOMark."
+                **[BODY]**: 3-4 câu — Spec nổi bật nhất cho Gen Z (camera, design, gaming performance).
+                    So sánh ngắn gọn với đối thủ bằng con số cụ thể.
+                **[DESIRE]**: 3-4 câu — Viễn cảnh "flex" trên social, content creation chuyên nghiệp.
+                **[CTA]**: 2-3 câu — Link Shopee/Lazada, mã giảm giá, trả góp 0%.
+                **[CHANNEL]**: TikTok (video 30s), Instagram Reels, Shopee Live.
+                **[HASHTAGS]**: 10 hashtags trending, viral-ready.
+
+                ═══════════════════════════════════════════════════
+                PHÂN KHÚC 2: 💼 DOANH NHÂN (30-45 tuổi)
+                ═══════════════════════════════════════════════════
+                *Tuân theo Creative Brief — Phân khúc Doanh nhân*
+
+                Đặc điểm ngôn ngữ Doanh nhân:
+                - Tinh tế, chuyên nghiệp, nhấn mạnh ROI cá nhân.
+                - Tone đẳng cấp, tập trung vào giá trị thay vì giá tiền.
+                - Không dùng emoji quá nhiều, ưu tiên nội dung long-form.
+                - Tập trung vào: Hiệu suất, Bảo mật, Hệ sinh thái, Đẳng cấp.
+
+                **[HOOK]**: 3-4 câu — Mở bằng insight về productivity hoặc competitive advantage.
+                    VD: "CEO nào cũng biết: 30 phút tiết kiệm mỗi ngày = 182 giờ/năm. Một thiết bị đúng đắn
+                    tạo ra chênh lệch đó."
+                **[BODY]**: 3-4 câu — Hiệu suất chip, bảo mật enterprise, hệ sinh thái đa thiết bị.
+                    Dẫn chứng từ benchmark hoặc case study.
+                **[DESIRE]**: 3-4 câu — Hình ảnh người lãnh đạo sử dụng công nghệ để dẫn đầu.
+                    Đẳng cấp, exclusive, không phải ai cũng sở hữu.
+                **[CTA]**: 2-3 câu — Đặt lịch tư vấn 1:1, trải nghiệm tại showroom premium, trade-in VIP.
+                **[CHANNEL]**: YouTube (review 10 phút), LinkedIn Article, Email newsletter.
+                **[HASHTAGS]**: 10 hashtags chuyên nghiệp, B2B-friendly.
+
+                ═══════════════════════════════════════════════════
+                PHÂN KHÚC 3: 👨‍👩‍👧‍👦 PHỔ THÔNG (25-40 tuổi)
+                ═══════════════════════════════════════════════════
+                *Tuân theo Creative Brief — Phân khúc Phổ thông*
+
+                Đặc điểm ngôn ngữ Phổ thông:
+                - Thực tế, dễ hiểu, tập trung vào giá trị/giá tiền.
+                - Tone gần gũi nhưng vẫn chuyên nghiệp.
+                - So sánh trực tiếp, bảng spec dễ đọc.
+                - Tập trung vào: Pin trâu, Bền bỉ, Giá hợp lý, Bảo hành tốt.
+
+                **[HOOK]**: 3-4 câu — Mở bằng comparison trực tiếp hoặc testimonial.
+                    VD: "Cùng phân khúc 10 triệu, một bên pin 4000mAh, một bên 5500mAh.
+                    Lựa chọn nào thông minh hơn đã rõ ràng."
+                **[BODY]**: 3-4 câu — Bảng so sánh đơn giản: Model A vs Model B vs Model C.
+                    Nhấn mạnh value-for-money từ dữ liệu thực tế.
+                **[DESIRE]**: 3-4 câu — Gia đình hài lòng, sản phẩm bền, không phải sửa chữa.
+                    Đầu tư 1 lần — sử dụng bền bỉ 3 năm.
+                **[CTA]**: 2-3 câu — Các ưu đãi thực tế: giảm giá, tặng kèm, bảo hành mở rộng.
+                **[CHANNEL]**: Facebook (post + group review), Zalo OA, KOL review YouTube.
+                **[HASHTAGS]**: 10 hashtags phổ thông, dễ tìm.
 
                 ⚠️ QUY TẮC NGÔN NGỮ & ĐỊNH DẠNG:
                 1. 100% tiếng Việt có dấu, đúng ngữ pháp và dấu câu.
@@ -247,46 +379,45 @@ class MarketingTasks:
                 2. Sử dụng Emoji tinh tế (📈, 💎, 🛡️, 🤝).
                 3. Tiền tệ chuẩn: 16,860,000,000 VNĐ.
                 4. Từ ngữ: Chuyên nghiệp, lịch sự, không sử dụng biệt ngữ tiêu cực hoặc từ ngữ dân dã.
-                5. Mỗi MẪU phải ghi rõ: "Tuân theo Creative Brief — Góc: [tên góc], Tone: [tên tone]".
+                5. Mỗi phân khúc phải ghi rõ: "Tuân theo Creative Brief — Phân khúc: [tên], Tone: [tên tone]".
                 6. ĐỘ SÂU BẮT BUỘC: Mỗi thành phần AIDA (Hook, Body, Desire, CTA) PHẢI là
                    1 đoạn văn đầy đủ gồm 3-4 câu chuyên nghiệp, có sức thuyết phục cao.
                    ⛔ CẤM viết 1 câu slogan ngắn rồi dừng lại.
             """),
             expected_output=dedent("""
-                ## 🛡️ PHƯƠNG ÁN 1 — GIẢI PHÁP CHIẾN LƯỢC
-                *Tuân theo Creative Brief — Góc: [Angle], Tone: [Tone]*
+                # CONTENT MARKETING THEO PHÂN KHÚC KHÁCH HÀNG
 
-                **[HOOK]**: [Đoạn văn 3-4 câu. Mở đầu bằng câu hỏi khiêu khích hoặc số liệu gây sốc.
-                Tiếp theo bằng mô tả pain point mà khách hàng đang gặp phải.
-                Kết thúc bằng hint về giải pháp vượt trội mà sản phẩm mang lại.]
+                ## 🎯 PHÂN KHÚC 1 — GEN Z (18-25)
+                *Tuân theo Creative Brief — Phân khúc: Gen Z, Tone: [Tone]*
 
-                **[BODY]**: [Đoạn văn 3-4 câu. Câu 1: Nêu thông số kỹ thuật cụ thể (chip, camera, pin).
-                Câu 2: So sánh tinh tế với giới hạn của đối thủ (không nêu tên trực tiếp).
-                Câu 3: Khẳng định ưu thế độc quyền. Câu 4: Dẫn chứng từ chuyên gia/giải thưởng.]
+                **[HOOK]**: [Đoạn văn 3-4 câu — con số wow, câu hỏi provocative]
+                **[BODY]**: [Đoạn văn 3-4 câu — camera, design, gaming spec]
+                **[DESIRE]**: [Đoạn văn 3-4 câu — social flex, content creation]
+                **[CTA]**: [2-3 câu — Shopee, trả góp, mã giảm giá]
+                **[CHANNEL]**: TikTok, Instagram Reels
+                **[HASHTAGS]**: (10 hashtags viral)
 
-                **[DESIRE]**: [Đoạn văn 3-4 câu. Vẽ ra viễn cảnh cuộc sống/công việc khi sở hữu sản phẩm.
-                Dùng ngôn ngữ cảm xúc đẳng cấp. Gợi mở về giá trị thặng dư lâu dài.
-                Tạo cảm giác "không sở hữu = đang bỏ lỡ".]
+                ---
+                ## 💼 PHÂN KHÚC 2 — DOANH NHÂN (30-45)
+                *Tuân theo Creative Brief — Phân khúc: Doanh nhân, Tone: [Tone]*
 
-                **[CTA]**: [2-3 câu hành động cụ thể. Kênh mua hàng + ưu đãi độc quyền + deadline.]
-                **[CHANNEL]**: [Kênh ưu tiên + lý do dựa trên Creative Brief]
+                **[HOOK]**: [Đoạn văn 3-4 câu — productivity, competitive advantage]
+                **[BODY]**: [Đoạn văn 3-4 câu — hiệu suất, bảo mật, hệ sinh thái]
+                **[DESIRE]**: [Đoạn văn 3-4 câu — đẳng cấp lãnh đạo]
+                **[CTA]**: [2-3 câu — tư vấn 1:1, showroom, trade-in VIP]
+                **[CHANNEL]**: YouTube, LinkedIn
                 **[HASHTAGS]**: (10 hashtags chuyên nghiệp)
 
                 ---
-                ## 💎 PHƯƠNG ÁN 2 — KHẲNG ĐỊNH VỊ THẾ
-                *Tuân theo Creative Brief — Góc: [Angle], Tone: [Tone]*
-                **[HOOK]**: [Đoạn văn 3-4 câu — tập trung vào model dẫn đầu doanh thu]
-                **[BODY]**: [Đoạn văn 3-4 câu — đẳng cấp và uy tín được thị trường chứng minh]
-                **[DESIRE]**: [Đoạn văn 3-4 câu — đặc quyền sở hữu, trải nghiệm đỉnh cao]
-                **[CTA]**: [2-3 câu — tư vấn giải pháp sở hữu]
+                ## 👨‍👩‍👧‍👦 PHÂN KHÚC 3 — PHỔ THÔNG (25-40)
+                *Tuân theo Creative Brief — Phân khúc: Phổ thông, Tone: [Tone]*
 
-                ---
-                ## 📈 PHƯƠNG ÁN 3 — TỐI ƯU HÓA CƠ HỘI
-                *Tuân theo Creative Brief — Góc: [Angle], Tone: [Tone]*
-                **[HOOK]**: [Đoạn văn 3-4 câu — giá trị đầu tư tối ưu]
-                **[BODY]**: [Đoạn văn 3-4 câu — thông số vượt trội ở phân khúc]
-                **[DESIRE]**: [Đoạn văn 3-4 câu — số lượng hữu hạn, cơ hội không lặp lại]
-                **[CTA]**: [2-3 câu — trải nghiệm ngay + ưu đãi đặc quyền]
+                **[HOOK]**: [Đoạn văn 3-4 câu — comparison, value-for-money]
+                **[BODY]**: [Đoạn văn 3-4 câu — bảng so sánh spec, giá]
+                **[DESIRE]**: [Đoạn văn 3-4 câu — bền bỉ, gia đình hài lòng]
+                **[CTA]**: [2-3 câu — giảm giá, bảo hành, tặng kèm]
+                **[CHANNEL]**: Facebook, Zalo, KOL YouTube
+                **[HASHTAGS]**: (10 hashtags phổ thông)
             """),
             agent=agent,
             context=[creative_decision_task],
@@ -300,21 +431,29 @@ class MarketingTasks:
         return Task(
             description=dedent(f"""
                 NHIỆM VỤ: Truy xuất dữ liệu tài chính phục vụ báo cáo cấp quản trị.
-                Chỉ trả về 3 bảng Markdown chứa kết quả thô từ SQL, không kèm phân tích.
+                Chỉ trả về các bảng Markdown chứa kết quả thô từ SQL, không kèm phân tích.
 
                 {_REGION_NOTE}
 
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought):
+                BƯỚC 1: Xác định 5 bộ dữ liệu cần thiết cho báo cáo Executive.
+                BƯỚC 2: Viết SQL cho từng bộ dữ liệu — đảm bảo ORDER BY + LIMIT.
+                BƯỚC 3: Trả về kết quả dạng bảng Markdown thuần — không phân tích.
+
                 SQL 1 — Chỉ số ROI & CPA theo kênh (TikTok, Instagram, Facebook, YouTube, Google Search, KOL).
-                SQL 2 — Doanh thu phân bổ theo Danh mục Sản phẩm (Sắp xếp giảm dần).
+                SQL 2 — Doanh thu phân bổ theo Model (Sắp xếp giảm dần). Dùng SUM(units_sold * unit_price).
                 SQL 3 — Doanh thu phân bổ theo Khu vực Địa lý ({_REGIONS}).
+                SQL 4 — Doanh thu theo tháng (sales_performance) để phục vụ Forecasting.
+                SQL 5 — Phân bổ khách hàng theo nhóm tuổi và phương thức thanh toán (phục vụ SWOT).
             """),
-            expected_output="3 bảng Markdown dữ liệu tài chính thô.",
+            expected_output="5 bảng Markdown dữ liệu tài chính thô (ROI/CPA, Revenue by Model, Revenue by Region, Monthly Trend, Customer Profile).",
             agent=agent,
             context=[research_task, creative_decision_task, content_task],
         )
 
     # ══════════════════════════════════════════════════════════════════════════
     # STAGE 3 — BÁO CÁO CHIẾN LƯỢC EXECUTIVE EXCELLENCE
+    # (NÂNG CẤP: SWOT + PESTEL + FORECASTING + BCG)
     # ══════════════════════════════════════════════════════════════════════════
 
     def marketing_strategy_task(
@@ -329,153 +468,147 @@ class MarketingTasks:
 
                 {_REGION_NOTE}
 
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought — Bắt buộc cho MỖI phần):
+                Với MỖI phần báo cáo, bạn phải suy luận 4 bước:
+                BƯỚC 1 (Thu thập): Lấy dữ liệu từ context hoặc truy vấn SQL bổ sung.
+                BƯỚC 2 (Phân tích): Áp dụng framework lên dữ liệu — tìm pattern + anomaly.
+                BƯỚC 3 (Suy luận): So What? → Why So? → Now What?
+                BƯỚC 4 (Hành động): Chuyển insight thành action item với timeline + KPI.
+
                 ⛔ QUY TẮC TUYỆT ĐỐI — VI PHẠM = BÁO CÁO BỊ TỪ CHỐI:
                 1. CẤM đọc lại số liệu đã có trong bảng. Bảng cung cấp DATA — bạn cung cấp INSIGHT.
                 2. CẤM bắt đầu câu bằng: "Dựa trên bảng này", "Như chúng ta thấy", "Từ dữ liệu trên",
                    "Bảng trên cho thấy", "Điều này có nghĩa là", "Chúng tôi có thể thấy rằng".
-                3. CẤM phân tích đơn chiều (chỉ nói về 1 chỉ số riêng lẻ). Luôn phân tích GIAO CẮT:
-                   ROI × Budget, Revenue × Market Share, Price × Sentiment.
-                4. DƯỚI mỗi bảng dữ liệu: BẮT BUỘC viết ≥3 câu phân tích sâu theo framework:
-                   - So What? (Ý nghĩa ẩn sau con số)
-                   - Why So? (Nguyên nhân gốc rễ)
-                   - Now What? (Hành động quyết liệt tiếp theo)
-                5. Toàn bộ báo cáo ≥ 1500 từ. Mỗi phần ≥ 150 từ.
+                3. CẤM phân tích đơn chiều. Luôn phân tích GIAO CẮT.
+                4. DƯỚI mỗi bảng: BẮT BUỘC viết ≥3 câu phân tích (So What/Why So/Now What).
+                5. Toàn bộ báo cáo ≥ 2000 từ. Mỗi phần ≥ 150 từ.
 
                 🚨 HARD GUARDRAIL #6 — NGÔN NGỮ THUẦN KHIẾT:
-                Output PHẢI 100% TIẾNG VIỆT. CẤM ký tự Trung Quốc (面臨, 市場, 競爭),
-                Nhật (の, は), Hàn (는, 을). CẤM Tiếng Anh ngoài thuật ngữ kỹ thuật
-                (ROI, CPA, KPI, BCG, AIDA, CTR, Trade-in, KOL).
-                TRƯỚC KHI HOÀN THÀNH: Rà soát toàn bộ output — nếu có ký tự ngoại lai, XÓA ngay.
+                Output PHẢI 100% TIẾNG VIỆT. CẤM ký tự Trung Quốc, Nhật, Hàn.
+                CẤM Tiếng Anh ngoài thuật ngữ kỹ thuật (ROI, CPA, KPI, BCG, AIDA, CTR,
+                Trade-in, KOL, SWOT, PESTEL).
 
                 🚨 HARD GUARDRAIL #7 — TÍNH TOÀN VẸN DỮ LIỆU:
                 TUYỆT ĐỐI CẤM gom sản phẩm vào danh mục chung chung.
-                CẤM viết: 'Điện tử', 'Thời trang', 'Hàng gia dụng', 'Electronics', 'Fashion'.
-                BẮT BUỘC dùng CHÍNH XÁC tên model_name từ SQL (VD: 'Galaxy A56', 'iPhone 17 Pro',
-                'Find X9 Pro', 'Pixel 10 Pro'). Nếu SQL trả về 'Galaxy S26 Ultra', bạn PHẢI viết
-                'Galaxy S26 Ultra' — KHÔNG viết 'Samsung' hay 'Flagship'.
+                BẮT BUỘC dùng CHÍNH XÁC tên model_name từ SQL.
 
                 🚨 HARD GUARDRAIL #8 — CẤM PHÂN TÍCH TAUTOLOGICAL:
-                CẤM viết rủi ro thừa kiểu: 'Doanh thu giảm → Tăng nguồn lực'.
-                CẤM viết phân tích lặp: 'Sản phẩm A có doanh thu cao → Sản phẩm A đóng góp nhiều'.
                 PHẢI viết: Nguyên nhân gốc rễ + hành động cụ thể + số tiền + timeline.
 
                 ═══════════════════════════════════════════════════
-                CẤU TRÚC BÁO CÁO — 7 PHẦN CHIẾN LƯỢC
+                CẤU TRÚC BÁO CÁO — 10 PHẦN CHIẾN LƯỢC
                 ═══════════════════════════════════════════════════
 
                 ## 🔭 I. Tổng Quan Chiến Lược & Phân Tích Đa Chiều (Executive Summary)
                 Viết 1 đoạn mở đầu có sức nặng như một Partner McKinsey trình bày trước Board of Directors.
                 - Câu 1: Khẳng định vị thế hiện tại (dựa trên số liệu doanh thu dẫn đầu).
-                - Câu 2: Chỉ ra mâu thuẫn chiến lược lớn nhất (VD: "Kênh ROI cao nhất lại bị đầu tư thấp nhất").
+                - Câu 2: Chỉ ra mâu thuẫn chiến lược lớn nhất.
                 - Câu 3: Đề xuất Chủ đề Chiến lược (Strategic Theme) cho kỳ này.
-                Sau đó đặt và trả lời 3 câu hỏi chiến lược. Mỗi câu trả lời phải có SỐ LIỆU CỤ THỂ:
-                  Q1: "Đâu là động lực tăng trưởng chính (Growth Engine) và nó đang hoạt động ở mấy % công suất?"
-                  Q2: "Khoảng trống cạnh tranh nào (Competitive Gap) chúng ta có thể khai thác ngay trong 7 ngày tới?"
-                  Q3: "Rủi ro lớn nhất nào đang đe dọa vị thế dẫn đầu và phương án phòng thủ là gì?"
+                Sau đó đặt và trả lời 3 câu hỏi chiến lược. Mỗi câu trả lời phải có SỐ LIỆU CỤ THỂ.
 
                 ## 📊 II. Phân Tích Hiệu Quả Tài Chính & Tối Ưu Hóa Nguồn Lực
-                Trình bày bảng ROI/CPA theo kênh. Dữ liệu tham chiếu: {_ROI_DATA}
-                SAU BẢNG — Viết phân tích giao cắt (Intersection Analysis) bắt buộc:
-                - Ma trận ROI × Budget: Phân loại mỗi kênh vào 1 trong 4 ô:
-                  🌟 Star (ROI cao + Budget cao) → Duy trì và bảo vệ.
-                  🚀 Rocket (ROI cao + Budget thấp) → ĐÂY LÀ CƠ HỘI LỚN NHẤT. Tăng gấp đôi ngân sách.
-                  🐢 Turtle (ROI thấp + Budget cao) → Tái phân bổ khẩn cấp. Giảm ≥30% ngân sách.
-                  ❓ Mystery (ROI thấp + Budget thấp) → Thí điểm hoặc loại bỏ.
-                - Viết đề xuất hành động cụ thể: "Chuyển [X] tỷ VNĐ từ [Kênh A] sang [Kênh B]
-                  vì mỗi đồng chi cho [Kênh B] tạo ra gấp [N] lần giá trị so với [Kênh A]."
-                - KHÔNG được viết "TikTok có ROI cao nhất." Đó là đọc lại số.
-                  PHẢI viết: "TikTok đang bị kìm hãm nghiêm trọng: ROI 1,383 (dẫn đầu) nhưng budget chỉ 235tr
-                  (17% tổng chi). Mỗi đồng đầu tư vào TikTok tạo giá trị gấp 4.1 lần YouTube (ROI 333).
-                  Đề xuất: Tái cấu trúc — chuyển 200tr từ YouTube/Google Search sang TikTok."
+                Bảng ROI/CPA theo kênh + Ma trận ROI × Budget (Star/Rocket/Turtle/Mystery).
+                {_ROI_DATA}
 
-                ## 🏆 III. Toàn Cảnh Doanh Thu & Định Vị Sản Phẩm
-                Bảng doanh thu chi tiết (định dạng 48,000,000,000 VNĐ).
-                🚨🚨🚨 BCG MATRIX — QUY TẮC NGHIÊM NGẶT 🚨🚨🚨
-                Mỗi dòng trong bảng BCG PHẢI dùng CHÍNH XÁC tên model_name từ dữ liệu SQL.
-                ❌ SAI: '| Điện tử | 1,500,000,000 | Star | 60% |'
-                ❌ SAI: '| Smartphone | 2,000,000,000 | Cash Cow | 40% |'
-                ✅ ĐÚNG: '| Galaxy A56 | 141,066,000,000 | Star | 45% |'
-                ✅ ĐÚNG: '| Find X9 Pro | 16,860,000,000 | Question Mark | 5% |'
-                Nếu dữ liệu SQL có model_name là 'iPhone 17 Pro', bạn PHẢI viết 'iPhone 17 Pro'.
+                ## 🏆 III. Toàn Cảnh Doanh Thu & BCG Matrix
+                Bảng doanh thu + BCG Matrix (Star/Cash Cow/Question Mark/Dog).
+                🚨 Mỗi dòng PHẢI dùng CHÍNH XÁC model_name từ SQL.
+                Phân tích: Key Driver, Concentration Risk, Gap Analysis, Bất đối xứng địa lý.
 
-                SAU BẢNG — Phân tích bắt buộc:
-                - Phân nhóm BCG Matrix: Star / Cash Cow / Question Mark / Dog cho từng sản phẩm specifc.
-                - Xác định "Key Driver" (sản phẩm đóng góp >40% tổng doanh thu) và "Dead Weight"
-                  (sản phẩm <10% doanh thu nhưng chiếm nhiều nguồn lực tiếp thị).
-                - Gap Analysis: Chênh lệch doanh thu giữa Sản phẩm #1 và #2 là bao nhiêu % ?
-                  Con số này nói gì về mức độ phụ thuộc vào một sản phẩm đơn lẻ (Concentration Risk)?
-                - Khu vực: Phân tích bất đối xứng địa lý — khu vực nào đang underperform so với GDP/dân số?
+                ## 🔍 IV. MA TRẬN SWOT — PHÂN TÍCH NỘI LỰC & MÔI TRƯỜNG ★★★ MỚI ★★★
 
-                ## ⚔️ IV. Cạnh Tranh Chiến Lược & Benchmark Đối Đầu
-                Trình bày bảng benchmarking đối thủ (từ research context).
-                SAU BẢNG — Phân tích Win/Loss:
-                - Với mỗi đối thủ, phân tích theo cặp (Head-to-Head):
-                  "Thắng ở [X] vì [lý do + số liệu] nhưng Thua ở [Y] vì [lý do + số liệu]."
-                - Xác định 1 "Gót chân Achilles" chiến lược nhất của đối thủ mạnh nhất
-                  mà chúng ta có thể khai thác ngay.
-                - Đề xuất "Flanking Strategy" (chiến lược đánh bên sườn):
-                  Thay vì đối đầu trực diện về [X], tấn công vào [Y] — nơi đối thủ yếu nhất.
+                📐 Chain-of-Thought cho SWOT:
+                BƯỚC 1: Từ dữ liệu doanh thu + benchmarking → Liệt kê 3-5 Strengths (S).
+                BƯỚC 2: Từ sản phẩm underperform + complaint → Liệt kê 3-5 Weaknesses (W).
+                BƯỚC 3: Từ xu hướng thị trường + đối thủ yếu → Liệt kê 3-5 Opportunities (O).
+                BƯỚC 4: Từ đối thủ mạnh + rủi ro external → Liệt kê 3-5 Threats (T).
 
-                ## 📱 V. Chiến Lược Nội Dung Truyền Thông Xứng Tầm
-                Trình bày 03 phương án nội dung từ Brand Strategist (context).
-                ⚠️ YÊU CẦU ĐẶC BIỆT: KHÔNG chỉ copy 1 câu slogan. Mỗi phương án PHẢI có đủ 4 thành phần AIDA,
-                mỗi thành phần là 1 ĐOẠN VĂN 3-4 CÂU (không phải 1 câu ngắn):
-                - **[A] Attention (Thu hút)**: 3-4 câu — Hook mạnh + Số liệu gây sốc + Pain point.
-                - **[I] Interest (Gợi mở)**: 3-4 câu — Thông số kỹ thuật + So sánh tinh tế với đối thủ.
-                - **[D] Desire (Khao khát)**: 3-4 câu — Viễn cảnh sở hữu + Ngôn ngữ cảm xúc đẳng cấp.
-                - **[A] Action (Hành động)**: 2-3 câu — CTA cụ thể + kênh + ưu đãi độc quyền.
+                Xuất bảng SWOT:
+                | | Yếu tố Tích cực | Yếu tố Tiêu cực |
+                |---|---|---|
+                | **Nội bộ** | **S - Điểm Mạnh** | **W - Điểm Yếu** |
+                | | S1: [Dựa trên doanh thu SQL] | W1: [Dựa trên underperformer SQL] |
+                | | S2: [Dựa trên cấu hình benchmarking] | W2: [Dựa trên complaint data] |
+                | | S3: [Dựa trên ROI kênh mạnh] | W3: [Dựa trên khu vực yếu] |
+                | **Bên ngoài** | **O - Cơ hội** | **T - Thách thức** |
+                | | O1: [Dựa trên xu hướng search] | T1: [Dựa trên đối thủ mạnh nhất] |
+                | | O2: [Dựa trên điểm yếu đối thủ] | T2: [Dựa trên rủi ro chuỗi cung ứng] |
+                | | O3: [Dựa trên phân khúc chưa khai thác] | T3: [Dựa trên thay đổi pháp lý] |
 
-                ## 🗺️ VI. Lộ Trình Triển Khai 7 Ngày (Implementation Roadmap)
-                Bảng kế hoạch:
-                | Ngày | Hành Động Chiến Lược | Kênh | KPI Mục Tiêu | Ngân Sách | Khu Vực |
+                SAU BẢNG SWOT — Viết CHIẾN LƯỢC GIAO CẮT bắt buộc:
+                - **SO (Strengths × Opportunities):** Dùng điểm mạnh nào để khai thác cơ hội nào?
+                - **WO (Weaknesses × Opportunities):** Khắc phục điểm yếu nào để nắm bắt cơ hội?
+                - **ST (Strengths × Threats):** Dùng điểm mạnh nào để phòng thủ trước thách thức?
+                - **WT (Weaknesses × Threats):** Điểm yếu + thách thức nào tạo rủi ro nghiêm trọng nhất?
+
+                ## 🌍 V. PHÂN TÍCH PESTEL — MÔI TRƯỜNG VĨ MÔ THỊ TRƯỜNG SMARTPHONE VN ★★★ MỚI ★★★
+
+                📐 Chain-of-Thought cho PESTEL:
+                BƯỚC 1: Với MỖI yếu tố (P-E-S-T-E-L), tìm ít nhất 1 sự kiện/xu hướng CỤ THỂ
+                        đang ảnh hưởng đến thị trường smartphone Việt Nam NĂM 2026.
+                BƯỚC 2: Đánh giá Impact (Tích cực / Tiêu cực / Trung tính) cho mỗi yếu tố.
+                BƯỚC 3: Đề xuất hành động ứng phó cụ thể.
+
+                | Yếu tố | Mô tả Sự kiện/Xu hướng Cụ thể | Impact | Hành động Ứng phó |
+                |---|---|---|---|
+                | **P** - Chính trị | [VD: Chính sách hỗ trợ sản xuất điện tử nội địa VN] | Tích cực/Tiêu cực | [Hành động] |
+                | **E** - Kinh tế | [VD: Tăng trưởng GDP VN 6.5%, thu nhập tầng trung tăng] | ... | [Hành động] |
+                | **S** - Xã hội | [VD: Gen Z chiếm 30% lực lượng lao động, ưu tiên trải nghiệm] | ... | [Hành động] |
+                | **T** - Công nghệ | [VD: AI Phone, 5G phủ sóng toàn quốc, foldable mainstream] | ... | [Hành động] |
+                | **E** - Môi trường | [VD: Xu hướng điện thoại bền vững, vật liệu tái chế] | ... | [Hành động] |
+                | **L** - Pháp lý | [VD: Quy định bảo hành 24 tháng, chống hàng xách tay] | ... | [Hành động] |
+
+                SAU BẢNG PESTEL — Viết TÓM TẮT CHIẾN LƯỢC:
+                "Yếu tố PESTEL có impact lớn nhất là [X]. Hành động ưu tiên #1: [Mô tả cụ thể]."
+
+                ## 📈 VI. DỰ BÁO XU HƯỚNG (FORECASTING) ★★★ MỚI ★★★
+
+                📐 Chain-of-Thought cho Forecasting:
+                BƯỚC 1: Truy vấn SQL để lấy dữ liệu doanh thu theo tháng (sales_performance).
+                BƯỚC 2: Xác định trend line — doanh thu đang đi lên, đi xuống, hay đi ngang?
+                BƯỚC 3: Kết hợp xu hướng thị trường từ research context + PESTEL.
+                BƯỚC 4: Đưa ra 3 kịch bản dự báo cho Quý tiếp theo.
+
+                Trình bày:
+                **Dữ liệu lịch sử (từ SQL):**
+                | Tháng | Doanh thu | Units | Tăng trưởng so với tháng trước |
+                |---|---|---|---|
+
+                **3 Kịch bản Dự báo cho Quý tới:**
+                | Kịch bản | Mô tả | Doanh thu Dự kiến | Điều kiện kích hoạt |
+                |---|---|---|---|
+                | 🟢 Lạc quan | [Mô tả] | [X] tỷ VNĐ (+Y%) | [Nếu A + B xảy ra] |
+                | 🟡 Cơ bản | [Mô tả] | [X] tỷ VNĐ (+Y%) | [Nếu hiện trạng duy trì] |
+                | 🔴 Thận trọng | [Mô tả] | [X] tỷ VNĐ (-Y%) | [Nếu C + D xảy ra] |
+
+                **Đề xuất**: "Cần chuẩn bị cho kịch bản [X] bằng cách [hành động cụ thể]."
+
+                ## ⚔️ VII. Cạnh Tranh Chiến Lược & Benchmark Đối Đầu
+                Bảng benchmarking đối thủ (từ research context) + phân tích Win/Loss.
+                Xác định Gót chân Achilles + Flanking Strategy.
+
+                ## 📱 VIII. Chiến Lược Nội Dung Truyền Thông THEO PHÂN KHÚC
+                Trình bày 03 bộ nội dung AIDA từ Brand Strategist (context):
+                - PHÂN KHÚC GEN Z 🎯: Đầy đủ 4 thành phần AIDA.
+                - PHÂN KHÚC DOANH NHÂN 💼: Đầy đủ 4 thành phần AIDA.
+                - PHÂN KHÚC PHỔ THÔNG 👨‍👩‍👧‍👦: Đầy đủ 4 thành phần AIDA.
+
+                ⚠️ YÊU CẦU: KHÔNG copy 1 câu slogan. Mỗi AIDA component ≥ 3 câu.
+
+                ## 🗺️ IX. Lộ Trình Triển Khai 7 Ngày (Implementation Roadmap)
+                Bảng kế hoạch PHÂN CHIA theo phân khúc:
+                | Ngày | Hành Động | Phân khúc | Kênh | KPI | Ngân Sách | Khu Vực |
                 Rules:
-                - Mỗi ngày có KPI đo lường cụ thể (VD: "Reach ≥500K", "CTR ≥2.5%", "Leads ≥200").
-                - Ngân sách: Format 50,000,000 VNĐ.
-                - Khu vực: Chỉ sử dụng {_REGIONS}.
-                - Ngày 7 là "Review & Optimize" — tổng ngân sách đã chi, KPI đạt/chưa đạt.
+                - Mỗi ngày có KPI đo lường cụ thể riêng cho từng phân khúc.
+                - Ngày 7 là "Review & Optimize" — tổng KPI đạt/chưa đạt.
 
-                ## ⚠️ VII. Quản Trị Rủi Ro & Điểm Kiểm Soát (Risk Management)
-                ⚠️ KHÔNG ĐƯỢC viết rủi ro chung chung, tautological, hoặc hiển nhiên.
-                ❌ CẤM kiểu: "Rủi ro: Doanh thu giảm → Phương án: Tăng cường nguồn lực"
-                ❌ CẤM kiểu: "Rủi ro: Cạnh tranh tăng → Phương án: Cạnh tranh mạnh hơn"
-                ❌ CẤM kiểu: "Rủi ro: Thay đổi thị trường → Phương án: Nghiên cứu thị trường"
-                Mỗi rủi ro PHẢI cụ thể, bất ngờ, và có kế hoạch hành động chi tiết (≥3 rủi ro).
-
-                VÍ DỤ MẪU ĐỂ THAM KHẢO (viết theo phong cách này, KHÔNG copy nguyên văn):
-
-                **Rủi ro #1: Apple giảm giá iPhone 17 Pro trong chương trình Back-to-School**
-                - 🎯 Trigger: Apple công bố giảm 15% giá iPhone 17 Pro cho sinh viên, kéo giá
-                  từ 32,000,000 xuống 27,200,000 VNĐ — trùng phân khúc Galaxy S26 Ultra.
-                - 📊 Xác suất: Cao — Apple đã triển khai chương trình Education Pricing tại 6 thị trường
-                  châu Á trong Q2/2025.
-                - 💥 Impact: Mất 15-20% thị phần phân khúc 25-32 triệu VNĐ tại khu vực South.
-                - 🛡️ Contingency: Kích hoạt chương trình Trade-in bù giá 3,000,000 VNĐ trong 48h.
-                  Ngân sách dự phòng: 500,000,000 VNĐ từ quỹ Risk Reserve.
-                - 📡 Early Warning: Theo dõi search volume 'iPhone giảm giá' trên Google Trends —
-                  khi tăng >300% trong 7 ngày, kích hoạt cảnh báo.
-
-                **Rủi ro #2: TikTok thay đổi thuật toán ưu tiên video dài >3 phút**
-                - 🎯 Trigger: TikTok cập nhật thuật toán feed, giảm 40% reach cho video <60 giây.
-                - 📊 Xác suất: Trung bình — TikTok đã thử nghiệm tại Indonesia trong tháng 3/2026.
-                - 💥 Impact: ROI kênh TikTok có thể giảm từ 1,383 xuống ~800, ảnh hưởng chiến lược Rocket.
-                - 🛡️ Contingency: Chuyển 30% ngân sách TikTok sang Instagram Reels trong 72h.
-                  Đồng thời sản xuất 5 video dài 3-5 phút từ content dạng mini-series.
-                  Ngân sách chuyển đổi nội dung: 100,000,000 VNĐ.
-                - 📡 Early Warning: Theo dõi CPM và CTR hàng ngày — khi CPM tăng >25% trong 3 ngày liên tiếp,
-                  kích hoạt họp khẩn cấp.
-
-                **Rủi ro #3: Thiếu hụt chip Snapdragon 8 Gen 5 do căng thẳng chuỗi cung ứng TSMC**
-                - 🎯 Trigger: TSMC thông báo giảm 20% công suất nhà máy N3P do bảo trì khẩn cấp.
-                - 📊 Xác suất: Thấp — nhưng tác động cực lớn nếu xảy ra (Black Swan).
-                - 💥 Impact: Gián đoạn nguồn cung Galaxy S26 Ultra tại thị trường Việt Nam trong 4-6 tuần.
-                - 🛡️ Contingency: Đẩy mạnh tiêu thụ Galaxy A56 (tồn kho dồi dào) và chạy chương trình
-                  Pre-order Galaxy S26 Ultra với ưu đãi giữ chỗ. Ngân sách dự phòng: 300,000,000 VNĐ.
-                - 📡 Early Warning: Theo dõi lead time từ nhà cung cấp — khi tăng >50%, báo cáo ngay.
+                ## ⚠️ X. Quản Trị Rủi Ro & Điểm Kiểm Soát (Risk Management)
+                ⚠️ KHÔNG ĐƯỢC viết rủi ro chung chung.
+                ≥3 rủi ro, mỗi rủi ro có: Trigger, Xác suất, Impact, Contingency, Early Warning.
 
                 ⚠️ YÊU CẦU QUY CHUẨN TOÀN BÁO CÁO:
                 - Tiếng Việt 100% chuẩn mực văn phong quản trị cấp cao.
-                - Tuyệt đối không sử dụng slang, từ ngữ dân dã hoặc các biểu cảm tiêu cực.
-                - Toàn bộ báo cáo ≥ 1500 từ.
+                - Toàn bộ báo cáo ≥ 2000 từ.
                 - Tiền tệ: Luôn format 48,000,000,000 VNĐ (có dấu phẩy phân cách nghìn).
             """),
             expected_output=dedent(f"""
@@ -483,68 +616,44 @@ class MarketingTasks:
 
                 ## 🔭 I. Tổng Quan Chiến Lược & Phân Tích Đa Chiều
                 [Đoạn mở đầu 3 câu: Vị thế → Mâu thuẫn → Chủ đề chiến lược]
-
-                **Q1: Động lực tăng trưởng chính?**
-                [Trả lời với số liệu cụ thể, ≥3 câu]
-                **Q2: Khoảng trống cạnh tranh có thể khai thác?**
-                [Trả lời với số liệu cụ thể, ≥3 câu]
-                **Q3: Rủi ro lớn nhất và phương án phòng thủ?**
-                [Trả lời với số liệu cụ thể, ≥3 câu]
+                **Q1/Q2/Q3:** [Trả lời với số liệu cụ thể]
 
                 ---
                 ## 📊 II. Phân Tích Hiệu Quả Tài Chính & Tối Ưu Hóa Nguồn Lực
-                | Kênh | ROI | CPA | Budget | Phân loại |
-                |---|---|---|---|---|
-                [Dữ liệu]
-
-                **Ma trận ROI × Budget:**
-                🚀 Rocket: [Kênh] — ROI [X] nhưng Budget chỉ [Y]. Đề xuất: [Hành động + số tiền cụ thể]
-                🐢 Turtle: [Kênh] — ROI [X] nhưng Budget [Y]. Đề xuất: [Hành động + số tiền cụ thể]
-                **Đề xuất tái cấu trúc:** "Chuyển [X] tỷ từ [A] sang [B] vì..."
+                [Bảng ROI/CPA + Ma trận ROI × Budget + Đề xuất tái cấu trúc]
 
                 ---
-                ## 🏆 III. Toàn Cảnh Doanh Thu & Định Vị Sản Phẩm
-                | Model | Doanh Thu | Phân loại BCG | Đóng góp % |
-                [Dữ liệu + BCG Matrix]
-
-                **Key Driver Analysis:** [Model #1] chiếm [X]% tổng doanh thu — [So What?]
-                **Concentration Risk:** Chênh lệch #1 vs #2 là [Y]% — [Why So? + Now What?]
-                **Bất đối xứng địa lý:** Khu vực [Z] chiếm [W]% dân số nhưng chỉ [V]% doanh thu — [Hành động]
+                ## 🏆 III. Toàn Cảnh Doanh Thu & BCG Matrix
+                [Bảng doanh thu với model_name chính xác + BCG + Gap Analysis]
 
                 ---
-                ## ⚔️ IV. Cạnh Tranh Chiến Lược & Benchmark Đối Đầu
-                | Đối Thủ | Model | Giá | Thắng | Thua |
-                [Bảng Head-to-Head]
-
-                **Gót chân Achilles chiến lược:** [Đối thủ X] yếu nhất ở [Y] — cơ hội khai thác: [Hành động]
-                **Flanking Strategy:** [Chiến lược cụ thể]
+                ## 🔍 IV. Ma Trận SWOT
+                [Bảng SWOT 2×2 + Chiến lược giao cắt SO/WO/ST/WT]
 
                 ---
-                ## 📱 V. Chiến Lược Nội Dung Truyền Thông Xứng Tầm
-                ### Phương án 1 — 🛡️ Giải Pháp Chiến Lược
-                **[A] Attention:** [≥2 câu — Hook + Số liệu gây sốc]
-                **[I] Interest:** [≥2 câu — Giá trị kỹ thuật + So sánh tinh tế]
-                **[D] Desire:** [≥2 câu — Viễn cảnh sở hữu]
-                **[A] Action:** [CTA + Kênh + Ưu đãi]
-                [Lặp lại cho Phương án 2, 3]
+                ## 🌍 V. Phân Tích PESTEL
+                [Bảng 6 yếu tố P-E-S-T-E-L + Impact + Hành động ứng phó]
 
                 ---
-                ## 🗺️ VI. Lộ Trình Triển Khai 7 Ngày
-                | Ngày | Hành Động | Kênh | KPI Mục Tiêu | Ngân Sách | Khu Vực |
-                |---|---|---|---|---|---|
-                | 1 | ... | ... | Reach ≥500K | 50,000,000 VNĐ | North |
-                [...]
-                | 7 | Review & Optimize | — | Tổng kết KPI | — | All |
+                ## 📈 VI. Dự Báo Xu Hướng (Forecasting)
+                [Bảng lịch sử + 3 kịch bản Lạc quan/Cơ bản/Thận trọng]
 
                 ---
-                ## ⚠️ VII. Quản Trị Rủi Ro & Điểm Kiểm Soát
-                **Rủi ro #1: [Tên cụ thể]**
-                - 🎯 Trigger: [Sự kiện cụ thể]
-                - 📊 Xác suất: [Cao/TB/Thấp] — Bằng chứng: [...]
-                - 💥 Impact: [Tác động cụ thể]
-                - 🛡️ Contingency: [Hành động + Ngân sách dự phòng]
-                - 📡 Early Warning: [Chỉ số theo dõi]
-                [Lặp lại cho Rủi ro #2, #3]
+                ## ⚔️ VII. Cạnh Tranh Chiến Lược & Benchmark Đối Đầu
+                [Bảng Head-to-Head + Gót chân Achilles + Flanking Strategy]
+
+                ---
+                ## 📱 VIII. Chiến Lược Nội Dung Theo Phân Khúc
+                ### 🎯 Gen Z | 💼 Doanh nhân | 👨‍👩‍👧‍👦 Phổ thông
+                [3 bộ AIDA riêng biệt]
+
+                ---
+                ## 🗺️ IX. Lộ Trình Triển Khai 7 Ngày
+                [Bảng kế hoạch phân chia theo phân khúc + kênh + KPI]
+
+                ---
+                ## ⚠️ X. Quản Trị Rủi Ro & Điểm Kiểm Soát
+                [≥3 rủi ro: Trigger + Xác suất + Impact + Contingency + Early Warning]
             """),
             agent=agent,
             context=[research_task, content_task, data_fetch_task],
@@ -566,7 +675,12 @@ class MarketingTasks:
                 Đây là bước CUỐI CÙNG, BẮT BUỘC trong pipeline. Bạn PHẢI sử dụng công cụ `signal_update`
                 để lưu lại các nhận định quan trọng nhất từ báo cáo vừa hoàn thành.
 
-                HÀNH ĐỘNG CỤ THỂ — Gọi công cụ `signal_update` ÍT NHẤT 3 LẦN với các nội dung sau:
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought):
+                BƯỚC 1: Đọc lại báo cáo → Xác định 3 insight quan trọng nhất.
+                BƯỚC 2: Phân loại mỗi insight vào 1 trong 3 loại signal.
+                BƯỚC 3: Gọi tool signal_update 3 lần với nội dung trích xuất.
+
+                HÀNH ĐỘNG CỤ THỂ — Gọi công cụ `signal_update` ÍT NHẤT 3 LẦN:
 
                 LẦN 1 — insight_type: "low_performer"
                     Xác định từ context: Model hoặc kênh marketing nào có hiệu suất thấp nhất?
@@ -600,4 +714,76 @@ class MarketingTasks:
             agent=agent,
             context=[report_task],
             tools=tools,
+        )
+
+    def qa_task(self, agent, report_content: str, data_fetch_output: str) -> Task:
+        return Task(
+            description=dedent(f"""
+                NHIỆM VỤ: Kiểm duyệt Báo cáo Chiến lược (LLM-as-a-Judge)
+                
+                Dưới đây là BÁO CÁO CẦN DUYỆT:
+                ---
+                {report_content}
+                ---
+                
+                Dưới đây là DỮ LIỆU GỐC (SQL RAW DATA):
+                ---
+                {data_fetch_output}
+                ---
+
+                Hãy đóng vai trò là một Quality Assurance Agent cực kỳ khắt khe.
+
+                📐 PHƯƠNG PHÁP KIỂM DUYỆT (Chain-of-Thought):
+                BƯỚC 1: Quét toàn bộ báo cáo tìm ký tự CJK (Trung/Nhật/Hàn).
+                BƯỚC 2: Kiểm tra mọi bảng dữ liệu — có dùng model_name chính xác không?
+                BƯỚC 3: Đối chiếu số liệu trong báo cáo với DỮ LIỆU GỐC — tìm hallucination.
+                BƯỚC 4: Kiểm tra cấu trúc đầy đủ — có đủ 10 phần không?
+
+                CHECKLIST BẮT BUỘC:
+                ☐ Không có ký tự CJK nào?
+                ☐ Tất cả bảng dùng model_name chính xác từ SQL?
+                ☐ Số liệu khớp với DỮ LIỆU GỐC?
+                ☐ Có Ma trận SWOT đầy đủ 4 ô (S/W/O/T)?
+                ☐ Có Phân tích PESTEL (≥4/6 yếu tố)?
+                ☐ Có BCG Matrix?
+                ☐ Có Forecasting (≥3 kịch bản)?
+                ☐ Có nội dung phân khúc theo 3 nhóm (Gen Z/Doanh nhân/Phổ thông)?
+                ☐ Có ≥3 rủi ro cụ thể với Trigger + Contingency?
+                ☐ ≥2000 từ?
+
+                Nếu BÁO CÁO có lỗi, hãy liệt kê chi tiết (Critique) những điểm cần sửa.
+                Nếu BÁO CÁO hoàn hảo (pass tất cả checklist), trả về CHÍNH XÁC chuỗi: "PASSED".
+            """),
+            expected_output="Danh sách các lỗi (Critique) CẦN SỬA, hoặc trả về 'PASSED' nếu báo cáo đạt chuẩn.",
+            agent=agent,
+        )
+
+    def refine_report_task(self, agent, original_report: str, critique: str) -> Task:
+        return Task(
+            description=dedent(f"""
+                NHIỆM VỤ: Refine & Chỉnh sửa Báo cáo dựa trên phản hồi của QA (Reflection Pattern)
+                
+                BÁO CÁO CŨ CỦA BẠN:
+                ---
+                {original_report}
+                ---
+                
+                PHẢN HỒI QA (CRITIQUE):
+                ---
+                {critique}
+                ---
+
+                📐 PHƯƠNG PHÁP SUY LUẬN (Chain-of-Thought):
+                BƯỚC 1: Đọc PHẢN HỒI QA → Liệt kê TẤT CẢ các lỗi được chỉ ra.
+                BƯỚC 2: Với MỖI lỗi, xác định vị trí chính xác trong báo cáo.
+                BƯỚC 3: Sửa từng lỗi một — đảm bảo không tạo lỗi mới.
+                BƯỚC 4: Đọc lại toàn bộ báo cáo sau khi sửa — kiểm tra tự xác nhận.
+
+                Hãy sửa lại BÁO CÁO CŨ một cách triệt để dựa trên PHẢN HỒI QA.
+                Tuyệt đối không để lại các lỗi đã được chỉ ra. Giữ nguyên cấu trúc 10 phần,
+                chỉ sửa các lỗi vi phạm. Đảm bảo các framework mới (SWOT, PESTEL, Forecasting)
+                có mặt đầy đủ trong báo cáo sau khi sửa.
+            """),
+            expected_output="Báo cáo hoàn chỉnh 10 phần, 100% tiếng Việt thuần khiết, dữ liệu chuẩn xác, đầy đủ SWOT/PESTEL/Forecasting, không còn lỗi QA.",
+            agent=agent,
         )

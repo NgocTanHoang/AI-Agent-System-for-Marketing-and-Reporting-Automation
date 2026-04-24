@@ -253,6 +253,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Để chạy test cục bộ:
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+```
+
 ### Bước 3 — Cấu hình environment
 
 Tạo file `.env` tại thư mục gốc:
@@ -264,6 +270,36 @@ Tạo file `.env` tại thư mục gốc:
 NVIDIA_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxx
 OPENROUTER_API_KEY=sk-or-xxxxxxxxxxxxxxxxxxxx
 ```
+
+### Bước 3.5 — Tùy chỉnh runtime qua `config/pipeline.json`
+
+File `config/pipeline.json` cho phép thay đổi cấu hình pipeline mà không cần sửa code. Nếu file bị thiếu hoặc thiếu key, hệ thống sẽ tự fallback về default trong `src/config.py`.
+
+Ví dụ:
+
+```json
+{
+  "pipeline": {
+    "market_topic": "Xu huong smartphone 2026 va thi truong AI Phone",
+    "report_prefix": "Smartphone_Strategic_Report",
+    "feedback_signal_limit": 5,
+    "feedback_lookback_days": 30,
+    "signal_recent_window_minutes": 10
+  },
+  "analysis": {
+    "allowed_regions": ["North", "South", "Central", "Highlands"]
+  }
+}
+```
+
+Các nhóm cấu hình đang hỗ trợ:
+
+- `pipeline.market_topic`: chủ đề đưa vào `research_task`
+- `pipeline.report_prefix`: tiền tố tên file báo cáo trong `data/processed/`
+- `pipeline.feedback_signal_limit`: số learning signals gần nhất được đưa lại vào prompt
+- `pipeline.feedback_lookback_days`: số ngày lookback khi đọc `learning_signals`
+- `pipeline.signal_recent_window_minutes`: cửa sổ thời gian để kiểm tra signal do LLM vừa ghi hay cần fallback
+- `analysis.allowed_regions`: danh sách khu vực hợp lệ cho prompt và dashboard
 
 ### Bước 4 — Khởi tạo database
 
@@ -312,6 +348,14 @@ Truy cập `http://localhost:8000`. Dashboard hỗ trợ:
 - Kích hoạt pipeline từ UI + theo dõi logs
 - Lọc theo Brand và Region
 
+### Bước 7 (khuyến nghị) — Chạy test & kiểm tra CI
+
+```bash
+pytest -q
+```
+
+CI GitHub Actions đã được cấu hình tại `.github/workflows/ci.yml` để tự chạy test trên `push` và `pull_request`.
+
 ---
 
 ## Cấu trúc Thư mục
@@ -319,15 +363,20 @@ Truy cập `http://localhost:8000`. Dashboard hỗ trợ:
 ```
 ├── main.py                          # Entry point — Pipeline orchestration, retry logic, fallback
 ├── app.py                           # FastAPI server — Dashboard UI & REST API endpoints
-├── requirements.txt                 # 14 Python dependencies
+├── requirements.txt                 # Runtime dependencies
+├── requirements-dev.txt             # Test dependencies: pytest, httpx
 ├── .env                             # API keys (git-ignored)
 ├── LICENSE                          # MIT
+│
+├── config/
+│   └── pipeline.json                # Runtime config override cho topic, feedback window, report prefix
 │
 ├── src/
 │   ├── agents.py                    # 4 Agent definitions + LLM factory (NVIDIA/OpenRouter fallback)
 │   ├── tasks.py                     # 6 Task definitions với structured prompts
 │   ├── tools.py                     # Tool implementations: SQL query, search, sanitizer, chart, signal
 │   ├── config.py                    # Centralized paths, logging, environment validation
+│   ├── runtime_data.py              # Runtime metadata, feedback context, dashboard data helpers
 │   └── init_db.py                   # Database seeder (5 tables, synthetic data)
 │
 ├── data/
@@ -349,8 +398,27 @@ Truy cập `http://localhost:8000`. Dashboard hỗ trợ:
 │   ├── experiments.ipynb
 │   └── checklist.ipynb
 │
+├── tests/                           # Unit/integration tests cho config, runtime data và API
+│   ├── test_config.py
+│   ├── test_runtime_data.py
+│   └── test_app_api.py
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml                   # GitHub Actions chạy pytest trên push / pull_request
+│
 └── image/README/                    # Ảnh minh họa cho README
 ```
+
+### Ghi chú kiểm thử thực tế
+
+Những hạng mục đã được kiểm thử trực tiếp trên bản hiện tại:
+
+- Chạy `main.py` end-to-end thành công và sinh báo cáo mới trong `data/processed/`
+- Dashboard HTML render thành công ở route `/`
+- API `/api/kpi-summary`, `/api/dashboard-data`, `/api/reports`, `/api/report/{filename}`, `/api/model-info`, `/api/social-posts`, `/api/pipeline-status`, `/api/pipeline-logs` đều trả `200`
+- Route `/run` từ dashboard chuyển trạng thái sang `RUNNING`, sinh `pid`, và reset log mới
+- Bộ test tự động hiện tại pass với `pytest -q`
 
 ---
 
@@ -363,9 +431,9 @@ Truy cập `http://localhost:8000`. Dashboard hỗ trợ:
 | 1 | **Dữ liệu synthetic**            | Database hiện tại chứa dữ liệu demo được sinh ngẫu nhiên, không phản ánh thị trường thực tế                              |
 | 2 | **Sequential processing**          | Pipeline chạy tuần tự — thời gian thực thi phụ thuộc hoàn toàn vào tốc độ API của LLM provider                              |
 | 3 | **Sanitizer coverage**             | Category Revert chỉ thay thế bằng top-selling model — chưa xử lý được ánh xạ chính xác model vào đúng vị trí ngữ cảnh |
-| 4 | **Feedback Loop chưa khép kín** | Bảng `learning_signals` được ghi nhưng chưa được đọc tự động ở chu kỳ tiếp theo (cần tích hợp vào prompt context)   |
-| 5 | **Single market**                  | Cấu trúc hiện tại hardcode cho thị trường Việt Nam (4 regions: North, South, Central, Highlands)                                   |
-| 6 | **Không có test suite**          | Chưa có unit/integration tests                                                                                                           |
+| 4 | **Feedback Loop còn heuristic** | `learning_signals` đã được đọc lại vào prompt context, nhưng việc tóm tắt/ưu tiên signal vẫn đang theo heuristic rule-based |
+| 5 | **Single market**                  | Hệ thống đã config hóa `allowed_regions`, nhưng prompt và dataset hiện vẫn đang tối ưu cho ngữ cảnh smartphone tại Việt Nam |
+| 6 | **Test suite còn tập trung backend**          | Đã có unit/integration tests cho config, runtime data và API; chưa có browser E2E test cho UI tương tác |
 
 ### Lộ trình
 
@@ -373,9 +441,9 @@ Truy cập `http://localhost:8000`. Dashboard hỗ trợ:
 | :-------: | :----------------------------------------------------------------------------------------------------- | :----------: |
 |    P0    | **Dockerization** — `Dockerfile` + `docker-compose.yml` cho reproducible deployment         |   Planned   |
 |    P0    | **Async Pipeline** — Chuyển sang xử lý bất đồng bộ để giảm thời gian thực thi       |   Planned   |
-|    P1    | **Closed-loop Feedback** — Đọc `learning_signals` vào prompt context ở đầu mỗi chu kỳ |   Planned   |
+|    P1    | **Closed-loop Feedback** — Đọc `learning_signals` vào prompt context ở đầu mỗi chu kỳ | Implemented |
 |    P1    | **Long-term Memory** — Tích hợp Vector Database (ChromaDB) cho cross-cycle context            |   Planned   |
-|    P2    | **Test Suite** — Unit tests cho tools, integration tests cho pipeline                           |   Planned   |
+|    P2    | **Test Suite** — Unit tests cho config/runtime data, API integration tests và CI bằng GitHub Actions | Implemented |
 |    P2    | **Dashboard Enhancement** — Interactive charts, dark mode, PDF export                           |   Planned   |
 
 ---
