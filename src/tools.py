@@ -208,6 +208,31 @@ def save_report(content: str, filename: str) -> str:
     except Exception as e:
         return f"Lỗi lưu file: {e}"
 
+@tool("search_internal_knowledge")
+def search_internal_knowledge(query: str) -> str:
+    """
+    Tìm kiếm ngữ nghĩa (semantic search) trong Brand Knowledge Base.
+    Sử dụng khi cần thông tin về Brand Guidelines, chiến dịch, thông điệp,
+    ưu đãi khuyến mãi, hoặc chiến lược marketing nội bộ.
+    
+    Input: Câu hỏi tự nhiên về brand (VD: "Chiến dịch Galaxy S26 Ultra có ưu đãi gì?")
+    Output: Các đoạn văn liên quan từ tài liệu nội bộ, kèm nguồn và relevance score.
+    """
+    try:
+        from src.vector_db import BrandKnowledgeDB
+        kb = BrandKnowledgeDB()
+        
+        # Auto-index nếu chưa có dữ liệu
+        if kb.count() == 0:
+            logger.info("🔄 Brand Knowledge Base trống. Đang tự động index...")
+            kb.index_brand_files()
+        
+        return kb.search(query, n_results=5)
+    except Exception as e:
+        logger.error(f"search_internal_knowledge failed: {e}")
+        # Graceful fallback: đọc file trực tiếp
+        return f"Lỗi Vector DB: {e}. Hãy dùng tool 'read_marketing_content' để đọc file trực tiếp."
+
 @tool("create_sales_chart")
 def create_sales_chart(data_json: str, title: str, chart_type: str = "bar") -> str:
     """Tạo biểu đồ PNG từ dữ liệu JSON (keys: label, value). Trả về đường dẫn file."""
@@ -242,21 +267,24 @@ def create_sales_chart(data_json: str, title: str, chart_type: str = "bar") -> s
 
 class SignalUpdateTool(BaseTool):
     name: str = "signal_update"
-    description: str = "Ghi nhận bài học chiến lược (learning signals) vào database để Agent chu kỳ sau tham khảo."
+    description: str = (
+        "Ghi nhận bài học chiến lược (learning signals) vào memory.db "
+        "để Agent chu kỳ sau KHÔNG lặp lại cùng một lỗi. "
+        "Dữ liệu được lưu vĩnh viễn và tự động inject vào prompt mỗi lần chạy mới."
+    )
     
     def _run(self, insight_type: str, learning_content: str) -> str:
         """
-        Lưu ý: insight_type nên thuộc: 'low_performer', 'budget_realloc', 'trend_alert'.
+        Ghi signal vào memory.db (KHÔNG phải marketing_intelligence.db).
+        
+        Args:
+            insight_type: 'low_performer' | 'budget_realloc' | 'trend_alert' |
+                         'quality_issue' | 'competitive_shift' | 'custom'
+            learning_content: Nội dung bài học chiến lược (tiếng Việt, có số liệu).
         """
-        from src.config import DATABASE_PATH
-        try:
-            with sqlite3.connect(str(DATABASE_PATH)) as conn:
-                cur = conn.cursor()
-                cur.execute(
-                    "INSERT INTO learning_signals (insight_type, learning_content) VALUES (?, ?)",
-                    (insight_type, sanitize_vietnamese_text(learning_content))
-                )
-                conn.commit()
-            return f"✅ Đã ghi nhận signal [{insight_type}] thành công."
-        except Exception as e:
-            return f"Lỗi ghi signal: {e}"
+        from src.memory import write_signal
+        sanitized = sanitize_vietnamese_text(learning_content)
+        return write_signal(
+            insight_type=insight_type,
+            learning_content=sanitized,
+        )
