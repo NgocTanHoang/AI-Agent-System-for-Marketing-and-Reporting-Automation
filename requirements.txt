@@ -1,15 +1,1 @@
-crewai[tools]
-litellm
-pydantic
-python-dotenv
-pandas
-ddgs
-langchain-nvidia-ai-endpoints
-langchain-community
-duckduckgo-search
-sentence-transformers
-matplotlib
-fastapi
-uvicorn
-markdown
-chromadb
+-r requirements-worker.txt

@@ -1,26 +1,9 @@
-version: '3.8'
-
-# Production configuration
-# Use: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
 services:
-  ai-marketing-agent:
+  ai-marketing-web:
     environment:
-      - ENVIRONMENT=production
+      ENVIRONMENT: production
     restart: always
-    # Run the agent on a schedule (example using cron)
-    # command: >
-    #   bash -c "
-    #   while true; do
-    #     python main.py;
-    #     sleep 86400; # Run daily
-    #   done
-    #   "
 
-  # If you have a web interface
-  # ai-marketing-web:
-  #   ports:
-  #     - "80:8000"
-  #   restart: always
-  #   environment:
-  #     - ENVIRONMENT=production
+  ai-marketing-worker:
+    environment:
+      ENVIRONMENT: production

@@ -226,6 +226,33 @@ def count_recent_signals(
         return 0
 
 
+def count_signals_for_run(
+    run_id: str,
+    minutes: int = 10,
+    db_path: Optional[str] = None,
+) -> int:
+    """Đếm số signals được ghi cho một run cụ thể trong N phút gần đây."""
+    if not run_id:
+        return 0
+
+    path = db_path or _default_memory_path()
+    init_memory_db(path)
+    try:
+        with sqlite3.connect(path) as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM learning_signals
+                WHERE run_id = ?
+                  AND timestamp >= datetime('now', ?)
+                """,
+                (run_id, f"-{minutes} minutes"),
+            ).fetchone()
+            return row[0] if row else 0
+    except Exception:
+        return 0
+
+
 # ---------------------------------------------------------------------------
 # RUN HISTORY
 # ---------------------------------------------------------------------------

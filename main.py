@@ -25,7 +25,7 @@ from src.tasks import MarketingTasks
 from src.tools import SignalUpdateTool
 from src.memory import (
     build_memory_context,
-    count_recent_signals,
+    count_signals_for_run,
     write_signal,
     log_run,
 )
@@ -34,6 +34,7 @@ from src.runtime_data import (
     build_signal_fallback_entries,
     format_regions,
 )
+from src.reporting import missing_required_sections
 from crewai import Crew, Process
 
 # Initialize logger for main process
@@ -261,6 +262,14 @@ def run_smartphone_intelligence_system():
     # 4. Lưu sản phẩm cuối cùng
     try:
         report_path = PROCESSED_DATA_DIR / report_output_filename
+        missing_sections = missing_required_sections(report_content)
+        if missing_sections:
+            logger.warning(
+                "⚠️ Report thiếu các section chiến lược: %s",
+                ", ".join(missing_sections),
+            )
+        else:
+            logger.info("✅ Report đạt đủ khung section chiến lược tối thiểu.")
         
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(report_content)
@@ -309,13 +318,17 @@ def _ensure_signal_updates(report_content: str, run_id: str = "", settings: dict
     settings = settings or load_pipeline_settings()
     recent_window = settings["pipeline"]["signal_recent_window_minutes"]
     
-    recent_count = count_recent_signals(minutes=recent_window)
+    recent_count = count_signals_for_run(run_id=run_id, minutes=recent_window)
     if recent_count >= 3:
-        logger.info(f"✅ LLM đã ghi {recent_count} signals thành công vào memory.db. Bỏ qua fallback.")
+        logger.info(
+            "✅ Run %s đã ghi %d signals vào memory.db. Bỏ qua fallback.",
+            run_id,
+            recent_count,
+        )
         return
     
     logger.warning(
-        f"⚠️ FALLBACK TRIGGERED: Chỉ có {recent_count}/3 signals. "
+        f"⚠️ FALLBACK TRIGGERED: Run {run_id or 'unknown'} chỉ có {recent_count}/3 signals. "
         f"Đang chạy Programmatic Fallback..."
     )
     

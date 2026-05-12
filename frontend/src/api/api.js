@@ -1,12 +1,32 @@
-const BASE_URL = 'http://localhost:8000'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+
+function buildUrl(path) {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path
+}
+
+async function fetchJson(path, options) {
+  const response = await fetch(buildUrl(path), options)
+  const payload = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const message = payload.message || payload.detail || `Request failed with status ${response.status}`
+    throw new Error(message)
+  }
+
+  return payload
+}
+
+export const healthAPI = {
+  getStatus: async () => fetchJson('/api/health')
+}
 
 export const kpiAPI = {
   getSummary: async (brand = '', region = '') => {
     const params = new URLSearchParams()
     if (brand) params.append('brand', brand)
     if (region) params.append('region', region)
-    const res = await fetch(`${BASE_URL}/api/kpi-summary?${params}`)
-    return res.json()
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    return fetchJson(`/api/kpi-summary${suffix}`)
   }
 }
 
@@ -15,48 +35,27 @@ export const dashboardAPI = {
     const params = new URLSearchParams()
     if (brand) params.append('brand', brand)
     if (region) params.append('region', region)
-    const res = await fetch(`${BASE_URL}/api/dashboard-data?${params}`)
-    return res.json()
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    return fetchJson(`/api/dashboard-data${suffix}`)
   }
 }
 
 export const pipelineAPI = {
-  run: async () => {
-    const res = await fetch(`${BASE_URL}/run`, { method: 'POST' })
-    return res.json()
-  },
-  getStatus: async () => {
-    const res = await fetch(`${BASE_URL}/api/pipeline-status`)
-    return res.json()
-  },
-  getLogs: async () => {
-    const res = await fetch(`${BASE_URL}/api/pipeline-logs`)
-    return res.json()
-  }
+  run: async () => fetchJson('/run', { method: 'POST' }),
+  getStatus: async () => fetchJson('/api/pipeline-status'),
+  getLogs: async () => fetchJson('/api/pipeline-logs')
 }
 
 export const reportsAPI = {
-  list: async () => {
-    const res = await fetch(`${BASE_URL}/api/reports`)
-    return res.json()
-  },
-  get: async (filename) => {
-    const res = await fetch(`${BASE_URL}/api/report/${filename}`)
-    return res.json()
-  },
-  rate: async (filename, rating) => {
-    const res = await fetch(`${BASE_URL}/api/rate-report`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename, rating })
-    })
-    return res.json()
-  }
+  list: async () => fetchJson('/api/reports'),
+  get: async (filename) => fetchJson(`/api/report/${encodeURIComponent(filename)}`),
+  rate: async (filename, rating) => fetchJson('/api/rate-report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, rating })
+  })
 }
 
 export const modelAPI = {
-  getInfo: async () => {
-    const res = await fetch(`${BASE_URL}/api/model-info`)
-    return res.json()
-  }
+  getInfo: async () => fetchJson('/api/model-info')
 }

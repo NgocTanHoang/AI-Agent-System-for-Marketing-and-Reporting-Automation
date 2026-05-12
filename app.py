@@ -11,6 +11,7 @@ import sqlite3
 import logging
 from pathlib import Path
 from datetime import datetime
+from contextlib import ExitStack
 
 from fastapi import FastAPI, BackgroundTasks, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -20,10 +21,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import DATABASE_PATH, PROCESSED_DATA_DIR, PROJECT_ROOT, load_pipeline_settings, setup_logging
 from src.runtime_data import build_social_posts, get_dashboard_model_info
+from src.init_db import init_db
 
 # Initialize logger
 logger = setup_logging("fastapi_app")
 SETTINGS = load_pipeline_settings()
+
+
+def _ensure_database_ready() -> None:
+    if not DATABASE_PATH.exists():
+        logger.warning("Database missing at %s. Initializing demo dataset for API runtime.", DATABASE_PATH)
+        init_db(str(DATABASE_PATH))
+
+
+_ensure_database_ready()
 
 app = FastAPI(title="AI Marketing Intelligence Dashboard")
 
@@ -52,6 +63,14 @@ PIPELINE_STATUS = {
 LOG_FILE = PROJECT_ROOT / "data" / "pipeline.log"
 
 # --- HELPERS ---
+
+def _safe_report_path(filename: str) -> Path:
+    safe_name = Path(filename).name
+    candidate = (PROCESSED_DATA_DIR / safe_name).resolve()
+    processed_root = PROCESSED_DATA_DIR.resolve()
+    if processed_root not in candidate.parents and candidate != processed_root:
+        raise HTTPException(status_code=400, detail="Invalid report path")
+    return candidate
 
 def _read_latest_report() -> tuple[str, str]:
     files = sorted(list(PROCESSED_DATA_DIR.glob("*.md")), key=os.path.getmtime, reverse=True)
@@ -87,6 +106,24 @@ def _get_sections(md_content: str) -> list:
 
 # --- ROUTES ---
 
+@app.get("/api/health")
+async def health_check():
+    latest_report, _ = _read_latest_report()
+    providers = {
+        "primary": bool(get_dashboard_model_info(settings=SETTINGS)["primary_model"]["api_connected"]),
+        "backup": bool(get_dashboard_model_info(settings=SETTINGS)["backup_provider"]["api_connected"]),
+    }
+    status = "ok" if DATABASE_PATH.exists() else "degraded"
+    payload = {
+        "status": status,
+        "database_exists": DATABASE_PATH.exists(),
+        "processed_reports": len(list(PROCESSED_DATA_DIR.glob("*.md"))),
+        "latest_report": latest_report or None,
+        "pipeline_status": PIPELINE_STATUS["status"],
+        "llm_credentials_available": providers,
+    }
+    return JSONResponse(status_code=200 if status == "ok" else 503, content=payload)
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     report_name, md_content = _read_latest_report()
@@ -99,32 +136,40 @@ async def index(request: Request):
 @app.post("/run")
 async def run_pipeline(background_tasks: BackgroundTasks):
     if PIPELINE_STATUS["status"] == "RUNNING":
-        return {"status": "error", "message": "Pipeline is already running."}
+        return JSONResponse(
+            status_code=409,
+            content={"status": "error", "message": "Pipeline is already running."},
+        )
 
     def _execute():
         PIPELINE_STATUS["status"] = "RUNNING"
         PIPELINE_STATUS["start_time"] = datetime.now().isoformat()
+        PIPELINE_STATUS["end_time"] = None
+        PIPELINE_STATUS["pid"] = None
         try:
             LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
             with open(LOG_FILE, "w", encoding="utf-8") as f: f.write("") 
-            
-            process = subprocess.Popen(
-                [sys.executable, "main.py"],
-                cwd=str(PROJECT_ROOT),
-                stdout=open(LOG_FILE, "a"),
-                stderr=open(LOG_FILE, "a"),
-                env={**os.environ, "PYTHONUTF8": "1"}
-            )
-            PIPELINE_STATUS["pid"] = process.pid
-            process.wait()
-            PIPELINE_STATUS["status"] = "COMPLETED" if process.returncode == 0 else "FAILED"
+
+            with ExitStack() as stack:
+                stdout = stack.enter_context(open(LOG_FILE, "a", encoding="utf-8"))
+                stderr = stack.enter_context(open(LOG_FILE, "a", encoding="utf-8"))
+                process = subprocess.Popen(
+                    [sys.executable, "main.py"],
+                    cwd=str(PROJECT_ROOT),
+                    stdout=stdout,
+                    stderr=stderr,
+                    env={**os.environ, "PYTHONUTF8": "1"}
+                )
+                PIPELINE_STATUS["pid"] = process.pid
+                process.wait()
+                PIPELINE_STATUS["status"] = "COMPLETED" if process.returncode == 0 else "FAILED"
         except Exception as e:
             logger.error(f"Pipeline Error: {e}")
             PIPELINE_STATUS["status"] = "FAILED"
         PIPELINE_STATUS["end_time"] = datetime.now().isoformat()
 
     background_tasks.add_task(_execute)
-    return {"status": "started"}
+    return JSONResponse(status_code=202, content={"status": "started"})
 
 @app.get("/api/pipeline-status")
 async def get_status():
@@ -230,7 +275,7 @@ async def list_reports():
 
 @app.get("/api/report/{filename}")
 async def get_report(filename: str):
-    path = PROCESSED_DATA_DIR / filename
+    path = _safe_report_path(filename)
     if not path.exists(): raise HTTPException(status_code=404)
     content = path.read_text(encoding="utf-8")
     sections = _get_sections(content)
@@ -247,8 +292,8 @@ class RateRequest(BaseModel):
 async def rate_report(req: RateRequest):
     if req.rating != "up":
         return {"status": "ignored", "message": "Only thumbs up are saved to Vector DB."}
-        
-    path = PROCESSED_DATA_DIR / req.filename
+
+    path = _safe_report_path(req.filename)
     if not path.exists():
         raise HTTPException(status_code=404, detail="Report not found")
         
@@ -264,6 +309,15 @@ async def rate_report(req: RateRequest):
         )
         logger.info(f"📚 Đã lưu báo cáo {req.filename} vào Vector DB (Được đánh giá Tốt).")
         return {"status": "success", "message": "Saved to Vector DB as few-shot example."}
+    except ModuleNotFoundError as e:
+        logger.warning("Vector DB dependencies unavailable in current image: %s", e)
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "Vector DB dependencies are not installed in the current runtime.",
+            },
+        )
     except Exception as e:
         logger.error(f"Lỗi khi lưu vào Vector DB: {e}")
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})

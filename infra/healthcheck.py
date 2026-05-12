@@ -1,136 +1,128 @@
 #!/usr/bin/env python3
-"""
-Health check script for AI Marketing Agent System Docker container.
-"""
+"""Health checks for local/Docker runtime."""
 
+from __future__ import annotations
+
+import argparse
+import importlib
 import os
 import sys
-import json
-from pathlib import Path
-import subprocess
 from datetime import datetime
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import urlopen
 
-def check_file_exists(filepath):
-    """Check if a file exists."""
-    return Path(filepath).exists()
 
-def check_directory_exists(dirpath):
-    """Check if a directory exists."""
-    return Path(dirpath).exists() and Path(dirpath).is_dir()
+REQUIRED_DIRS = [
+    Path("data/raw/marketing_content"),
+    Path("data/processed"),
+    Path("logs"),
+]
 
-def check_docker_container_status():
-    """Check if Docker container is running."""
-    try:
-        result = subprocess.run(
-            ['docker', 'ps', '--filter', 'name=ai-marketing-agent', '--format', '{{.Status}}'],
-            capture_output=True, text=True, timeout=10
-        )
-        return 'Up' in result.stdout
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-        return False
+REQUIRED_MODULES = {
+    "web": [
+        "dotenv",
+        "fastapi",
+        "uvicorn",
+        "markdown",
+    ],
+    "worker": [
+        "dotenv",
+        "fastapi",
+        "uvicorn",
+        "markdown",
+        "crewai",
+        "litellm",
+        "pandas",
+        "ddgs",
+        "sentence_transformers",
+        "matplotlib",
+        "chromadb",
+        "torch",
+    ],
+}
 
-def check_python_availability():
-    """Check if Python is available."""
-    try:
-        result = subprocess.run(
-            ['python', '--version'],
-            capture_output=True, text=True, timeout=5
-        )
-        return result.returncode == 0
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-        return False
 
-def check_required_directories():
-    """Check if required directories exist and are writable."""
-    required_dirs = [
-        'data/raw/marketing_content',
-        'data/processed',
-        'logs'
-    ]
+def check_required_directories() -> tuple[bool, str]:
+    for directory in REQUIRED_DIRS:
+        if not directory.exists() or not directory.is_dir():
+            return False, f"Directory missing: {directory}"
 
-    for dir_path in required_dirs:
-        if not check_directory_exists(dir_path):
-            return False, f"Directory {dir_path} does not exist"
-
-        # Check if writable
-        test_file = Path(dir_path) / '.write_test'
+        test_file = directory / ".write_test"
         try:
             test_file.touch()
             test_file.unlink()
-        except (PermissionError, OSError):
-            return False, f"Directory {dir_path} is not writable"
+        except OSError as exc:
+            return False, f"Directory not writable: {directory} ({exc})"
 
-    return True, "All directories exist and are writable"
+    return True, "Directories are present and writable"
 
-def check_import_modules():
-    """Check if required Python modules can be imported."""
-    required_modules = [
-        'crewai',
-        'litellm',
-        'pydantic',
-        'python_dotenv',
-        'pandas',
-        'duckduckgo_search',
-        'sentence_transformers',
-        'matplotlib',
-        'fastapi',
-        'uvicorn',
-        'markdown',
-        'chromadb'
-    ]
 
-    missing_modules = []
-    for module in required_modules:
+def check_required_modules(mode: str) -> tuple[bool, list[str]]:
+    missing = []
+    for module_name in REQUIRED_MODULES[mode]:
         try:
-            __import__(module)
+            importlib.import_module(module_name)
         except ImportError:
-            missing_modules.append(module)
+            missing.append(module_name)
+    return len(missing) == 0, missing
 
-    return len(missing_modules) == 0, missing_modules
 
-def main():
-    """Main health check function."""
-    print(f"[{datetime.now().isoformat()}] Performing health check...")
+def check_health_endpoint(url: str) -> tuple[bool, str]:
+    try:
+        with urlopen(url, timeout=5) as response:
+            if response.status != 200:
+                return False, f"Health endpoint returned {response.status}"
+            body = response.read().decode("utf-8", errors="ignore")
+            if '"status"' not in body:
+                return False, "Health endpoint response missing status field"
+            return True, "Health endpoint reachable"
+    except URLError as exc:
+        return False, f"Health endpoint unreachable: {exc}"
 
-    checks = []
 
-    # Check 1: Docker container status
-    if 'DOCKER_CONTAINER' in os.environ:
-        docker_status = check_docker_container_status()
-        checks.append(('Docker Container Status', docker_status))
-        if not docker_status:
-            print("ERROR: Docker container is not running properly")
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Health check for AI Marketing Agent System")
+    parser.add_argument("--mode", choices=["web", "worker"], default=os.getenv("HEALTHCHECK_MODE", "web"))
+    parser.add_argument(
+        "--url",
+        default=os.getenv("HEALTHCHECK_URL", "http://127.0.0.1:8000/api/health"),
+        help="Health endpoint URL for web mode",
+    )
+    args = parser.parse_args()
 
-    # Check 2: Python availability
-    python_status = check_python_availability()
-    checks.append(('Python Availability', python_status))
-    if not python_status:
-        print("ERROR: Python is not available")
+    print(f"[{datetime.now().isoformat()}] Performing {args.mode} health check...")
 
-    # Check 3: Required directories
-    dirs_status, dirs_msg = check_required_directories()
-    checks.append(('Required Directories', dirs_status))
-    if not dirs_status:
-        print(f"ERROR: {dirs_msg}")
+    checks: list[tuple[str, bool, str]] = []
 
-    # Check 4: Required Python modules
-    modules_status, modules_msg = check_import_modules()
-    checks.append(('Required Python Modules', modules_status))
-    if not modules_status:
-        print(f"ERROR: Missing Python modules: {modules_msg}")
+    dirs_ok, dirs_msg = check_required_directories()
+    checks.append(("Directories", dirs_ok, dirs_msg))
 
-    # Summary
-    passed_checks = sum(1 for _, status in checks if status)
-    total_checks = len(checks)
+    modules_ok, missing_modules = check_required_modules(args.mode)
+    checks.append(
+        (
+            "Python Modules",
+            modules_ok,
+            "All required modules available" if modules_ok else f"Missing modules: {missing_modules}",
+        )
+    )
 
-    print(f"Health check completed: {passed_checks}/{total_checks} checks passed")
+    if args.mode == "web":
+        health_ok, health_msg = check_health_endpoint(args.url)
+        checks.append(("HTTP Health Endpoint", health_ok, health_msg))
 
-    if passed_checks == total_checks:
-        print("STATUS: HEALTHY")
-        sys.exit(0)
-    else:
-        print("STATUS: UNHEALTHY")
-        sys.exit(1)
+    failures = [name for name, ok, _ in checks if not ok]
+    for name, ok, message in checks:
+        prefix = "OK" if ok else "ERROR"
+        print(f"{prefix}: {name} - {message}")
 
-if __name__ == '__main__':
-    main()
+    if failures:
+        print(f"STATUS: UNHEALTHY ({', '.join(failures)})")
+        return 1
+
+    print("STATUS: HEALTHY")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
