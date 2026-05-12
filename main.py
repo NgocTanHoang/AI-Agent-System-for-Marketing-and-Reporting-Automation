@@ -34,6 +34,7 @@ from src.runtime_data import (
     build_signal_fallback_entries,
     format_regions,
 )
+from src.reporting import missing_required_sections
 from crewai import Crew, Process
 
 # Initialize logger for main process
@@ -261,6 +262,14 @@ def run_smartphone_intelligence_system():
     # 4. Lưu sản phẩm cuối cùng
     try:
         report_path = PROCESSED_DATA_DIR / report_output_filename
+        missing_sections = missing_required_sections(report_content)
+        if missing_sections:
+            logger.warning(
+                "⚠️ Report thiếu các section chiến lược: %s",
+                ", ".join(missing_sections),
+            )
+        else:
+            logger.info("✅ Report đạt đủ khung section chiến lược tối thiểu.")
         
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(report_content)

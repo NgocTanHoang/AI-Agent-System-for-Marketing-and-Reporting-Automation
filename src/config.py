@@ -199,9 +199,13 @@ def validate_config():
         sys.exit(1)
 
     if not DATABASE_PATH.exists():
-        logger.error("CRITICAL ERROR: Database not found at %s", DATABASE_PATH)
-        logger.error("Please run 'python src/init_db.py' to initialize the database.")
-        sys.exit(1)
+        logger.warning("Database not found at %s. Initializing demo dataset...", DATABASE_PATH)
+        try:
+            from src.init_db import init_db
+            init_db(str(DATABASE_PATH))
+        except Exception as exc:
+            logger.error("CRITICAL ERROR: Failed to initialize database at %s: %s", DATABASE_PATH, exc)
+            sys.exit(1)
 
     logger.info("Configuration validated successfully.")
 

@@ -21,10 +21,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import DATABASE_PATH, PROCESSED_DATA_DIR, PROJECT_ROOT, load_pipeline_settings, setup_logging
 from src.runtime_data import build_social_posts, get_dashboard_model_info
+from src.init_db import init_db
 
 # Initialize logger
 logger = setup_logging("fastapi_app")
 SETTINGS = load_pipeline_settings()
+
+
+def _ensure_database_ready() -> None:
+    if not DATABASE_PATH.exists():
+        logger.warning("Database missing at %s. Initializing demo dataset for API runtime.", DATABASE_PATH)
+        init_db(str(DATABASE_PATH))
+
+
+_ensure_database_ready()
 
 app = FastAPI(title="AI Marketing Intelligence Dashboard")
 
