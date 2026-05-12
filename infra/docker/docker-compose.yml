@@ -1,46 +1,38 @@
-version: '3.8'
-
 services:
-  ai-marketing-agent:
+  ai-marketing-web:
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ai-marketing-agent
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    container_name: ai-marketing-web
+    ports:
+      - "8000:8000"
     volumes:
-      # Mount data and logs directories for persistence
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - ../../data:/app/data
+      - ../../logs:/app/logs
     environment:
-      - NVIDIA_NIM_API_KEY=${NVIDIA_NIM_API_KEY}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      HEALTHCHECK_MODE: web
+      HEALTHCHECK_URL: http://127.0.0.1:8000/api/health
+      NVIDIA_NIM_API_KEY: ${NVIDIA_NIM_API_KEY:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
     env_file:
-      - .env
+      - ../../.env
     restart: unless-stopped
-    # Uncomment the following if you want to run on a schedule
-    # deploy:
-    #   restart_policy:
-    #     condition: on-failure
-    #     delay: 5s
-    #     max_attempts: 3
-    #     window: 60s
 
-  # If you have a web interface, you can use this service
-  # ai-marketing-web:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.web
-  #   container_name: ai-marketing-web
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./data:/app/data
-  #     - ./logs:/app/logs
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - ai-marketing-agent
-
-# Volumes for data persistence
-volumes:
-  data:
-  logs:
+  ai-marketing-worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.worker
+    container_name: ai-marketing-worker
+    profiles: ["batch"]
+    volumes:
+      - ../../data:/app/data
+      - ../../logs:/app/logs
+    environment:
+      HEALTHCHECK_MODE: worker
+      NVIDIA_NIM_API_KEY: ${NVIDIA_NIM_API_KEY:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    env_file:
+      - ../../.env
+    restart: "no"

@@ -16,16 +16,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-RUN mkdir -p data/raw/marketing_content data/processed logs
 RUN useradd --create-home --shell /bin/bash app && \
     mkdir -p data/raw/marketing_content data/processed logs && \
     chown -R app:app /app
 
 USER app
 
-EXPOSE 8000
-
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-  CMD ["python", "infra/healthcheck.py", "--mode", "web"]
+  CMD ["python", "infra/healthcheck.py", "--mode", "worker"]
 
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "main.py"]

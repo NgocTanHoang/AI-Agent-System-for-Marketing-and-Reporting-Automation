@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { pipelineAPI } from '../api/api'
 import GlassCard from '../components/GlassCard'
 
@@ -7,47 +7,53 @@ function Pipelines() {
   const [pid, setPid] = useState('N/A')
   const [elapsed, setElapsed] = useState(0)
   const [logs, setLogs] = useState('[SYSTEM]: Dashboard ready.')
-  const [startTime, setStartTime] = useState(null)
-  const [polling, setPolling] = useState(false)
   const logRef = useRef(null)
+  const intervalRef = useRef(null)
 
-  const startPolling = () => {
-    if (polling) return
-    setPolling(true)
-    pollStatus()
-    const interval = setInterval(pollStatus, 3000)
-    return () => clearInterval(interval)
+  const stopPolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
   }
 
   const pollStatus = async () => {
     try {
       const data = await pipelineAPI.getStatus()
       setStatus(data.status)
-      setPid(data.pid ? '#' + data.pid : 'N/A')
+      setPid(data.pid ? `#${data.pid}` : 'N/A')
 
       if (data.start_time) {
-        setStartTime(new Date(data.start_time))
+        const start = new Date(data.start_time)
         const end = data.status === 'RUNNING' ? new Date() : new Date(data.end_time || new Date())
-        setElapsed(Math.floor((end - new Date(data.start_time)) / 1000))
+        setElapsed(Math.floor((end - start) / 1000))
+      } else {
+        setElapsed(0)
       }
 
-      if (data.status === 'COMPLETED' || data.status === 'FAILED' || data.status === 'IDLE') {
-        setPolling(false)
-      }
-
-      // Poll logs
       const logData = await pipelineAPI.getLogs()
       if (logData.logs) {
         setLogs(logData.logs)
       }
+
+      if (data.status !== 'RUNNING') {
+        stopPolling()
+      }
     } catch (e) {
       console.error('Pipeline polling error:', e)
+      stopPolling()
     }
   }
 
+  const startPolling = () => {
+    if (intervalRef.current) return
+    pollStatus()
+    intervalRef.current = setInterval(pollStatus, 3000)
+  }
+
   useEffect(() => {
-    const cleanup = startPolling()
-    return cleanup
+    startPolling()
+    return stopPolling
   }, [])
 
   useEffect(() => {
@@ -59,6 +65,7 @@ function Pipelines() {
   const handleRunPipeline = async () => {
     try {
       await pipelineAPI.run()
+      setStatus('RUNNING')
       startPolling()
     } catch (e) {
       console.error('Failed to run pipeline:', e)
@@ -67,7 +74,6 @@ function Pipelines() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <section className="space-y-2 mb-6">
         <div className="inline-flex items-center px-2 py-1 rounded-full bg-error/10 border border-error/20">
           <div className="w-1.5 h-1.5 rounded-full bg-error animate-pulse mr-2"></div>
@@ -78,7 +84,6 @@ function Pipelines() {
         </h1>
       </section>
 
-      {/* Status Cards */}
       <div className="grid grid-cols-3 gap-4">
         <GlassCard className="p-4">
           <p className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-2">Status</p>
@@ -96,7 +101,6 @@ function Pipelines() {
         </GlassCard>
       </div>
 
-      {/* Log Console */}
       <GlassCard className="p-5">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-headline font-bold text-lg">Live Activity Logs</h3>

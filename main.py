@@ -25,7 +25,7 @@ from src.tasks import MarketingTasks
 from src.tools import SignalUpdateTool
 from src.memory import (
     build_memory_context,
-    count_recent_signals,
+    count_signals_for_run,
     write_signal,
     log_run,
 )
@@ -309,13 +309,17 @@ def _ensure_signal_updates(report_content: str, run_id: str = "", settings: dict
     settings = settings or load_pipeline_settings()
     recent_window = settings["pipeline"]["signal_recent_window_minutes"]
     
-    recent_count = count_recent_signals(minutes=recent_window)
+    recent_count = count_signals_for_run(run_id=run_id, minutes=recent_window)
     if recent_count >= 3:
-        logger.info(f"✅ LLM đã ghi {recent_count} signals thành công vào memory.db. Bỏ qua fallback.")
+        logger.info(
+            "✅ Run %s đã ghi %d signals vào memory.db. Bỏ qua fallback.",
+            run_id,
+            recent_count,
+        )
         return
     
     logger.warning(
-        f"⚠️ FALLBACK TRIGGERED: Chỉ có {recent_count}/3 signals. "
+        f"⚠️ FALLBACK TRIGGERED: Run {run_id or 'unknown'} chỉ có {recent_count}/3 signals. "
         f"Đang chạy Programmatic Fallback..."
     )
     
