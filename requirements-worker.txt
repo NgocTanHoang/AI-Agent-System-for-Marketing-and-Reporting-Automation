@@ -1,0 +1,11 @@
+-r requirements-web.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+crewai
+litellm
+pandas
+ddgs
+matplotlib
+chromadb
+sentence-transformers
+torch==2.5.1+cpu

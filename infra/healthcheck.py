@@ -19,20 +19,28 @@ REQUIRED_DIRS = [
     Path("logs"),
 ]
 
-REQUIRED_MODULES = [
-    "crewai",
-    "litellm",
-    "pydantic",
-    "dotenv",
-    "pandas",
-    "ddgs",
-    "sentence_transformers",
-    "matplotlib",
-    "fastapi",
-    "uvicorn",
-    "markdown",
-    "chromadb",
-]
+REQUIRED_MODULES = {
+    "web": [
+        "dotenv",
+        "fastapi",
+        "uvicorn",
+        "markdown",
+    ],
+    "worker": [
+        "dotenv",
+        "fastapi",
+        "uvicorn",
+        "markdown",
+        "crewai",
+        "litellm",
+        "pandas",
+        "ddgs",
+        "sentence_transformers",
+        "matplotlib",
+        "chromadb",
+        "torch",
+    ],
+}
 
 
 def check_required_directories() -> tuple[bool, str]:
@@ -50,9 +58,9 @@ def check_required_directories() -> tuple[bool, str]:
     return True, "Directories are present and writable"
 
 
-def check_required_modules() -> tuple[bool, list[str]]:
+def check_required_modules(mode: str) -> tuple[bool, list[str]]:
     missing = []
-    for module_name in REQUIRED_MODULES:
+    for module_name in REQUIRED_MODULES[mode]:
         try:
             importlib.import_module(module_name)
         except ImportError:
@@ -90,7 +98,7 @@ def main() -> int:
     dirs_ok, dirs_msg = check_required_directories()
     checks.append(("Directories", dirs_ok, dirs_msg))
 
-    modules_ok, missing_modules = check_required_modules()
+    modules_ok, missing_modules = check_required_modules(args.mode)
     checks.append(
         (
             "Python Modules",

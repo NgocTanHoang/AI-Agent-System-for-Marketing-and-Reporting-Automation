@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+markdown
+python-dotenv
+jinja2

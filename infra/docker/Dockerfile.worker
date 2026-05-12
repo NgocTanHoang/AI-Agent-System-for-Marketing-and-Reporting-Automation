@@ -1,23 +1,25 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MPLBACKEND=Agg
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+COPY requirements-web.txt requirements-worker.txt ./
 
-COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements-worker.txt
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-COPY . .
+COPY main.py ./
+COPY src ./src
+COPY config ./config
+COPY infra/healthcheck.py ./infra/healthcheck.py
+COPY data/raw/marketing_content ./data/raw/marketing_content
 
 RUN useradd --create-home --shell /bin/bash app && \
-    mkdir -p data/raw/marketing_content data/processed logs && \
+    mkdir -p data/processed logs && \
     chown -R app:app /app
 
 USER app

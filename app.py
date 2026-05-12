@@ -309,6 +309,15 @@ async def rate_report(req: RateRequest):
         )
         logger.info(f"📚 Đã lưu báo cáo {req.filename} vào Vector DB (Được đánh giá Tốt).")
         return {"status": "success", "message": "Saved to Vector DB as few-shot example."}
+    except ModuleNotFoundError as e:
+        logger.warning("Vector DB dependencies unavailable in current image: %s", e)
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "Vector DB dependencies are not installed in the current runtime.",
+            },
+        )
     except Exception as e:
         logger.error(f"Lỗi khi lưu vào Vector DB: {e}")
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
