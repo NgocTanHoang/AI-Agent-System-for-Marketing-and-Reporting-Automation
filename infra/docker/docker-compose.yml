@@ -23,6 +23,8 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.worker
+      args:
+        INSTALL_LOCAL_EMBEDDINGS: ${WORKER_INSTALL_LOCAL_EMBEDDINGS:-false}
     container_name: ai-marketing-worker
     profiles: ["batch"]
     volumes:
@@ -30,6 +32,7 @@ services:
       - ../../logs:/app/logs
     environment:
       HEALTHCHECK_MODE: worker
+      HEALTHCHECK_REQUIRE_VECTOR_MODULES: ${HEALTHCHECK_REQUIRE_VECTOR_MODULES:-false}
       NVIDIA_NIM_API_KEY: ${NVIDIA_NIM_API_KEY:-}
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
