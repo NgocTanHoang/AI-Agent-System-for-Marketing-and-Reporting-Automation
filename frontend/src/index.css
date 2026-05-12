@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface antialiased min-h-screen;
+    background-image: radial-gradient(circle at 50% 0%, rgba(145, 171, 255, 0.05) 0%, transparent 50%),
+                              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    @apply bg-surface text-on-surface;
+  }
+
+  .glass-card {
+    @apply backdrop-blur-xl border border-white/5;
+    background: rgba(29, 31, 40, 0.4);
+  }
+
+  .dark .glass-card {
+    background: rgba(29, 31, 40, 0.4);
+  }
+
+  .light .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
+  }
+
+  .status-tag {
+    @apply px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+
+  .status-idle {
+    @apply bg-surface-variant text-on-surface-variant;
+  }
+
+  .status-running {
+    @apply bg-primary text-surface;
+    animation: blink 1.5s infinite;
+  }
+
+  .status-completed {
+    @apply bg-green-500 text-surface;
+  }
+
+  .status-failed {
+    @apply bg-error text-white;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-primary to-secondary rounded-xl font-bold text-on-primary-fixed shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm uppercase tracking-wider;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-surface-container-highest border border-outline-variant rounded-xl font-bold text-on-surface text-sm uppercase tracking-wider active:scale-95 transition-all;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 text-on-surface-variant rounded-xl transition-all cursor-pointer hover:bg-white/5;
+  }
+
+  .nav-item.active {
+    @apply bg-primary/10 text-primary;
+    box-shadow: 0 0 20px rgba(145, 171, 255, 0.15);
+  }
+}

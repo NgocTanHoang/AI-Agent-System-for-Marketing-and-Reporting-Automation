@@ -22,6 +22,7 @@ try:
         EnterpriseDataTools,
         save_report,
         search_internet,
+        search_internal_knowledge,
         create_sales_chart,
         read_marketing_content,
         SignalUpdateTool,
@@ -47,12 +48,13 @@ try:
         """
         return _db.query_marketing_db(query, output_format=output_format)
 
-    _search_tool  = search_internet
-    _save_tool    = save_report
-    _query_tool   = query_marketing_db
-    _chart_tool   = create_sales_chart
-    _read_tool    = read_marketing_content
-    _signal_tool  = SignalUpdateTool()
+    _search_tool     = search_internet
+    _save_tool       = save_report
+    _query_tool      = query_marketing_db
+    _chart_tool      = create_sales_chart
+    _read_tool       = read_marketing_content
+    _knowledge_tool  = search_internal_knowledge
+    _signal_tool     = SignalUpdateTool()
 
 except Exception as e:
     logger.critical(f"Lỗi khởi tạo EnterpriseDataTools: {e}")
@@ -115,11 +117,12 @@ class MarketingAgents:
         return [_search_tool, _query_tool]
 
     def _tools_creative_director(self) -> list:
-        """Creative Director cần truy vấn SQL để kiểm chứng dữ liệu khi ra quyết định."""
-        return [_query_tool]
+        """Creative Director cần SQL + Brand Knowledge để ra quyết định chiến lược."""
+        return [_query_tool, _knowledge_tool]
 
     def _tools_content(self) -> list:
-        return [_read_tool]
+        """Content Strategist dùng Vector Search để lấy Brand Guidelines + fallback đọc file."""
+        return [_knowledge_tool, _read_tool]
 
     def _tools_reporter(self) -> list:
         return [_query_tool, _save_tool, _chart_tool, _signal_tool]
@@ -318,7 +321,7 @@ class MarketingAgents:
             llm=self.llm,
             allow_delegation=False,
             verbose=True,
-            max_iter=25,
+            max_iter=15,
         )
 
     def quality_assurance_agent(self) -> Agent:

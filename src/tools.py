@@ -154,9 +154,16 @@ class EnterpriseDataTools:
 # --- 5. STANDALONE TOOLS ---
 
 @tool("search_internet")
-@retry_with_backoff(max_retries=3)
 def search_internet(query: str) -> str:
-    """Quét internet để lấy tin tức mới nhất về xu hướng công nghệ hoặc đối thủ."""
+    """
+    Quét internet để lấy tin tức mới nhất về xu hướng công nghệ hoặc đối thủ.
+    
+    Args:
+        query (str): Chuỗi tìm kiếm để lấy thông tin thị trường
+        
+    Returns:
+        str: Kết quả tìm kiếm định dạng gồm tiêu đề, URL và nội dung
+    """
     try:
         ddgs_client = DDGS()
         results = list(ddgs_client.text(query, max_results=5))
@@ -241,15 +248,25 @@ def create_sales_chart(data_json: str, title: str, chart_type: str = "bar") -> s
     
     try:
         data = json.loads(data_json)
+    except json.JSONDecodeError as e:
+        return f"Lỗi JSON không hợp lệ: {e}. Gợi ý: '[{{\"label\": \"A\", \"value\": 100}}, ...]'"
+
+    if not isinstance(data, list) or not all(isinstance(row, dict) for row in data):
+        return "Lỗi: JSON phải là mảng các object, VD: '[{\"label\": \"A\", \"value\": 100}]'"
+
+    try:
         df = pd.DataFrame(data)
-        
+
         if df.empty or len(df.columns) < 2:
-            return "Lỗi: Dữ liệu JSON không hợp lệ để tạo biểu đồ."
-        
-        plt.figure(figsize=(10, 6))
-        # Assuming first col is label, second is numerical
+            return "Lỗi: Dữ liệu JSON cần ít nhất 2 cột (label, value)."
+
         cols = df.columns
-        plt.bar(df[cols[0]], df[cols[1]], color='skyblue')
+        val_col = cols[1]
+        if not pd.api.types.is_numeric_dtype(df[val_col]):
+            return f"Lỗi: Cột '{val_col}' phải là số. Nhận được: {df[val_col].dtype}"
+
+        plt.figure(figsize=(10, 6))
+        plt.bar(df[cols[0]].astype(str), df[val_col], color='skyblue')
         plt.title(title)
         plt.xticks(rotation=45)
         plt.tight_layout()

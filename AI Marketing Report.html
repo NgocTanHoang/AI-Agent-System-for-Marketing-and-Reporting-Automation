@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Marketing Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0d0f14;
+    --surface:    #151820;
+    --surface2:   #1c2030;
+    --border:     #252a3a;
+    --accent:     #4f8ef7;
+    --accent2:    #7c4dff;
+    --gold:       #f5c842;
+    --text:       #e2e8f0;
+    --text-muted: #7a869a;
+    --success:    #34d399;
+    --danger:     #f87171;
+    --font-display: 'Syne', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+    --radius:     12px;
+    --shadow:     0 8px 32px rgba(0,0,0,.45);
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap');
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── Noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 32px 24px;
+    z-index: 10;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .logo span { color: var(--accent); }
+  .logo-sub {
+    font-size: .7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+  }
+  .nav-label {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .nav-item {
+    display: block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: .85rem;
+    transition: all .2s;
+    margin-bottom: 4px;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .nav-item.active { border-left: 2px solid var(--accent); padding-left: 12px; }
+  .sidebar-footer {
+    margin-top: auto;
+    font-size: .75rem;
+    color: var(--text-muted);
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 240px;
+    padding: 40px 48px;
+    position: relative; z-index: 1;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+  .page-meta {
+    font-size: .78rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .page-meta span { color: var(--accent); }
+
+  /* ── Run button & Download buttons ── */
+  .action-buttons {
+    display: flex; gap: 12px;
+  }
+  .btn-run {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-family: var(--font-display);
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .5px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(79,142,247,.35);
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-run:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(79,142,247,.5);
+  }
+  .btn-run:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-family: var(--font-display);
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .2s;
+  }
+  .btn-secondary:hover {
+    background: var(--border);
+  }
+
+  /* ── Stats row ── */
+  .alert-box {
+    background: rgba(248,113,113,.15);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: none;
+  }
+  .alert-box.active { display: block; }
+  .alert-title { font-weight: bold; color: var(--danger); font-size: 1rem; margin-bottom: 4px; }
+  .alert-body { color: var(--text); font-size: 0.9rem; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .stat-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .stat-value.green { color: var(--success); }
+  .stat-value.gold  { color: var(--gold); }
+
+  /* ── Charts Grid ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+  }
+  .chart-card h2 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .chart-canvas-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    flex-grow: 1;
+  }
+
+  /* ── Report sections ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .report-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    animation: fadeUp .4s ease both;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .section-body { font-size: .9rem; color: var(--text); }
+  .section-body p { margin-bottom: 12px; }
+  .section-body strong { color: var(--gold); font-weight: 500; }
+  .section-body code {
+    font-family: var(--font-mono);
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: .82rem;
+    color: var(--accent);
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: .82rem;
+  }
+  thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--font-display);
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tbody tr:hover td { background: var(--surface2); }
+
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 3rem; display: block; margin-bottom: 16px; }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: none; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+    border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px 20px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-card[style] { grid-column: span 1 !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="logo">AI<span>Marketing</span><br/>Agent</div>
+  <div class="logo-sub">Intelligence System</div>
+  <div class="nav-label">Navigation</div>
+  <a href="#charts"  class="nav-item">📈 Biểu đồ Interactive</a>
+  <a href="#report"  class="nav-item active">📝 Báo cáo Tóm tắt</a>
+  <a href="#" onclick="runPipeline(document.querySelector('.btn-run')); return false;" class="nav-item">🚀 Chạy Pipeline</a>
+  <a href="/health"  class="nav-item" target="_blank">⚙️ System Status</a>
+  <div class="sidebar-footer">
+    CrewAI · NVIDIA NIM<br/>Llama 3.3 70B
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Báo cáo Chiến lược<br/>Bán lẻ Smartphone</h1>
+      <p class="page-meta">
+        Nguồn: <span>Smartphone_Strategic_Report_20260325_194847.md</span>
+        &nbsp;·&nbsp; Cập nhật: <span>25/03/2026 20:57</span>
+      </p>
+    </div>
+    <div class="action-buttons">
+      <a href="#" class="btn-secondary" onclick="window.print()">Xuất PDF</a>
+      <a href="#" class="btn-secondary" onclick="alert('Tính năng tải MD đang phát triển!')">Tải báo cáo MD</a>
+      <button class="btn-run" onclick="runPipeline(this)">
+        <span class="spinner" id="spinner"></span>
+        🚀 Chạy Pipeline
+      </button>
+    </div>
+  </div>
+
+  <div id="sentimentAlert" class="alert-box">
+    <div class="alert-title">🚩 Cảnh báo Khủng hoảng (Nhận diện tự động)</div>
+    <div class="alert-body" id="sentimentAlertText"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Trạng thái API</div>
+      <div class="stat-value green" style="font-size:1rem;margin-top:4px;">ONLINE</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">LLM Triangulation</div>
+      <div class="stat-value gold" style="font-size:1rem;margin-top:4px;">Web + DB + Internet</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Số Mô hình AI</div>
+      <div class="stat-value">3 Agents</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cảm xúc Tổng quan</div>
+      <div class="stat-value green" id="overallSentimentVal" style="font-size:1rem;margin-top:4px;">Đang tải...</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div id="charts" class="charts-grid">
+    <div class="chart-card">
+      <h2>🏆 Top 5 Smartphone Hái Ra Tiền</h2>
+      <div class="chart-canvas-wrapper"><canvas id="topSalesChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>🔥 Phương Thức Thanh Toán (Theo Độ Tuổi)</h2>
+      <div class="chart-canvas-wrapper"><canvas id="paymentHeatmapChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>🌍 Tỷ Trọng Doanh Số Theo Vùng</h2>
+      <div class="chart-canvas-wrapper"><canvas id="regionPieChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>📢 Phễu Chuyển Đổi Chiến Dịch (Funnel)</h2>
+      <div class="chart-canvas-wrapper"><canvas id="funnelChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>💰 ROI So Sánh Các Kênh Marketing</h2>
+      <div class="chart-canvas-wrapper"><canvas id="roiChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>⚖️ Cán Cân Cảm Xúc (Định Kiến MXH)</h2>
+      <div class="chart-canvas-wrapper"><canvas id="sentimentChart"></canvas></div>
+    </div>
+    <div class="chart-card" style="grid-column: span 2;">
+      <h2>🏷️ Ma Trận Giá & Phân Khúc (Release vs Price)</h2>
+      <div class="chart-canvas-wrapper"><canvas id="scatterPriceChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Report sections -->
+  <div id="report">
+    
+    
+    <section class="report-section" style="animation-delay:0.0s">
+        <h2 class="section-title">Tổng quan</h2>
+        <div class="section-body"><p>https://docs.google.com/document/d/1sXCuqjcktQTDS83g0wUdHdWxOaTcM5y16cSPpUBJhzE/edit</p></div>
+    </section>
+    
+    
+  </div>
+
+</main>
+
+<script>
+  Chart.defaults.color = '#7a869a';
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.borderColor = '#252a3a';
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch('/api/dashboard-data');
+      const data = await res.json();
+      if(!data || data.error) return;
+
+      // 1. Top 5 Sales
+      if(data.top_sales) {
+        new Chart(document.getElementById('topSalesChart'), {
+          type: 'bar',
+          data: {
+            labels: data.top_sales.map(x => x.product_name),
+            datasets: [{
+              label: 'Doanh thu (VNĐ)',
+              data: data.top_sales.map(x => x.revenue),
+              backgroundColor: '#4f8ef7',
+              borderRadius: 4
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // 2. Payment Heatmap (Stacked Bar)
+      if(data.payment_heatmap) {
+        const ageGroups = [...new Set(data.payment_heatmap.map(x => x.customer_age_group))];
+        const methods = [...new Set(data.payment_heatmap.map(x => x.payment_method))];
+        const colors = ['#f5c842', '#34d399', '#4f8ef7', '#7c4dff'];
+        
+        const datasets = methods.map((m, i) => {
+          return {
+            label: m,
+            backgroundColor: colors[i % colors.length],
+            data: ageGroups.map(age => {
+              const item = data.payment_heatmap.find(x => x.customer_age_group === age && x.payment_method === m);
+              return item ? item.count : 0;
+            })
+          };
+        });
+
+        new Chart(document.getElementById('paymentHeatmapChart'), {
+          type: 'bar',
+          data: { labels: ageGroups, datasets: datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true } }
+          }
+        });
+      }
+
+      // 3. Region Pie
+      if(data.region_pie) {
+        new Chart(document.getElementById('regionPieChart'), {
+          type: 'doughnut',
+          data: {
+            labels: data.region_pie.map(x => x.region),
+            datasets: [{
+              data: data.region_pie.map(x => x.count),
+              backgroundColor: ['#4f8ef7', '#f5c842', '#34d399', '#f87171'],
+              borderWidth: 0
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      // 4. Funnel
+      if(data.funnel && data.funnel.total_reach) {
+        new Chart(document.getElementById('funnelChart'), {
+          type: 'bar',
+          data: {
+            labels: ['Độ Phủ (Reach)', 'Chuyển Đổi (Conversions)'],
+            datasets: [{
+              data: [data.funnel.total_reach, data.funnel.total_conversions],
+              backgroundColor: ['#7c4dff', '#34d399'],
+              borderRadius: 4
+            }]
+          },
+          options: { 
+            responsive: true, maintainAspectRatio: false,
+            indexAxis: 'y' // Horizontal bar
+          }
+        });
+      }
+
+      // 5. ROI
+      if(data.roi_channels) {
+        new Chart(document.getElementById('roiChart'), {
+          type: 'bar',
+          data: {
+            labels: data.roi_channels.map(x => x.channel),
+            datasets: [{
+              label: 'ROI',
+              data: data.roi_channels.map(x => x.avg_roi),
+              backgroundColor: '#f5c842',
+              borderRadius: 4
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+        });
+      }
+
+      // 6. Sentiment Balance (Area) & Red Warning alert
+      if(data.sentiment && data.sentiment.length > 0) {
+        new Chart(document.getElementById('sentimentChart'), {
+          type: 'line',
+          data: {
+            labels: data.sentiment.map(x => x.keyword),
+            datasets: [
+              { label: 'Positive', data: data.sentiment.map(x => x.positive_score), borderColor:'#34d399', backgroundColor:'rgba(52,211,153,0.2)', fill: true, tension: 0.4 },
+              { label: 'Negative', data: data.sentiment.map(x => x.negative_score), borderColor:'#f87171', backgroundColor:'rgba(248,113,113,0.2)', fill: true, tension: 0.4 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        let badSentiments = data.sentiment.filter(x => x.negative_score > x.positive_score);
+        if(badSentiments.length > 0) {
+          document.getElementById('sentimentAlert').classList.add('active');
+          document.getElementById('overallSentimentVal').textContent = "Nguy hiểm";
+          document.getElementById('overallSentimentVal').className = "stat-value";
+          document.getElementById('overallSentimentVal').style.color = "var(--danger)";
+          
+          let alertText = "Cảnh báo chỉ số tiêu cực vượt qua tích cực ở các dòng: ";
+          badSentiments.forEach(item => {
+             alertText += `<br/><b>${item.keyword}</b>: Phàn nàn phổ biến: <i>"${item.top_complaint}"</i>`;
+          });
+          document.getElementById('sentimentAlertText').innerHTML = alertText;
+        } else {
+          document.getElementById('overallSentimentVal').textContent = "Tích cực";
+        }
+      }
+
+      // 7. Scatter
+      if(data.scatter) {
+        new Chart(document.getElementById('scatterPriceChart'), {
+          type: 'scatter',
+          data: {
+            datasets: [{
+              label: 'Đối Thủ Cạnh Tranh',
+              backgroundColor: '#4f8ef7',
+              data: data.scatter.map(x => ({ x: x.release_year, y: x.current_price, model: x.model_name }))
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { display: true, title: { display: true, text: 'Năm Ra Mắt' } }, y: { display: true, title: {display: true, text: 'Mức Giá (VNĐ)'}} },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) { return ctx.raw.model + ': ' + ctx.raw.y.toLocaleString() + ' VNĐ'; }
+                }
+              }
+            }
+          }
+        });
+      }
+
+    } catch(e) { console.error("Could not load charts", e); }
+  }
+
+  loadDashboard();
+
+  async function runPipeline(btn) {
+    btn.disabled = true;
+    document.getElementById('spinner').style.display = 'inline-block';
+    btn.childNodes[btn.childNodes.length - 1].textContent = ' Đang chạy Data Triangulation...';
+    try {
+      const res = await fetch('/run', { method: 'POST' });
+      const data = await res.json();
+      if (data.status === 'started') {
+        setTimeout(() => location.reload(), 15000); 
+      }
+    } catch(e) {
+      alert('Lỗi kết nối server: ' + e.message);
+      btn.disabled = false;
+      document.getElementById('spinner').style.display = 'none';
+      btn.childNodes[btn.childNodes.length - 1].textContent = ' Lỗi chạy';
+    }
+  }
+</script>
+
+</body>
+</html>

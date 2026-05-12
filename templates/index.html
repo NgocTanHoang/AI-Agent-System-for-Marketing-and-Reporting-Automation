@@ -1,353 +1,217 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html class="dark" lang="vi">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>AI Marketing | Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Michroma&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-dim": "#0c0e14",
+              "surface-container-low": "#11131a",
+              "tertiary-dim": "#ef9b4b",
+              "secondary-fixed-dim": "#ebadff",
+              "on-error-container": "#ffb2b9",
+              "on-tertiary-fixed-variant": "#653600",
+              "on-surface-variant": "#aaaab3",
+              "on-secondary-container": "#f1bfff",
+              "inverse-primary": "#1854d7",
+              "surface-container-highest": "#23262f",
+              "surface-bright": "#292c36",
+              "on-primary": "#002776",
+              "on-tertiary-fixed": "#391c00",
+              "on-secondary": "#4c0068",
+              "tertiary-fixed-dim": "#ef9b4b",
+              "primary-container": "#7d9cff",
+              "tertiary-container": "#ffa857",
+              "primary": "#91abff",
+              "outline": "#74757d",
+              "surface-container": "#171921",
+              "on-primary-fixed": "#000000",
+              "secondary-dim": "#ce7eec",
+              "error": "#ff6e84",
+              "surface-container-high": "#1d1f28",
+              "on-primary-container": "#001d5c",
+              "on-primary-fixed-variant": "#002571",
+              "on-secondary-fixed-variant": "#792c97",
+              "inverse-on-surface": "#53555c",
+              "surface-container-lowest": "#000000",
+              "on-secondary-fixed": "#580078",
+              "error-container": "#a70138",
+              "secondary": "#dd8bfb",
+              "tertiary": "#ffbb81",
+              "outline-variant": "#46484f",
+              "primary-fixed-dim": "#688dff",
+              "error-dim": "#d73357",
+              "on-error": "#490013",
+              "inverse-surface": "#faf8ff",
+              "on-surface": "#eaeaf3",
+              "surface-tint": "#91abff",
+              "on-tertiary": "#653600",
+              "primary-dim": "#396bee",
+              "tertiary-fixed": "#ffa857",
+              "on-tertiary-container": "#582e00",
+              "primary-fixed": "#7d9cff",
+              "surface-variant": "#23262f",
+              "surface": "#0c0e14",
+              "secondary-fixed": "#f2c1ff",
+              "on-background": "#eaeaf3",
+              "background": "#0c0e14",
+              "secondary-container": "#6e208c"
+            },
+            fontFamily: {
+              "headline": ["Syne", "sans-serif"],
+              "body": ["DM Sans", "sans-serif"],
+              "label": ["Inter", "sans-serif"],
+              "brand": ["Space Grotesk", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
 <style>
-  :root {
-    /* The Cognitive Shadow - Core Palette */
-    --surface: #0c0e14;
-    --surface-low: #11131a;
-    --surface-high: #1d1f28;
-    --surface-highest: #23262f;
-    
-    --primary: #91abff;
-    --primary-dim: #396bee;
-    --secondary: #dd8bfb;
-    --tertiary: #ffbb81; /* Metallic Bronze highlights */
-    
-    --on-surface: #eaeaf3;
-    --on-surface-variant: #aaaab3;
-    --outline-variant: rgba(70, 72, 79, 0.15); /* Ghost Border */
-    
-    --accent-error: #ff6e84;
-    --accent-success: #34d399;
-    
-    --font-heading: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-logo: 'Michroma', sans-serif;
-    
-    --radius-lg: 0.5rem;
-    --radius-full: 9999px;
-    
-    /* Gradients */
-    --grad-intel: linear-gradient(135deg, var(--primary), var(--secondary));
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { 
-    background-color: var(--surface); 
-    color: var(--on-surface); 
-    font-family: var(--font-body); 
-    display: flex; 
-    min-height: 100vh; 
-    overflow-x: hidden; 
-    /* Texture Noise overlay */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Ffilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-blend-mode: overlay;
-    background-attachment: fixed;
-  }
-  [id^="page-"] { display: none; }
-  #page-intelligence { display: block; }
-
-  /* ── Sidebar ── */
-  .sidebar { 
-    width: 250px; 
-    background-color: var(--surface-low); 
-    height: 100vh; 
-    position: fixed; 
-    display: flex; 
-    flex-direction: column; 
-    padding: 32px 16px; 
-    z-index: 1000; 
-    /* The No-Line Rule: boundaries defined by color shift */
-  }
-  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; padding: 0 8px; }
-  .brand-icon { 
-    width: 32px; height: 32px; 
-    background: var(--grad-intel); 
-    border-radius: 6px; 
-    display: flex; align-items: center; justify-content: center; 
-    color: var(--surface); font-weight: 800; font-size: 1.1rem; 
-    box-shadow: 0 0 15px rgba(145, 171, 255, 0.3);
-  }
-  .brand-text h2 { font-family: var(--font-logo); font-size: 0.8rem; line-height: 1.2; letter-spacing: -0.5px; color: var(--on-surface); }
-  .brand-text p { font-size: 0.55rem; text-transform: uppercase; color: var(--on-surface-variant); letter-spacing: 1px; margin-top: 2px; }
-  
-  .nav-section { margin-bottom: 32px; }
-  .nav-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--on-surface-variant); padding: 0 16px; margin-bottom: 12px; font-weight: 700; opacity: 0.5; }
-  .nav-item { 
-    display: flex; align-items: center; gap: 12px; 
-    padding: 12px 16px; color: var(--on-surface-variant); 
-    text-decoration: none; border-radius: var(--radius-lg); 
-    transition: 0.3s; font-size: 0.85rem; font-weight: 500; 
-    margin-bottom: 4px; cursor: pointer; 
-  }
-  .nav-item:hover { color: var(--on-surface); background: rgba(255,255,255,0.03); }
-  .nav-item.active { 
-    background: rgba(145, 171, 255, 0.1); 
-    color: var(--primary); 
-    font-weight: 600;
-  }
-  .sidebar-bottom { margin-top: auto; padding-top: 24px; }
-  .btn-new { 
-    width: 100%; padding: 12px; 
-    border: none; 
-    background: var(--surface-highest); 
-    color: var(--on-surface); 
-    border-radius: var(--radius-lg); 
-    font-size: 0.8rem; font-weight: 600;
-    cursor: pointer; transition: 0.3s; 
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
-  }
-  .btn-new:hover { background: var(--primary); color: var(--surface); }
-
-  /* ── Main ── */
-  .main { margin-left: 250px; flex-grow: 1; padding: 48px 64px; max-width: 1600px; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 64px; padding-bottom: 24px; }
-  .header-titles h1 { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; letter-spacing: 2px; color: var(--on-surface-variant); text-transform: uppercase; }
-  
-  .header-utils { display: flex; gap: 20px; align-items: center; }
-  .search-wrap { 
-    display: flex; align-items: center; 
-    background: var(--surface-highest); 
-    padding: 8px 16px; border-radius: var(--radius-full); 
-    /* Ghost Border */
-    box-shadow: 0 0 0 1px var(--outline-variant);
-  }
-  .search-wrap input { background: none; border: none; color: var(--on-surface); outline: none; font-size: 0.8rem; width: 160px; font-family: var(--font-body); }
-  .search-wrap input::placeholder { color: var(--on-surface-variant); opacity: 0.4; }
-
-  /* ── Hero ── */
-  .hero { margin-bottom: 72px; }
-  .hero-meta { color: var(--tertiary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 4px; font-weight: 700; margin-bottom: 16px; display: block; }
-  .hero-title { 
-    font-family: var(--font-heading);
-    font-size: 4rem; font-weight: 700; 
-    line-height: 1; letter-spacing: -2px; margin-bottom: 40px; 
-    color: var(--on-surface);
-  }
-  .hero-actions { display: flex; gap: 16px; }
-  .btn-main { 
-    padding: 14px 40px; border-radius: var(--radius-lg); 
-    font-weight: 700; font-size: 0.85rem; cursor: pointer; 
-    border: none; transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); 
-    text-transform: uppercase; letter-spacing: 1.5px; 
-    display: flex; align-items: center; gap: 10px; 
-  }
-  .btn-run { 
-    background: var(--grad-intel); 
-    color: var(--surface); 
-    box-shadow: 0 10px 40px -10px rgba(145, 171, 255, 0.5);
-  }
-  .btn-run:hover { 
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 20px 60px -10px rgba(145, 171, 255, 0.7);
-  }
-  .btn-sec { 
-    background: var(--surface-highest); 
-    color: var(--on-surface); 
-    box-shadow: 0 0 0 1px var(--outline-variant);
-  }
-  .btn-sec:hover { background: rgba(255,255,255,0.05); transform: translateY(-1px); }
-
-  /* ── Stats ── */
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 64px; }
-  .stat-card { 
-    background: var(--surface-low); 
-    padding: 24px; border-radius: var(--radius-lg); 
-    position: relative; 
-    transition: 0.3s;
-    /* Ambient Glow */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  }
-  .stat-card:hover { transform: translateY(-4px); background: var(--surface-high); }
-  .stat-card::after { 
-    content:''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; 
-    background: var(--grad-intel); transition: 0.4s;
-  }
-  .stat-card:hover::after { width: 100%; }
-  
-  .stat-label { font-size: 0.65rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 12px; }
-  .stat-value { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 600; color: var(--on-surface); }
-  .stat-sub { font-size: 0.7rem; color: var(--on-surface-variant); opacity: 0.6; margin-top: 8px; }
-
-  /* ── Charts Grid ── */
-  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; margin-bottom: 64px; }
-  .card { 
-    background: var(--surface-high); 
-    border-radius: var(--radius-lg); 
-    padding: 32px; 
-    display: flex; flex-direction: column; 
-    box-shadow: 20px 20px 60px rgba(0,0,0,0.3);
-    border: 1px solid var(--outline-variant);
-    backdrop-filter: blur(10px);
-  }
-  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-  .card-header h3 { font-family: var(--font-heading); font-size: 0.9rem; text-transform: uppercase; color: var(--on-surface); letter-spacing: 1px; }
-  .card-header span { color: var(--on-surface-variant); font-size: 0.7rem; font-family: var(--font-logo); }
-  .canvas-box { height: 320px; position: relative; }
-  .module-title { 
-    grid-column: span 2; 
-    font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 4px; 
-    color: var(--primary); padding: 16px 0; 
-    border-bottom: 1px solid var(--outline-variant); margin-bottom: 12px; 
-    text-align: center;
-  }
-
-  /* ── KPI Big Cards ── */
-  .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-bottom: 64px; }
-  .kpi-card { 
-    background: var(--surface-low); 
-    padding: 40px; 
-    border-radius: var(--radius-lg); 
-    text-align: center; 
-    transition: 0.4s;
-    border: 1px solid var(--outline-variant);
-  }
-  .kpi-card:hover { background: var(--surface-highest); transform: scale(1.02); }
-  .kpi-icon { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.8; }
-  .kpi-num { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--on-surface); margin-bottom: 8px; }
-  .kpi-title { font-size: 0.75rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
-
-  /* ── Conclusion / Report Blocks ── */
-  .report-block { 
-    background: var(--surface-high); 
-    padding: 32px; 
-    border-radius: var(--radius-lg); 
-    margin-bottom: 24px; 
-    box-shadow: 0 20px 80px -10px rgba(0, 0, 0, 0.6);
-    border: 1px solid var(--outline-variant);
-  }
-  .report-block h4 { 
-    font-family: var(--font-heading); 
-    font-size: 1.2rem; margin-bottom: 20px; color: var(--primary); 
-    border-bottom: 1px solid var(--outline-variant);
-    padding-bottom: 12px;
-  }
-  .report-block div { font-size: 0.95rem; color: var(--on-surface-variant); line-height: 1.8; }
-  
-  /* Tables inside Report */
-  .report-block table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: var(--radius-lg); overflow: hidden; }
-  .report-block th { background: var(--surface-highest); padding: 14px; text-align: left; color: var(--tertiary); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-  .report-block td { padding: 14px; border-bottom: 1px solid var(--outline-variant); font-size: 0.85rem; color: var(--on-surface); }
-  .report-block tr:last-child td { border-bottom: none; }
-  .report-block strong { color: var(--primary); font-weight: 700; }
-
-  /* ── Log Console ── */
-  .log-console { 
-    background: #000000; color: #8899aa; 
-    font-family: 'JetBrains Mono', monospace; 
-    padding: 32px; border-radius: var(--radius-lg); 
-    height: 500px; overflow-y: auto; font-size: 0.8rem; line-height: 1.6; 
-    box-shadow: inset 0 0 20px rgba(0,0,0,1);
-    border: 1px solid var(--surface-highest);
-  }
-  .status-tag { padding: 6px 14px; border-radius: var(--radius-full); font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; }
-  .status-idle { background: var(--surface-high); color: var(--on-surface-variant); }
-  .status-running { background: var(--primary); color: var(--surface); animation: blink 1.5s infinite; }
-  .status-completed { background: var(--accent-success); color: var(--surface); }
-  .status-failed { background: var(--accent-error); color: white; }
-  
-  /* ── Animations ── */
-  @keyframes blink { 50% { opacity: 0.5; } }
-  @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.7; } }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
-  .font-mono { font-family: 'JetBrains Mono', monospace; }
-
-  /* ── Models Page ── */
-  .model-hero { display: flex; gap: 32px; margin-bottom: 48px; }
-  .model-card-big { flex: 1; background: var(--surface-low); border-radius: var(--radius-lg); padding: 32px; transition: 0.3s; }
-  .model-card-big h3 { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--on-surface); margin-bottom: 8px; }
-  .model-badge { display: inline-block; padding: 5px 14px; border-radius: var(--radius-full); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-  .badge-green { background: rgba(52, 211, 153, 0.15); color: var(--accent-success); }
-  .badge-blue { background: rgba(145, 171, 255, 0.15); color: var(--primary); }
-  .badge-grey { background: rgba(170, 170, 179, 0.1); color: var(--on-surface-variant); }
-  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-  .spec-item { background: var(--surface-high); padding: 14px; border-radius: var(--radius-lg); }
-  .spec-item .s-label { font-size: 0.6rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 700; }
-  .spec-item .s-val { font-size: 0.9rem; color: var(--on-surface); font-weight: 600; }
-  .agent-list { list-style: none; }
-  .agent-item { background: var(--surface-low); padding: 18px 22px; border-radius: var(--radius-lg); margin-bottom: 10px; display: flex; gap: 16px; align-items: flex-start; transition: 0.3s; }
-  .agent-item:hover { background: var(--surface-high); }
-  .agent-idx { width: 30px; height: 30px; background: var(--grad-intel); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--surface); flex-shrink: 0; }
-  .agent-role { font-size: 0.85rem; font-weight: 600; color: var(--on-surface); margin-bottom: 6px; }
-  .agent-tools { font-size: 0.7rem; color: var(--on-surface-variant); }
-  .agent-tools code { background: rgba(145, 171, 255, 0.1); padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; color: var(--primary); margin-right: 4px; font-family: 'JetBrains Mono', monospace; }
-  .tool-table { width: 100%; border-collapse: collapse; }
-  .tool-table th { text-align: left; font-size: 0.6rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; border-bottom: 1px solid var(--outline-variant); font-weight: 700; }
-  .tool-table td { padding: 12px 14px; font-size: 0.8rem; color: var(--on-surface-variant); border-bottom: 1px solid var(--outline-variant); }
-  .tool-table td:first-child { color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
-  .tool-table tr:last-child td { border-bottom: none; }
-
-  /* ── Reports Page ── */
-  .report-list-item { background: var(--surface-low); padding: 18px 22px; border-radius: var(--radius-lg); margin-bottom: 10px; cursor: pointer; transition: 0.3s; display: flex; justify-content: space-between; align-items: center; }
-  .report-list-item:hover { background: var(--surface-high); }
-  .report-list-item h4 { font-family: var(--font-heading); font-size: 0.85rem; color: var(--on-surface); margin-bottom: 4px; }
-  .report-list-item .meta { font-size: 0.7rem; color: var(--on-surface-variant); }
-  .report-viewer { background: var(--surface-low); padding: 32px; border-radius: var(--radius-lg); margin-top: 20px; display: none; }
-  .report-viewer h3 { font-family: var(--font-heading); font-size: 1rem; margin-bottom: 20px; color: var(--on-surface); }
-  .report-viewer-close { cursor: pointer; color: var(--on-surface-variant); font-size: 0.8rem; transition: 0.3s; }
-  .report-viewer-close:hover { color: var(--accent-error); }
-
-  /* ── Realtime Log Box ── */
-  .realtime-box { background: #000000; border: 1px solid var(--surface-highest); border-radius: var(--radius-lg); padding: 24px; height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6; color: #8899aa; word-break: break-all; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
-
-  /* ── Modal ── */
-  .modal-overlay { 
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-    background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px);
-    z-index: 2000; display: none; justify-content: center; align-items: center; 
-  }
-  .modal-content { 
-    background: var(--surface); 
-    border: 1px solid var(--surface-highest); 
-    border-radius: var(--radius-lg); width: 90%; max-width: 1200px; padding: 48px; 
-    position: relative; box-shadow: 0 40px 100px rgba(0,0,0,0.8);
-  }
-  .modal-close { position: absolute; top: 32px; right: 32px; font-size: 2rem; color: var(--on-surface-variant); cursor: pointer; border: none; background: none; transition: 0.3s; }
-  .modal-close:hover { color: var(--accent-error); transform: rotate(90deg); }
+        body {
+            background-color: #0c0e14;
+            background-image: radial-gradient(circle at 50% 0%, rgba(145, 171, 255, 0.05) 0%, transparent 50%),
+                              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            background-blend-mode: overlay;
+            min-height: max(884px, 100dvh);
+        }
+        .glass-card {
+            background: rgba(29, 31, 40, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(145, 171, 255, 0.05);
+        }
+        .neon-glow-primary {
+            box-shadow: 0 0 20px rgba(145, 171, 255, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        [id^="page-"] { display: none; }
+        #page-intelligence { display: block; }
 </style>
 </head>
-<body>
+<body class="font-body text-on-surface antialiased min-h-screen pb-24">
 
-<!-- ═══════════════ SIDEBAR ═══════════════ -->
-<aside class="sidebar">
-  <div class="brand">
-    <div class="brand-icon">S</div>
-    <div class="brand-text">
-      <h2>AI Marketing</h2>
-      <p>Marketing Intelligence</p>
-    </div>
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-[#0c0e14]/80 backdrop-blur-xl flex justify-between items-center px-6 h-16 shadow-[0_20px_80px_-10px_rgba(0,0,0,0.6]">
+  <div class="flex items-center gap-2">
+    <span class="material-symbols-outlined text-[#91abff] text-xl" data-icon="bubble_chart">bubble_chart</span>
+    <span class="font-brand tracking-tighter uppercase text-sm font-bold text-[#91abff] drop-shadow-[0_0_8px_rgba(145,171,255,0.4)]">NEURAL_STRAT</span>
   </div>
-  <div class="nav-section">
-    <p class="nav-label">Main</p>
-    <a onclick="showPage('intelligence')" class="nav-item active" id="nav-intelligence">🧠 Intelligence</a>
-    <a onclick="showPage('analytics')" class="nav-item" id="nav-analytics">📊 Analytics</a>
-    <a onclick="showPage('pipelines')" class="nav-item" id="nav-pipelines">🔀 Pipelines</a>
+  <div class="flex items-center gap-4">
+    <span class="material-symbols-outlined text-[#aaaab3] active:scale-95 transition-transform cursor-pointer" data-icon="sensors" id="nav-pipelines-icon" onclick="showPage('pipelines')">sensors</span>
   </div>
-  <div class="nav-section">
-    <p class="nav-label">Resources</p>
-    <a onclick="showPage('models')" class="nav-item" id="nav-models">🤖 Models</a>
-    <a onclick="showPage('reports')" class="nav-item" id="nav-reports">📑 Reports</a>
-  </div>
-  <div class="sidebar-bottom">
-    <a class="nav-item">⚙️ Settings</a>
-    <button class="btn-new" onclick="runPipelineRequest()">▶ Run Pipeline</button>
-  </div>
-</aside>
+</header>
 
-<!-- ═══════════════ MAIN CONTENT ═══════════════ -->
-<main class="main">
-  <header class="header">
-    <div class="header-titles">
-      <h1>Intelligence Dashboard</h1>
-    </div>
-    <div class="header-utils">
-      <select id="filter-brand" onchange="applyFilters()" style="background:var(--surface-highest); border:none; color:var(--on-surface); padding:8px 14px; border-radius:var(--radius-lg); font-size: 0.75rem; cursor:pointer; font-family:var(--font-body); box-shadow: 0 0 0 1px var(--outline-variant);">
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="pt-20 px-4 space-y-6">
+
+  <!-- ═══ PAGE: INTELLIGENCE ═══ -->
+  <section id="page-intelligence">
+    <!-- Header Section -->
+    <section class="space-y-2">
+      <div class="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-2"></span>
+        <span class="text-[10px] font-label font-bold uppercase tracking-widest text-primary">Live Intel Feed</span>
+      </div>
+      <h1 class="font-headline text-3xl font-extrabold leading-tight tracking-tighter text-on-surface">
+        Báo cáo Chiến lược<br/>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-tertiary">Bán lẻ Smartphone</span>
+      </h1>
+      <div class="flex items-center gap-4 text-xs font-label text-on-surface-variant">
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="calendar_today">calendar_today</span> Generated: {{ generated_at }}</span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="monitoring">monitoring</span> Pipeline: <span id="pipeline-status-tag" class="status-tag status-idle ml-1">IDLE</span></span>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <section class="flex gap-3">
+      <button class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary rounded-xl font-headline font-bold text-on-primary-fixed shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm uppercase tracking-wider" id="run-btn" onclick="runPipelineRequest()">
+        <span class="spinner" id="spinner" style="display:none; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite;"></span>
+        <span id="run-btn-text">▶ Chạy Pipeline</span>
+      </button>
+      <button class="px-6 py-3 bg-surface-container-highest border border-outline-variant rounded-xl font-headline font-bold text-on-surface text-sm uppercase tracking-wider active:scale-95 transition-all" onclick="window.print()">Xuất PDF</button>
+    </section>
+
+    <!-- KPI Cards Grid -->
+    <section class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 border-l-2 border-primary">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+          <span class="text-[10px] font-label text-primary font-bold">VND</span>
+        </div>
+        <div>
+          <div class="text-2xl font-headline font-bold" id="kpi-revenue">—</div>
+          <div class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Tổng Doanh Thu</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 border-l-2 border-secondary">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-secondary" data-icon="rocket_launch">rocket_launch</span>
+          <span class="text-[10px] font-label text-secondary font-bold" id="kpi-roi">—</span>
+        </div>
+        <div>
+          <div class="text-2xl font-headline font-bold" id="kpi-top-channel">—</div>
+          <div class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Kênh ROI Cao</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 border-l-2 border-tertiary">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-tertiary" data-icon="sentiment_satisfied">sentiment_satisfied</span>
+          <span class="text-[10px] font-label text-tertiary font-bold">%</span>
+        </div>
+        <div>
+          <div class="text-2xl font-headline font-bold" id="kpi-sentiment">—</div>
+          <div class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Sentiment</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 border-l-2 border-primary">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-primary" data-icon="inventory">inventory</span>
+          <span class="text-[10px] font-label text-primary font-bold">UNITS</span>
+        </div>
+        <div>
+          <div class="text-2xl font-headline font-bold" id="kpi-units">—</div>
+          <div class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Tổng Bán Ra</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 border-l-2 border-secondary">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-secondary" data-icon="trending_up">trending_up</span>
+          <span class="text-[10px] font-label text-secondary font-bold">ROI</span>
+        </div>
+        <div>
+          <div class="text-2xl font-headline font-bold" id="kpi-roi-val">—</div>
+          <div class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">ROI TB</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-xl flex flex-col justify-between h-32 border-l-2 border-tertiary">
+        <div class="flex justify-between items-start">
+          <span class="material-symbols-outlined text-tertiary" data-icon="chat_bubble">chat_bubble</span>
+          <span class="text-[10px] font-label text-tertiary font-bold">TREND</span>
+        </div>
+        <div>
+          <div class="text-2xl font-headline font-bold text-sm" id="kpi-trending">—</div>
+          <div class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Hot Topic</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="flex gap-3">
+      <select id="filter-brand" onchange="applyFilters()" class="bg-surface-container-highest border border-outline-variant text-on-surface text-xs rounded-xl px-4 py-2 font-label uppercase tracking-wider focus:outline-none focus:border-primary/50">
         <option value="">Tất cả Thương hiệu</option>
         <option value="Apple">Apple</option>
         <option value="Samsung">Samsung</option>
@@ -355,270 +219,265 @@
         <option value="Oppo">Oppo</option>
         <option value="Google">Google</option>
       </select>
-      <select id="filter-region" onchange="applyFilters()" style="background:var(--surface-highest); border:none; color:var(--on-surface); padding:8px 14px; border-radius:var(--radius-lg); font-size: 0.75rem; cursor:pointer; font-family:var(--font-body); box-shadow: 0 0 0 1px var(--outline-variant);">
+      <select id="filter-region" onchange="applyFilters()" class="bg-surface-container-highest border border-outline-variant text-on-surface text-xs rounded-xl px-4 py-2 font-label uppercase tracking-wider focus:outline-none focus:border-primary/50">
         <option value="">Tất cả Khu vực</option>
-        <option value="North">Miền Bắc (North)</option>
-        <option value="South">Miền Nam (South)</option>
-        <option value="Central">Miền Trung (Central)</option>
-        <option value="Highlands">Tây Nguyên (Highlands)</option>
+        <option value="North">Miền Bắc</option>
+        <option value="South">Miền Nam</option>
+        <option value="Central">Miền Trung</option>
+        <option value="Highlands">Tây Nguyên</option>
       </select>
-      <div class="search-wrap"><span>🔍</span><input type="text" placeholder="Search..."></div>
-      <span style="position:relative; cursor:pointer">🔔<div style="position:absolute;top:0;right:0;width:5px;height:5px;background:var(--accent-error);border-radius:50%"></div></span>
-      <div style="width:30px; height:30px; background:var(--surface-highest); border-radius:50%; display:grid; place-items:center; cursor:pointer; font-size:0.8rem">👤</div>
-    </div>
-  </header>
+    </section>
 
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!--                        PAGE: INTELLIGENCE                          -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <section id="page-intelligence">
-
-<!-- COMMAND CENTER -->
-      <section class="hero">
-        <span class="hero-meta">AI Agent Analysis</span>
-        <h1 class="hero-title">Báo cáo Chiến lược<br/>Bán lẻ Smartphone</h1>
-        <div class="hero-actions">
-          <button class="btn-main btn-run" id="run-btn" onclick="runPipelineRequest()">
-            <span class="spinner" id="spinner"></span> Chạy Pipeline
-          </button>
-          <button class="btn-main btn-sec" onclick="window.print()">Xuất PDF</button>
-        </div>
-      </section>
-
-      <!-- KPI Cards -->
-      <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-num font-mono" id="kpi-revenue">—</div><div class="kpi-title">Tổng Doanh Thu</div></div>
-        <div class="kpi-card"><div class="kpi-icon">🚀</div><div class="kpi-num font-mono" id="kpi-top-channel">—</div><div class="kpi-title">Kênh ROI Cao Nhất</div></div>
-        <div class="kpi-card"><div class="kpi-icon">🔥</div><div class="kpi-num font-mono" id="kpi-trending">—</div><div class="kpi-title">Từ Khóa Trending</div></div>
-        
-        <div class="kpi-card"><div class="kpi-icon">📦</div><div class="kpi-num font-mono" id="kpi-units">—</div><div class="kpi-title">Tổng Bán Ra</div></div>
-        <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-num font-mono" id="kpi-roi">—</div><div class="kpi-title">ROI Trung Bình</div></div>
-        <div class="kpi-card"><div class="kpi-icon">😊</div><div class="kpi-num font-mono" id="kpi-sentiment">—</div><div class="kpi-title">Sentiment Score</div></div>
-      </div>
-
-      <!-- Report Sections from AI -->
-      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin:40px 0 20px;">
-        <h2 style="font-size:1.1rem; font-weight:700; color:var(--on-surface); font-family:var(--font-heading)">🚀 Kế Hoạch Hành Động & Gợi Ý Bài Đăng</h2>
-        <div style="display:flex; gap:12px;">
+    <!-- Report Sections from AI -->
+    <section class="space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="font-headline text-xl font-bold flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary" data-icon="auto_awesome">auto_awesome</span>
+          Kế Hoạch Hành Động & Báo Cáo AI
+        </h2>
+        <div class="flex gap-2">
           {% if report_name %}
-          <button class="btn-main btn-sec" onclick="rateReport('{{ report_name }}', 'up')" title="Báo cáo tốt, lưu làm Few-Shot" style="padding: 8px 16px; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; border-color: #4ade80;">
-            👍 Đánh giá Tốt
-          </button>
-          <button class="btn-main btn-sec" onclick="rateReport('{{ report_name }}', 'down')" title="Báo cáo chưa tốt" style="padding: 8px 16px; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; border-color: #f87171;">
-            👎 Đánh giá Kém
-          </button>
+          <button class="px-4 py-2 bg-surface-container-highest border border-[#4ade80]/30 rounded-xl text-[10px] font-bold uppercase tracking-wider text-[#4ade80] hover:bg-[#4ade80]/10 transition-all" onclick="rateReport('{{ report_name }}', 'up')">👍 Tốt</button>
+          <button class="px-4 py-2 bg-surface-container-highest border border-[#f87171]/30 rounded-xl text-[10px] font-bold uppercase tracking-wider text-[#f87171] hover:bg-[#f87171]/10 transition-all" onclick="rateReport('{{ report_name }}', 'down')">👎 Kém</button>
           {% endif %}
-          <button class="btn-main btn-sec" onclick="alert('Đã đẩy các gợi ý bài đăng và chiến lược lên Google Sheets/Notion thành công!')" style="padding: 8px 16px; font-size: 0.75rem; display: flex; align-items: center; gap: 8px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            Push to Sheets/Notion
-          </button>
         </div>
       </div>
       <div id="report-sections">
         {% if sections %}
           {% for sec in sections %}
-            <div class="report-block">
-              <h4>{{ sec.heading }}</h4>
-              <div>{{ sec.body_html | safe }}</div>
+            <div class="glass-card rounded-2xl p-5 space-y-3 mb-4">
+              <h4 class="font-headline font-bold text-lg text-primary border-b border-white/5 pb-3">{{ sec.heading }}</h4>
+              <div class="text-sm text-on-surface-variant leading-relaxed">{{ sec.body_html | safe }}</div>
             </div>
           {% endfor %}
         {% else %}
-          <div class="report-block"><h4>Chưa có báo cáo</h4><div>Nhấn "Chạy Pipeline" để AI bắt đầu phân tích và tạo báo cáo đầu tiên.</div></div>
+          <div class="glass-card rounded-2xl p-5">
+            <h4 class="font-headline font-bold text-lg">Chưa có báo cáo</h4>
+            <p class="text-sm text-on-surface-variant mt-2">Nhấn "Chạy Pipeline" để AI bắt đầu phân tích và tạo báo cáo đầu tiên.</p>
+          </div>
         {% endif %}
       </div>
+    </section>
   </section>
 
-  <!-- MODAL: REALTIME LOGS -->
-  <div class="modal-overlay" id="rt-modal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeRealtimeModal()">&times;</button>
-      <section class="hero" style="margin-bottom:24px">
-        <span class="hero-meta">Live Feed</span>
-        <h1 class="hero-title" style="font-size:2rem">Real-Time Agent Logs</h1>
-        <p style="color:var(--on-surface-variant); margin-top:-16px; margin-bottom: 20px;">Theo dõi suy nghĩ của AI khi đang quét web, truy vấn SQL và phân tích dữ liệu.</p>
-      </section>
-      <div class="stats-row" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
-        <div class="stat-card">
-          <p class="stat-label">Status</p>
-          <p class="stat-value"><span id="rt-status" class="status-tag status-idle">IDLE</span></p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">Process ID</p>
-          <p class="stat-value" id="rt-pid">N/A</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">Elapsed</p>
-          <p class="stat-value" id="rt-elapsed">0s</p>
-        </div>
-      </div>
-      <div class="realtime-box" id="realtime-logs">[SYSTEM]: Đang chờ Pipeline. Nhấn "Chạy Pipeline" để bắt đầu theo dõi.</div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!--                        PAGE: ANALYTICS                             -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- ═══ PAGE: ANALYTICS ═══ -->
   <section id="page-analytics">
-    <section class="hero">
-      <span class="hero-meta">Data Exploration</span>
-      <h1 class="hero-title">Analytics Center</h1>
+    <section class="space-y-2 mb-6">
+      <div class="inline-flex items-center px-2 py-1 rounded-full bg-secondary/10 border border-secondary/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse mr-2"></span>
+        <span class="text-[10px] font-label font-bold uppercase tracking-widest text-secondary">Data Exploration</span>
+      </div>
+      <h1 class="font-headline text-3xl font-extrabold leading-tight tracking-tighter text-on-surface">
+        Analytics<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-tertiary">Center</span>
+      </h1>
     </section>
 
-    <!-- MODULE 1 -->
-    <div class="grid-2">
-      <p class="module-title">📊 Module 1 — Performance Ranking</p>
-      <div class="card">
-        <div class="card-header"><h3>Top 5 — Doanh Thu Cao Nhất</h3><span>revenue</span></div>
-        <div class="canvas-box"><canvas id="topRevenueChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Top 5 — Doanh Số Cao Nhất</h3><span>units sold</span></div>
-        <div class="canvas-box"><canvas id="topSalesChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Top 5 — Doanh Thu Thấp Nhất</h3><span>revenue</span></div>
-        <div class="canvas-box"><canvas id="bottomRevenueChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Top 5 — Doanh Số Thấp Nhất</h3><span>units sold</span></div>
-        <div class="canvas-box"><canvas id="bottomSalesChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- MODULE 2 -->
-    <div class="grid-2">
-      <p class="module-title">💳 Module 2 — Payment Dynamics</p>
-      <div class="card">
-        <div class="card-header"><h3>Tỷ Lệ Phương Thức Thanh Toán</h3><span>donut</span></div>
-        <div class="canvas-box"><canvas id="paymentDonutChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Thanh Toán Theo Nhóm Tuổi</h3><span>stacked bar</span></div>
-        <div class="canvas-box"><canvas id="paymentAgeChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- MODULE 3 -->
-    <div class="grid-2">
-      <p class="module-title">👥 Module 3 — Customer Profiles</p>
-      <div class="card" style="grid-column: span 2;">
-        <div class="card-header"><h3>Heatmap: Tầm Giá Theo Độ Tuổi</h3><span>age × price</span></div>
-        <div class="canvas-box"><canvas id="heatmapChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- MODULE 4 -->
-    <div class="grid-2">
-      <p class="module-title">🚀 Module 4 — Marketing Efficiency</p>
-      <div class="card" style="grid-column: span 2;">
-        <div class="card-header"><h3>CPA & ROI Theo Kênh Marketing</h3><span>grouped bar</span></div>
-        <div class="canvas-box"><canvas id="marketingChart"></canvas></div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!--                        PAGE: PIPELINES                             -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <section id="page-pipelines">
-    <section class="hero">
-      <span class="hero-meta">Processing Layer v2</span>
-      <h1 class="hero-title">Pipeline Execution<br/>Monitoring</h1>
-    </section>
-    <div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
-      <div class="stat-card">
-        <p class="stat-label">Current Status</p>
-        <p class="stat-value"><span id="pipeline-status-tag" class="status-tag status-idle">IDLE</span></p>
-        <p class="stat-sub" id="pipeline-time">Waiting for trigger...</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">Active Process ID</p>
-        <p class="stat-value" id="pipeline-pid">N/A</p>
-        <p class="stat-sub">Subprocess PID</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">Elapsed Time</p>
-        <p class="stat-value" id="pipeline-elapsed">0s</p>
-        <p class="stat-sub" id="pipeline-time-sub">Real-time counter</p>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:40px">
-      <div class="card-header"><h3>Live Activity Logs</h3><span id="log-status-indicator">● Standby</span></div>
-      <div class="log-console" id="pipeline-logs">[SYSTEM]: Dashboard ready. Click "Chạy Pipeline" to start the AI agents.</div>
-    </div>
-  </section>
-
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!--                        PAGE: MODELS                                -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <section id="page-models">
-    <section class="hero">
-      <span class="hero-meta">Infrastructure</span>
-      <h1 class="hero-title">LLM & Agent<br/>Configuration</h1>
-    </section>
-
-    <div class="model-hero" id="model-hero">
-      <div class="model-card-big" style="flex:2">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-          <div>
-            <h3 id="model-name">Loading...</h3>
-            <p style="color:var(--on-surface-variant); font-size:0.8rem" id="model-provider">—</p>
+    <!-- MODULE 1: Performance Ranking -->
+    <div class="mb-6">
+      <p class="font-label text-[10px] font-bold uppercase tracking-widest text-primary mb-4">📊 Module 1 — Performance Ranking</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="glass-card p-5 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline font-bold text-lg">Top 5 — Doanh Thu</h3>
           </div>
-          <span class="model-badge badge-green" id="model-conn-badge">CONNECTED</span>
+          <div class="h-64"><canvas id="topRevenueChart"></canvas></div>
         </div>
-        <div class="spec-grid">
-          <div class="spec-item"><div class="s-label">Model ID</div><div class="s-val" id="model-id" style="font-family:monospace; font-size:0.75rem">—</div></div>
-          <div class="spec-item"><div class="s-label">Parameters</div><div class="s-val" id="model-params">—</div></div>
-          <div class="spec-item"><div class="s-label">Temperature</div><div class="s-val" id="model-temp">—</div></div>
-          <div class="spec-item"><div class="s-label">Context Window</div><div class="s-val" id="model-ctx">—</div></div>
+        <div class="glass-card p-5 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline font-bold text-lg">Top 5 — Doanh Số</h3>
+          </div>
+          <div class="h-64"><canvas id="topSalesChart"></canvas></div>
         </div>
-      </div>
-      <div class="model-card-big" style="flex:1; background: linear-gradient(135deg, var(--surface-high), var(--surface-low));">
-        <h3 style="font-size:1rem; margin-bottom:8px">Orchestrator</h3>
-        <p style="color:var(--on-surface-variant); font-size:0.8rem; margin-bottom:16px" id="orch-info">—</p>
-        <div style="margin-bottom:16px">
-          <span class="model-badge badge-blue">3 AGENTS</span>
-          <span class="model-badge badge-grey" style="margin-left:6px" id="backup-badge">BACKUP: —</span>
+        <div class="glass-card p-5 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline font-bold text-lg">Bottom 5 — Doanh Thu</h3>
+          </div>
+          <div class="h-64"><canvas id="bottomRevenueChart"></canvas></div>
         </div>
-        <p style="font-size:0.65rem; color:var(--on-surface-variant); opacity:0.5; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px">Pipeline Flow</p>
-        <p style="font-size:0.8rem; color:var(--on-surface-variant)">Nghiên cứu → Phản biện → Báo cáo MD</p>
+        <div class="glass-card p-5 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline font-bold text-lg">Bottom 5 — Doanh Số</h3>
+          </div>
+          <div class="h-64"><canvas id="bottomSalesChart"></canvas></div>
+        </div>
       </div>
     </div>
 
-    <!-- Agent Cards -->
-    <h2 style="font-size:0.9rem; font-weight:700; margin-bottom:16px; color:var(--on-surface); font-family:var(--font-heading)">🤖 AI Agent Registry</h2>
-    <ul class="agent-list" id="agent-list"></ul>
+    <!-- MODULE 2: Payment Dynamics -->
+    <div class="mb-6">
+      <p class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary mb-4">💳 Module 2 — Payment Dynamics</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="glass-card p-5 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline font-bold text-lg">Tỷ Lệ Thanh Toán</h3>
+          </div>
+          <div class="h-64"><canvas id="paymentDonutChart"></canvas></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline font-bold text-lg">Thanh Toán Theo Độ Tuổi</h3>
+          </div>
+          <div class="h-64"><canvas id="paymentAgeChart"></canvas></div>
+        </div>
+      </div>
+    </div>
 
-    <!-- Tool Table -->
-    <h2 style="font-size:0.9rem; font-weight:700; margin:32px 0 16px; color:var(--on-surface); font-family:var(--font-heading)">🔧 Tool Inventory</h2>
-    <div class="card">
-      <table class="tool-table" id="tool-table">
-        <thead><tr><th>Tool Name</th><th>Type</th><th>Description</th></tr></thead>
+    <!-- MODULE 3: Customer Profiles -->
+    <div class="mb-6">
+      <p class="font-label text-[10px] font-bold uppercase tracking-widest text-tertiary mb-4">👥 Module 3 — Customer Profiles</p>
+      <div class="glass-card p-5 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-headline font-bold text-lg">Heatmap: Tầm Giá × Độ Tuổi</h3>
+        </div>
+        <div class="h-64"><canvas id="heatmapChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- MODULE 4: Marketing Efficiency -->
+    <div class="mb-6">
+      <p class="font-label text-[10px] font-bold uppercase tracking-widest text-primary mb-4">🚀 Module 4 — Marketing Efficiency</p>
+      <div class="glass-card p-5 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-headline font-bold text-lg">CPA & ROI Theo Kênh</h3>
+        </div>
+        <div class="h-64"><canvas id="marketingChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PAGE: PIPELINES ═══ -->
+  <section id="page-pipelines">
+    <section class="space-y-2 mb-6">
+      <div class="inline-flex items-center px-2 py-1 rounded-full bg-error/10 border border-error/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse mr-2"></span>
+        <span class="text-[10px] font-label font-bold uppercase tracking-widest text-error">Processing Layer</span>
+      </div>
+      <h1 class="font-headline text-3xl font-extrabold leading-tight tracking-tighter text-on-surface">
+        Pipeline<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-error to-tertiary">Monitoring</span>
+      </h1>
+    </section>
+
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="glass-card p-4 rounded-xl">
+        <p class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-2">Status</p>
+        <p class="font-headline font-bold"><span id="pipeline-status-tag-2" class="status-tag status-idle">IDLE</span></p>
+        <p class="text-[10px] text-on-surface-variant mt-2" id="pipeline-time">Waiting...</p>
+      </div>
+      <div class="glass-card p-4 rounded-xl">
+        <p class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-2">Process ID</p>
+        <p class="font-headline font-bold" id="pipeline-pid">N/A</p>
+      </div>
+      <div class="glass-card p-4 rounded-xl">
+        <p class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-2">Elapsed</p>
+        <p class="font-headline font-bold" id="pipeline-elapsed">0s</p>
+      </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-5">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-headline font-bold text-lg">Live Activity Logs</h3>
+        <span id="log-status-indicator" class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">● Standby</span>
+      </div>
+      <div class="bg-[#000000] border border-surface-container-highest rounded-xl p-4 h-80 overflow-y-auto font-mono text-xs text-[#8899aa] leading-relaxed" id="pipeline-logs">[SYSTEM]: Dashboard ready.</div>
+    </div>
+  </section>
+
+  <!-- ═══ PAGE: MODELS ═══ -->
+  <section id="page-models">
+    <section class="space-y-2 mb-6">
+      <div class="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-2"></span>
+        <span class="text-[10px] font-label font-bold uppercase tracking-widest text-primary">Infrastructure</span>
+      </div>
+      <h1 class="font-headline text-3xl font-extrabold leading-tight tracking-tighter text-on-surface">
+        LLM &<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Agent Config</span>
+      </h1>
+    </section>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="glass-card p-5 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="font-headline font-bold text-lg" id="model-name">Loading...</h3>
+            <p class="text-xs text-on-surface-variant" id="model-provider">—</p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" id="model-conn-badge">CONNECTED</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-surface-container-highest/50 p-3 rounded-xl">
+            <p class="text-[9px] font-label uppercase text-on-surface-variant">Model ID</p>
+            <p class="text-xs font-bold mt-1 font-mono" id="model-id">—</p>
+          </div>
+          <div class="bg-surface-container-highest/50 p-3 rounded-xl">
+            <p class="text-[9px] font-label uppercase text-on-surface-variant">Temp</p>
+            <p class="text-xs font-bold mt-1" id="model-temp">—</p>
+          </div>
+          <div class="bg-surface-container-highest/50 p-3 rounded-xl">
+            <p class="text-[9px] font-label uppercase text-on-surface-variant">Params</p>
+            <p class="text-xs font-bold mt-1" id="model-params">—</p>
+          </div>
+          <div class="bg-surface-container-highest/50 p-3 rounded-xl">
+            <p class="text-[9px] font-label uppercase text-on-surface-variant">Context</p>
+            <p class="text-xs font-bold mt-1" id="model-ctx">—</p>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card p-5 rounded-2xl bg-gradient-to-br from-surface-container to-surface-container-high">
+        <h3 class="font-headline font-bold text-lg mb-2">Orchestrator</h3>
+        <p class="text-xs text-on-surface-variant mb-4" id="orch-info">—</p>
+        <div class="flex gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-primary/10 text-[10px] font-bold text-primary uppercase tracking-wider">3 AGENTS</span>
+          <span class="px-3 py-1 rounded-full bg-secondary/10 text-[10px] font-bold text-secondary uppercase tracking-wider" id="backup-badge">BACKUP: —</span>
+        </div>
+        <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-wider mb-2">Pipeline Flow</p>
+        <p class="text-xs text-on-surface-variant">Nghiên cứu → Phản biện → Báo cáo MD</p>
+      </div>
+    </div>
+
+    <h2 class="font-headline text-xl font-bold mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
+      AI Agent Registry
+    </h2>
+    <ul class="space-y-2 mb-6" id="agent-list"></ul>
+
+    <h2 class="font-headline text-xl font-bold mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined text-secondary" data-icon="build">build</span>
+      Tool Inventory
+    </h2>
+    <div class="glass-card rounded-2xl overflow-hidden">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-white/5">
+            <th class="p-4 text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Tool Name</th>
+            <th class="p-4 text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Type</th>
+            <th class="p-4 text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Description</th>
+          </tr>
+        </thead>
         <tbody id="tool-tbody"></tbody>
       </table>
     </div>
   </section>
 
-
-  <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!--                        PAGE: REPORTS                               -->
-  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- ═══ PAGE: REPORTS ═══ -->
   <section id="page-reports">
-    <section class="hero">
-      <span class="hero-meta">Document Archive</span>
-      <h1 class="hero-title">Report History</h1>
+    <section class="space-y-2 mb-6">
+      <div class="inline-flex items-center px-2 py-1 rounded-full bg-tertiary/10 border border-tertiary/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse mr-2"></span>
+        <span class="text-[10px] font-label font-bold uppercase tracking-widest text-tertiary">Document Archive</span>
+      </div>
+      <h1 class="font-headline text-3xl font-extrabold leading-tight tracking-tighter text-on-surface">
+        Report<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-tertiary to-primary">History</span>
+      </h1>
     </section>
-    <div id="reports-list" style="margin-bottom:30px">
-      <p style="color:var(--on-surface-variant)">Loading reports...</p>
+
+    <div id="reports-list" class="space-y-3 mb-6">
+      <p class="text-on-surface-variant text-sm">Loading reports...</p>
     </div>
-    <div class="report-viewer" id="report-viewer">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 id="viewer-title">Report</h3>
-        <span class="report-viewer-close" onclick="closeViewer()">✕ Đóng</span>
+
+    <div class="glass-card rounded-2xl p-5" id="report-viewer" style="display:none">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-headline font-bold text-lg" id="viewer-title">Report</h3>
+        <span class="text-xs text-on-surface-variant cursor-pointer hover:text-error transition-colors" onclick="closeViewer()">✕ Đóng</span>
       </div>
       <div id="viewer-content"></div>
     </div>
@@ -626,21 +485,86 @@
 
 </main>
 
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-4 pb-safe bg-[#0c0e14]/90 backdrop-blur-2xl rounded-t-2xl border-t border-[#91abff]/10 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] z-50">
+  <div class="flex flex-col items-center justify-center text-[#aaaab3] hover:text-[#91abff] active:scale-90 transition-all duration-300 cursor-pointer" onclick="showPage('intelligence')" id="nav-intelligence">
+    <span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+    <span class="font-['Inter'] text-[10px] uppercase tracking-widest font-semibold">Intel</span>
+  </div>
+  <div class="flex flex-col items-center justify-center text-[#aaaab3] hover:text-[#dd8bfb] active:scale-90 transition-all duration-300 cursor-pointer" onclick="showPage('analytics')" id="nav-analytics">
+    <span class="material-symbols-outlined" data-icon="insights">insights</span>
+    <span class="font-['Inter'] text-[10px] uppercase tracking-widest font-semibold">Analytics</span>
+  </div>
+  <div class="flex flex-col items-center justify-center text-[#aaaab3] hover:text-[#ffbb81] active:scale-90 transition-all duration-300 cursor-pointer" onclick="showPage('models')" id="nav-models">
+    <span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+    <span class="font-['Inter'] text-[10px] uppercase tracking-widest font-semibold">Models</span>
+  </div>
+  <div class="flex flex-col items-center justify-center text-[#aaaab3] hover:text-[#ff6e84] active:scale-90 transition-all duration-300 cursor-pointer" onclick="showPage('reports')" id="nav-reports">
+    <span class="material-symbols-outlined" data-icon="description">description</span>
+    <span class="font-['Inter'] text-[10px] uppercase tracking-widest font-semibold">Reports</span>
+  </div>
+</nav>
+
+<!-- Error Toast Notification -->
+<div id="error-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[3000] hidden">
+  <div class="bg-error/90 backdrop-blur-xl text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-label text-sm">
+    <span class="material-symbols-outlined text-[18px]">error</span>
+    <span id="error-toast-msg">Có lỗi xảy ra</span>
+    <span class="material-symbols-outlined text-[18px] cursor-pointer hover:opacity-70" onclick="document.getElementById('error-toast').classList.add('hidden')">close</span>
+  </div>
+</div>
+
+<!-- Noise Overlay -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[100]">
+  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+    <filter id="noiseFilterMain"><feTurbulence baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" type="fractalNoise"/></filter>
+    <rect filter="url(#noiseFilterMain)" height="100%" width="100%"/>
+  </svg>
+</div>
+
+<!-- Modal: Realtime Logs -->
+<div class="modal-overlay fixed inset-0 bg-[rgba(0,0,0,0.85)] backdrop-blur-[15px] z-[2000] hidden justify-center items-center" id="rt-modal">
+  <div class="bg-surface border border-surface-container-highest rounded-2xl w-[90%] max-w-[1200px] p-8 relative shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
+    <button class="absolute top-6 right-6 text-2xl text-on-surface-variant hover:text-error transition-transform hover:rotate-90" onclick="closeRealtimeModal()">&times;</button>
+    <section class="space-y-2 mb-6">
+      <div class="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-2"></span>
+        <span class="text-[10px] font-label font-bold uppercase tracking-widest text-primary">Live Feed</span>
+      </div>
+      <h1 class="font-headline text-2xl font-extrabold">Real-Time Agent Logs</h1>
+    </section>
+    <div class="grid grid-cols-3 gap-4 mb-4">
+      <div class="glass-card p-4 rounded-xl">
+        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant">Status</p>
+        <p class="font-headline font-bold"><span id="rt-status" class="status-tag status-idle">IDLE</span></p>
+      </div>
+      <div class="glass-card p-4 rounded-xl">
+        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant">PID</p>
+        <p class="font-headline font-bold" id="rt-pid">N/A</p>
+      </div>
+      <div class="glass-card p-4 rounded-xl">
+        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant">Elapsed</p>
+        <p class="font-headline font-bold" id="rt-elapsed">0s</p>
+      </div>
+    </div>
+    <div class="bg-[#000000] border border-surface-container-highest rounded-xl p-4 h-80 overflow-y-auto font-mono text-xs text-[#8899aa] leading-relaxed whitespace-pre-wrap" id="realtime-logs">[SYSTEM]: Đang chờ Pipeline...</div>
+  </div>
+</div>
+
 <script>
-// ══════════════ GLOBALS ══════════════
-Chart.defaults.color = 'rgba(170, 170, 179, 0.6)'; /* on-surface-variant */
-Chart.defaults.font.family = "'Inter', sans-serif";
+// ═══ GLOBALS ═══
+Chart.defaults.color = 'rgba(170, 170, 179, 0.6)';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
 Chart.defaults.font.weight = '500';
 Chart.defaults.font.size = 11;
-Chart.defaults.borderColor = 'rgba(255,255,255,0.03)'; /* outline-variant */
+Chart.defaults.borderColor = 'rgba(255,255,255,0.03)';
 
-/* The Cognitive Shadow - Chart Palette */
-const P = '#91abff'; /* Primary */
-const S = '#dd8bfb'; /* Secondary */
-const T = '#ffbb81'; /* Tertiary */
-const E = '#ff6e84'; /* Error/Red */
-const G = '#34d399'; /* Success/Green */
-const C = '#396bee'; /* Primary Dim */
+const P = '#91abff';
+const S = '#dd8bfb';
+const T = '#ffbb81';
+const E = '#ff6e84';
+const G = '#34d399';
+const C = '#396bee';
 
 const chartInstances = {};
 
@@ -655,13 +579,13 @@ function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
 
-// ══════════════ FILTER SYSTEM ══════════════
+// ═══ FILTER SYSTEM ═══
 function applyFilters() {
   loadKPI();
-  loadCharts();
+  if (document.getElementById('page-analytics').style.display !== 'none') loadCharts();
 }
 
-// ══════════════ KPI LOADER ══════════════
+// ═══ KPI LOADER ═══
 async function loadKPI() {
   try {
     const brand = document.getElementById('filter-brand').value;
@@ -672,17 +596,35 @@ async function loadKPI() {
 
     const res = await fetch(url);
     const d = await res.json();
-    if (d.error) return;
-    document.getElementById('kpi-revenue').textContent = fmtVND(d.total_revenue) + ' VNĐ';
-    document.getElementById('kpi-top-channel').textContent = d.top_channel;
-    document.getElementById('kpi-trending').textContent = d.top_complaint;
-    document.getElementById('kpi-units').textContent = d.total_units.toLocaleString('vi-VN') + ' máy';
-    document.getElementById('kpi-roi').textContent = d.avg_roi.toFixed(2) + 'x';
-    document.getElementById('kpi-sentiment').textContent = d.avg_sentiment + '%';
-  } catch(e) {}
+    if (d.error) {
+      console.error('KPI Error:', d.error);
+      const errMsg = 'Lỗi: ' + d.error.substring(0, 30) + '...';
+      ['kpi-revenue','kpi-top-channel','kpi-trending','kpi-units','kpi-roi-val','kpi-sentiment'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = 'N/A';
+      });
+      const roiBadge = document.getElementById('kpi-roi');
+      if(roiBadge) roiBadge.textContent = 'ERR';
+      return;
+    }
+    document.getElementById('kpi-revenue').textContent = fmtVND(d.total_revenue);
+    document.getElementById('kpi-top-channel').textContent = d.top_channel || 'N/A';
+    document.getElementById('kpi-trending').textContent = d.top_complaint || 'N/A';
+    document.getElementById('kpi-units').textContent = (d.total_units || 0).toLocaleString('vi-VN');
+    document.getElementById('kpi-roi-val').textContent = (d.avg_roi || 0).toFixed(2)+'x';
+    document.getElementById('kpi-sentiment').textContent = (d.avg_sentiment || 0)+'%';
+    const roiBadge = document.getElementById('kpi-roi');
+    if(roiBadge) roiBadge.textContent = (d.avg_roi || 0).toFixed(2)+'x';
+  } catch(e) {
+    console.error('KPI fetch error:', e);
+    ['kpi-revenue','kpi-top-channel','kpi-trending','kpi-units','kpi-roi-val','kpi-sentiment'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = 'ERR';
+    });
+  }
 }
 
-// ══════════════ ANALYTICS CHARTS ══════════════
+// ═══ ANALYTICS CHARTS ═══
 async function loadCharts() {
   try {
     const brand = document.getElementById('filter-brand').value;
@@ -693,12 +635,26 @@ async function loadCharts() {
 
     const res = await fetch(url);
     const data = await res.json();
-    if (!data || data.error) return;
+    if (!data || data.error) {
+      console.error('Charts Error:', data?.error || 'No data');
+      // Clear all charts and show error state
+      ['topRevenueChart','bottomSalesChart','topSalesChart','bottomRevenueChart','paymentDonutChart','paymentAgeChart','heatmapChart','marketingChart'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if(canvas) {
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = 'rgba(170,170,179,0.5)';
+          ctx.font = '12px Inter';
+          ctx.textAlign = 'center';
+          ctx.fillText('Không có dữ liệu', canvas.width/2, canvas.height/2);
+        }
+      });
+      return;
+    }
 
-    // Destroy previous instances
     ['topRevenueChart','bottomSalesChart','topSalesChart','bottomRevenueChart','paymentDonutChart','paymentAgeChart','heatmapChart','marketingChart'].forEach(destroyChart);
 
-    // M1a: Top Revenue
+    // Top Revenue
     chartInstances.topRevenueChart = new Chart(document.getElementById('topRevenueChart'), {
       type:'bar', data:{ labels:data.top_revenue.map(x=>x.product_name), datasets:[{ label:'Doanh thu', data:data.top_revenue.map(x=>x.revenue), backgroundColor:[P,S,T,C,G], barThickness:12, borderRadius:4 }] },
       options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
@@ -707,7 +663,7 @@ async function loadCharts() {
       }
     });
 
-    // M1b: Top Sales
+    // Top Sales
     chartInstances.topSalesChart = new Chart(document.getElementById('topSalesChart'), {
       type:'bar', data:{ labels:data.top_sales.map(x=>x.product_name), datasets:[{ label:'Units', data:data.top_sales.map(x=>x.units_sold), backgroundColor:[P,S,T,C,G], barThickness:12, borderRadius:4 }] },
       options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
@@ -716,7 +672,7 @@ async function loadCharts() {
       }
     });
 
-    // M1c: Bottom Revenue
+    // Bottom Revenue
     chartInstances.bottomRevenueChart = new Chart(document.getElementById('bottomRevenueChart'), {
       type:'bar', data:{ labels:data.bottom_revenue.map(x=>x.product_name), datasets:[{ label:'Revenue', data:data.bottom_revenue.map(x=>x.revenue), backgroundColor:E, barThickness:12, borderRadius:4 }] },
       options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
@@ -725,7 +681,7 @@ async function loadCharts() {
       }
     });
 
-    // M1d: Bottom Sales
+    // Bottom Sales
     chartInstances.bottomSalesChart = new Chart(document.getElementById('bottomSalesChart'), {
       type:'bar', data:{ labels:data.bottom_sales.map(x=>x.product_name), datasets:[{ label:'Units', data:data.bottom_sales.map(x=>x.units_sold), backgroundColor:E, barThickness:12, borderRadius:4 }] },
       options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
@@ -734,7 +690,7 @@ async function loadCharts() {
       }
     });
 
-    // M2a: Payment Donut
+    // Payment Donut
     chartInstances.paymentDonutChart = new Chart(document.getElementById('paymentDonutChart'), {
       type:'doughnut', data:{ labels:data.payment_donut.map(x=>x.payment_method), datasets:[{ data:data.payment_donut.map(x=>x.count), backgroundColor:[P,S,T,G,C], borderWidth:0, hoverOffset: 15 }] },
       options:{ responsive:true, maintainAspectRatio:false, cutout:'80%',
@@ -742,7 +698,7 @@ async function loadCharts() {
       }
     });
 
-    // M2b: Payment×Age Stacked
+    // Payment×Age Stacked
     const ageGroups=[...new Set(data.payment_age.map(x=>x.customer_age_group))];
     const payMethods=[...new Set(data.payment_age.map(x=>x.payment_method))];
     const pc=[P,S,T,G,C,E];
@@ -754,7 +710,7 @@ async function loadCharts() {
       }
     });
 
-    // M3: Heatmap (Price × Age)
+    // Heatmap (Price × Age)
     const ageCols=[...new Set(data.price_age_heatmap.map(x=>x.customer_age_group))];
     const priceBins=['Dưới 5 triệu','5-10 triệu','10-20 triệu','Trên 20 triệu'].filter(pb=>data.price_age_heatmap.some(x=>x.price_bin===pb));
     chartInstances.heatmapChart = new Chart(document.getElementById('heatmapChart'), {
@@ -765,10 +721,13 @@ async function loadCharts() {
       }
     });
 
-    // M4: Marketing CPA+ROI
+    // Marketing CPA+ROI
     const channels=data.marketing_efficiency.map(x=>x.channel);
     chartInstances.marketingChart = new Chart(document.getElementById('marketingChart'), {
-      type:'bar', data:{ labels:channels, datasets:[ {label:'CPA (VNĐ)',data:data.marketing_efficiency.map(x=>x.avg_cpa),backgroundColor:E,borderRadius:4,barThickness:12,yAxisID:'y'}, {label:'ROI (x)',data:data.marketing_efficiency.map(x=>x.avg_roi),backgroundColor:P,borderRadius:4,barThickness:12,yAxisID:'y1'} ] },
+      type:'bar', data:{ labels:channels, datasets:[
+        {label:'CPA (VNĐ)',data:data.marketing_efficiency.map(x=>x.avg_cpa),backgroundColor:E,borderRadius:4,barThickness:12,yAxisID:'y'},
+        {label:'ROI (x)',data:data.marketing_efficiency.map(x=>x.avg_roi),backgroundColor:P,borderRadius:4,barThickness:12,yAxisID:'y1'}
+      ] },
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{position:'top',labels:{boxWidth:8,padding:16}}, tooltip:{backgroundColor:'rgba(12,14,20,0.9)', padding:12, callbacks:{label:ctx=>{ if(ctx.dataset.label==='CPA (VNĐ)') return 'CPA: '+fmtVND(ctx.raw)+' VNĐ/đơn'; return 'ROI: '+ctx.raw+'x'; }}} },
         scales:{ x:{grid:{display:false}}, y:{position:'left',grid:{display:false},ticks:{display:false}}, y1:{position:'right',grid:{display:false},ticks:{display:false}} }
@@ -778,7 +737,7 @@ async function loadCharts() {
   } catch(e) { console.error("Chart error:", e); }
 }
 
-// ══════════════ MODELS PAGE ══════════════
+// ═══ MODELS PAGE ═══
 async function loadModels() {
   try {
     const res = await fetch('/api/model-info');
@@ -793,51 +752,48 @@ async function loadModels() {
     document.getElementById('model-ctx').textContent = pm.context_window;
 
     const badge = document.getElementById('model-conn-badge');
-    if (pm.api_connected) { badge.textContent = 'CONNECTED'; badge.className = 'model-badge badge-green'; }
-    else { badge.textContent = 'DISCONNECTED'; badge.className = 'model-badge badge-grey'; }
+    if (pm.api_connected) { badge.textContent = 'CONNECTED'; badge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#34d399]/15 text-[#34d399]'; }
+    else { badge.textContent = 'DISCONNECTED'; badge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#aaaab3]/10 text-[#aaaab3]'; }
 
     document.getElementById('orch-info').textContent = d.orchestrator.name + ' v' + d.orchestrator.version;
-
-    const bb = document.getElementById('backup-badge');
-    bb.textContent = 'BACKUP: ' + d.backup_provider.name + (d.backup_provider.api_connected ? ' ✓' : ' ✗');
-    bb.className = 'model-badge ' + (d.backup_provider.api_connected ? 'badge-blue' : 'badge-grey');
+    document.getElementById('backup-badge').textContent = 'BACKUP: ' + d.backup_provider.name + (d.backup_provider.api_connected ? ' ✓' : ' ✗');
 
     // Agents
     const list = document.getElementById('agent-list');
     list.innerHTML = d.orchestrator.agents.map((a,i) => `
-      <li class="agent-item">
-        <div class="agent-idx">${i+1}</div>
+      <li class="glass-card p-4 rounded-xl flex gap-4 hover:bg-surface-container transition-all">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center font-bold text-surface text-sm shrink-0">${i+1}</div>
         <div>
-          <div class="agent-role">${a.role}</div>
-          <div class="agent-tools">${a.tools.map(t=>'<code>'+t+'</code>').join(' ')}</div>
+          <div class="font-headline font-bold text-sm text-on-surface mb-1">${a.role}</div>
+          <div class="flex flex-wrap gap-1">${a.tools.map(t=>`<code class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-mono">${t}</code>`).join('')}</div>
         </div>
       </li>
     `).join('');
 
     // Tools
     const tbody = document.getElementById('tool-tbody');
-    tbody.innerHTML = d.tools.map(t => `<tr><td>${t.name}</td><td>${t.type}</td><td>${t.desc}</td></tr>`).join('');
+    tbody.innerHTML = d.tools.map(t => `<tr class="border-b border-white/5 hover:bg-surface-container-highest/30 transition-colors"><td class="p-4 text-primary font-mono text-xs">${t.name}</td><td class="p-4 text-xs text-on-surface-variant">${t.type}</td><td class="p-4 text-xs text-on-surface-variant">${t.desc}</td></tr>`).join('');
 
   } catch(e) {}
 }
 
-// ══════════════ REPORTS PAGE ══════════════
+// ═══ REPORTS PAGE ═══
 async function loadReports() {
   try {
     const res = await fetch('/api/reports');
     const d = await res.json();
     const container = document.getElementById('reports-list');
     if (!d.reports || d.reports.length === 0) {
-      container.innerHTML = '<div class="report-block"><h4>Chưa có báo cáo</h4><div>Chạy Pipeline để tạo báo cáo đầu tiên. Các tệp .md sẽ xuất hiện tại đây.</div></div>';
+      container.innerHTML = '<div class="glass-card rounded-2xl p-5"><p class="text-on-surface-variant">Chưa có báo cáo. Chạy Pipeline để tạo báo cáo đầu tiên.</p></div>';
       return;
     }
     container.innerHTML = d.reports.map(r => `
-      <div class="report-list-item" onclick="openReport('${r.filename}')">
+      <div class="glass-card p-4 rounded-xl flex justify-between items-center hover:bg-surface-container-highest/50 transition-all cursor-pointer" onclick="openReport('${r.filename}')">
         <div>
-          <h4>📄 ${r.filename}</h4>
-          <p class="meta">Cập nhật: ${r.modified} · ${r.size_kb} KB</p>
+          <h4 class="font-headline font-bold text-sm text-on-surface">📄 ${r.filename}</h4>
+          <p class="text-[10px] text-on-surface-variant mt-1">Cập nhật: ${r.modified} · ${r.size_kb} KB</p>
         </div>
-        <span style="color:var(--primary); font-size:0.8rem">Xem →</span>
+        <span class="text-primary text-xs">Xem →</span>
       </div>
     `).join('');
   } catch(e) {}
@@ -851,7 +807,7 @@ async function openReport(filename) {
     document.getElementById('viewer-title').textContent = d.filename;
     const viewer = document.getElementById('report-viewer');
     const content = document.getElementById('viewer-content');
-    content.innerHTML = d.sections.map(s => `<div class="report-block"><h4>${s.heading}</h4><div>${s.body_html}</div></div>`).join('');
+    content.innerHTML = d.sections.map(s => `<div class="mb-4"><h4 class="font-headline font-bold text-sm text-primary mb-2">${s.heading}</h4><div class="text-sm text-on-surface-variant leading-relaxed">${s.body_html}</div></div>`).join('');
     viewer.style.display = 'block';
     viewer.scrollIntoView({ behavior: 'smooth' });
   } catch(e) {}
@@ -861,99 +817,108 @@ function closeViewer() {
   document.getElementById('report-viewer').style.display = 'none';
 }
 
-// ══════════════ SPA NAVIGATION ══════════════
+// ═══ SPA NAVIGATION ═══
 function showPage(pageId) {
   document.querySelectorAll('[id^="page-"]').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll('.fixed nav > div').forEach(i => {
+    i.classList.remove('text-[#91abff]', 'drop-shadow-[0_0_10px_rgba(145,171,255,0.5)]', 'scale-110');
+    i.classList.add('text-[#aaaab3]', 'opacity-60');
+  });
   const target = document.getElementById('page-' + pageId);
   if (target) target.style.display = 'block';
   const nav = document.getElementById('nav-' + pageId);
-  if (nav) nav.classList.add('active');
+  if (nav) {
+    nav.classList.remove('text-[#aaaab3]', 'opacity-60');
+    nav.classList.add('text-[#91abff]', 'drop-shadow-[0_0_10px_rgba(145,171,255,0.5)]', 'scale-110');
+  }
   window.location.hash = pageId;
 
-  // Page-specific data loading
   if (pageId === 'intelligence') loadKPI();
   if (pageId === 'analytics') loadCharts();
   if (pageId === 'models') loadModels();
   if (pageId === 'reports') loadReports();
-  
-  // Manage Polling
-  if (pageId === 'pipelines') {
-    startPolling();
-  } else {
-    stopPolling();
-  }
+
+  if (pageId === 'pipelines') startPolling();
+  else stopPolling();
 }
 
-// ══════════════ PIPELINE MONITORING ══════════════
+// ═══ PIPELINE MONITORING ═══
 let pollInterval = null, isPolling = false;
 let rtPollInterval = null;
 
-function startPolling() { 
-  if (isPolling) return; 
-  isPolling = true; 
-  console.log("Starting Pipeline Polling...");
-  updatePipelineStatus(); 
-  pollInterval = setInterval(updatePipelineStatus, 3000); 
+function startPolling() {
+  if (isPolling) return;
+  isPolling = true;
+  updatePipelineStatus();
+  pollInterval = setInterval(updatePipelineStatus, 3000);
 }
-function stopPolling() { 
-  if (pollInterval) {
-    console.log("Stopping Pipeline Polling.");
-    clearInterval(pollInterval);
-  }
-  pollInterval = null; 
-  isPolling = false; 
+function stopPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = null;
+  isPolling = false;
 }
 
-function startRealtimePolling() { 
-  if (rtPollInterval) return; 
-  console.log("Starting Realtime Polling...");
-  updateRealtimeView(); 
-  rtPollInterval = setInterval(updateRealtimeView, 2000); 
+function startRealtimePolling() {
+  if (rtPollInterval) return;
+  updateRealtimeView();
+  rtPollInterval = setInterval(updateRealtimeView, 2000);
 }
-function stopRealtimePolling() { 
-  if (rtPollInterval) {
-    console.log("Stopping Realtime Polling.");
-    clearInterval(rtPollInterval);
+function stopRealtimePolling() {
+  if (rtPollInterval) clearInterval(rtPollInterval);
+  rtPollInterval = null;
+}
+
+function showErrorToast(msg) {
+  const toast = document.getElementById('error-toast');
+  const msgEl = document.getElementById('error-toast-msg');
+  if(toast && msgEl) {
+    msgEl.textContent = msg.substring(0, 80);
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 6000);
   }
-  rtPollInterval = null; 
 }
 
 async function updatePipelineStatus() {
   try {
     const res = await fetch('/api/pipeline-status');
     const data = await res.json();
-    const tag = document.getElementById('pipeline-status-tag');
-    if(tag) {
-        tag.textContent = data.status;
-        tag.className = 'status-tag status-' + data.status.toLowerCase();
-    }
-    const logIndicator = document.getElementById('log-status-indicator');
 
+    ['pipeline-status-tag', 'pipeline-status-tag-2'].forEach(id => {
+      const tag = document.getElementById(id);
+      if(tag) { tag.textContent = data.status; tag.className = 'status-tag status-' + data.status.toLowerCase(); }
+    });
+
+    const logIndicator = document.getElementById('log-status-indicator');
     if (data.status === 'RUNNING') {
-      pollLogs();
       if(logIndicator) logIndicator.innerHTML = '<span style="color:var(--primary)">● RUNNING</span>';
+      pollLogs();
     } else if (data.status === 'COMPLETED') {
       if(logIndicator) logIndicator.innerHTML = '<span style="color:var(--accent-success)">● FINISHED</span>';
-      pollLogs(); loadKPI(); loadCharts(); stopPolling(); 
+      pollLogs(); loadKPI(); loadCharts(); stopPolling();
     } else if (data.status === 'FAILED') {
       if(logIndicator) logIndicator.innerHTML = '<span style="color:var(--accent-error)">● FAILED</span>';
-      pollLogs(); stopPolling();
-    } else if (data.status === 'IDLE') {
+      pollLogs();
+      // Show error toast if logs contain "Unsupported content type"
+      fetch('/api/pipeline-logs').then(r=>r.json()).then(d => {
+        if(d.logs && d.logs.includes('Unsupported content type')) {
+          showErrorToast('Lỗi AI Model: Unsupported content type. Kiểm tra cấu hình model!');
+        }
+      });
       stopPolling();
     }
 
     const pidEl = document.getElementById('pipeline-pid');
     if(pidEl) pidEl.textContent = data.pid ? '#' + data.pid : 'N/A';
 
-    if (data.start_time && document.getElementById('pipeline-elapsed')) {
+    if (data.start_time) {
       const start = new Date(data.start_time);
       const end = data.status === 'RUNNING' ? new Date() : new Date(data.end_time || new Date());
-      document.getElementById('pipeline-elapsed').textContent = Math.floor((end - start) / 1000) + 's';
+      ['pipeline-elapsed', 'rt-elapsed'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = Math.floor((end - start) / 1000) + 's';
+      });
       const pTime = document.getElementById('pipeline-time');
       if(pTime) pTime.textContent = 'Started: ' + start.toLocaleTimeString();
-      const pTimeSub = document.getElementById('pipeline-time-sub');
-      if(pTimeSub) pTimeSub.textContent = data.status === 'RUNNING' ? 'Counting...' : 'Total duration';
     }
   } catch(e) {}
 }
@@ -965,18 +930,16 @@ async function updateRealtimeView() {
     const lData = await lRes.json();
 
     const rtTag = document.getElementById('rt-status');
-    if(rtTag) {
-        rtTag.textContent = sData.status;
-        rtTag.className = 'status-tag status-' + sData.status.toLowerCase();
-    }
-    
+    if(rtTag) { rtTag.textContent = sData.status; rtTag.className = 'status-tag status-' + sData.status.toLowerCase(); }
+
     const rtPid = document.getElementById('rt-pid');
     if(rtPid) rtPid.textContent = sData.pid ? '#' + sData.pid : 'N/A';
 
-    if (sData.start_time && document.getElementById('rt-elapsed')) {
+    if (sData.start_time) {
       const start = new Date(sData.start_time);
       const end = sData.status === 'RUNNING' ? new Date() : new Date(sData.end_time || new Date());
-      document.getElementById('rt-elapsed').textContent = Math.floor((end - start) / 1000) + 's';
+      const el = document.getElementById('rt-elapsed');
+      if(el) el.textContent = Math.floor((end - start) / 1000) + 's';
     }
 
     const box = document.getElementById('realtime-logs');
@@ -986,9 +949,7 @@ async function updateRealtimeView() {
         box.scrollTop = box.scrollHeight;
     }
 
-    if (sData.status === 'COMPLETED' || sData.status === 'FAILED' || sData.status === 'IDLE') {
-      stopRealtimePolling();
-    }
+    if (sData.status === 'COMPLETED' || sData.status === 'FAILED' || sData.status === 'IDLE') stopRealtimePolling();
   } catch(e) {}
 }
 
@@ -1007,41 +968,34 @@ async function pollLogs() {
 
 function closeRealtimeModal() {
   document.getElementById('rt-modal').style.display = 'none';
-  stopRealtimePolling(); // stop polling when modal closed
+  document.getElementById('rt-modal').classList.remove('flex');
+  document.getElementById('rt-modal').classList.add('hidden');
+  stopRealtimePolling();
 }
 
 async function runPipelineRequest() {
   const btn = document.getElementById('run-btn');
-  if(btn) {
-    btn.disabled = true;
-    const spin = document.getElementById('spinner');
-    if(spin) spin.style.display = 'inline-block';
-    if(btn.childNodes.length > 0) {
-        btn.childNodes[btn.childNodes.length - 1].textContent = ' RUNNING...';
-    }
-  }
-  
-  // Show Modal
+  const btnText = document.getElementById('run-btn-text');
+  const spinner = document.getElementById('spinner');
+
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+  btnText.textContent = 'RUNNING...';
+
   const modal = document.getElementById('rt-modal');
-  if(modal) {
-    modal.style.display = 'flex';
-    document.getElementById('rt-status').textContent = 'STARTING...';
-    document.getElementById('realtime-logs').textContent = 'Đang khởi tạo Agent...';
-    startRealtimePolling();
-  }
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('rt-status').textContent = 'STARTING...';
+  document.getElementById('realtime-logs').textContent = 'Đang khởi tạo Agent...';
+  startRealtimePolling();
 
   try {
     const res = await fetch('/run', { method: 'POST' });
-    if (res.ok) {
-        // pipeline initiated
-    }
+    if (res.ok) { /* pipeline initiated */ }
   } catch(e) {
-    if(btn) {
-        btn.disabled = false;
-        const spin = document.getElementById('spinner');
-        if(spin) spin.style.display = 'none';
-        btn.childNodes[btn.childNodes.length - 1].textContent = ' CHẠY PIPELINE';
-    }
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '▶ Chạy Pipeline';
   }
 }
 
@@ -1054,21 +1008,27 @@ async function rateReport(filename, rating) {
     });
     const data = await res.json();
     if (res.ok && data.status === 'success') {
-      alert('Cảm ơn! Báo cáo đã được lưu vào Vector DB để làm dữ liệu Few-shot (Learning).');
+      alert('Cảm ơn! Báo cáo đã được lưu vào Vector DB.');
     } else if (data.status === 'ignored') {
-      alert('Đã ghi nhận phản hồi của bạn.');
+      alert('Đã ghi nhận phản hồi.');
     } else {
-      alert('Có lỗi xảy ra: ' + data.message);
+      alert('Có lỗi: ' + data.message);
     }
   } catch(e) {
     alert('Không thể gửi đánh giá: ' + e);
   }
 }
 
+// ═══ INIT ═══
 window.onload = () => {
   const hash = window.location.hash.replace('#', '') || 'intelligence';
   showPage(hash);
 };
+
+// Spinner keyframes
+const style = document.createElement('style');
+style.textContent = `@keyframes spin { to { transform: rotate(360deg); } } .status-tag { padding:6px 14px; border-radius:9999px; font-weight:700; text-transform:uppercase; font-size:0.65rem; letter-spacing:1px; } .status-idle { background:rgba(29,31,40,1); color:#aaaab3; } .status-running { background:#91abff; color:#0c0e14; animation:blink 1.5s infinite; } .status-completed { background:#34d399; color:#0c0e14; } .status-failed { background:#ff6e84; color:white; } @keyframes blink { 50% { opacity:0.5; } }`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>

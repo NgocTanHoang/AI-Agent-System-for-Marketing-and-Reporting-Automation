@@ -1,0 +1,19 @@
+version: '3.8'
+
+# Development override
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  ai-marketing-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount local code for development
+      - .:/app
+      # But keep data and logs persistent
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - ENVIRONMENT=development
+    # For development, mount the code for live editing
