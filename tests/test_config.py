@@ -38,3 +38,15 @@ def test_runtime_model_info_reflects_available_credentials(monkeypatch):
     assert info["primary_model"]["api_connected"] is False
     assert info["backup_provider"]["api_connected"] is True
     assert info["orchestrator"]["agents"]
+
+
+def test_runtime_model_info_uses_openrouter_free_defaults(monkeypatch):
+    monkeypatch.delenv("NVIDIA_NIM_API_KEY", raising=False)
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-openrouter")
+
+    info = get_runtime_model_info()
+
+    assert info["backup_provider"]["name"] == "OpenRouter"
+    assert info["backup_provider"]["api_connected"] is True
+    assert "gpt-oss-120b:free" in load_pipeline_settings()["llm"]["backup"]["model_id"]
