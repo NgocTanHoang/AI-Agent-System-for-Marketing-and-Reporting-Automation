@@ -1,114 +1,55 @@
-import { useState, useEffect } from 'react'
-import { reportsAPI } from '../api/api'
-import GlassCard from '../components/GlassCard'
-import MarkdownRenderer from '../components/MarkdownRenderer'
+import { useEffect } from "react"
+import { useOutletContext } from "react-router-dom"
+import { api } from "../api/api"
 
 function Reports() {
-  const [reports, setReports] = useState([])
-  const [selectedReport, setSelectedReport] = useState(null)
-  const [sections, setSections] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  const loadReports = async () => {
-    try {
-      const data = await reportsAPI.list()
-      if (data.reports) {
-        setReports(data.reports)
-      }
-    } catch (e) {
-      console.error('Reports error:', e)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { reports, activeReport, setActiveReport, refresh } = useOutletContext()
 
   useEffect(() => {
-    loadReports()
-  }, [])
-
-  const openReport = async (filename) => {
-    try {
-      const data = await reportsAPI.get(filename)
-      if (!data.error) {
-        setSelectedReport(filename)
-        setSections(data.sections || [])
-      }
-    } catch (e) {
-      console.error('Open report error:', e)
+    if (!activeReport && reports.length > 0) {
+      api.report(reports[0].id).then(setActiveReport).catch(console.error)
     }
-  }
+  }, [reports, activeReport, setActiveReport])
 
-  const closeViewer = () => {
-    setSelectedReport(null)
-    setSections([])
+  const handleSelect = async (report) => {
+    const payload = await api.report(report.id)
+    setActiveReport(payload)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <section className="space-y-2 mb-6">
-        <div className="inline-flex items-center px-2 py-1 rounded-full bg-tertiary/10 border border-tertiary/20">
-          <div className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse mr-2"></div>
-          <span className="text-[10px] font-label font-bold uppercase tracking-widest text-tertiary">Document Archive</span>
+    <div className="grid gap-6 xl:grid-cols-[0.45fr_0.55fr]">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="font-headline text-2xl font-bold text-white">Reports</h2>
+          <button type="button" onClick={() => refresh()} className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-slate-300">
+            Refresh
+          </button>
         </div>
-        <h1 className="font-headline text-3xl font-extrabold leading-tight tracking-tighter text-on-surface">
-          Report<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-tertiary to-primary">History</span>
-        </h1>
+        <div className="mt-6 space-y-3">
+          {reports.map((report) => (
+            <button
+              type="button"
+              key={report.id}
+              onClick={() => handleSelect(report)}
+              className={`w-full rounded-2xl border p-4 text-left ${activeReport?.id === report.id ? "border-blue-400/40 bg-blue-500/10" : "border-white/10 bg-[#0f1220]"}`}
+            >
+              <p className="font-semibold text-white">{report.filename}</p>
+              <p className="mt-2 text-xs text-slate-400">{new Date(report.created_at).toLocaleString()} · {report.size_kb} KB</p>
+            </button>
+          ))}
+        </div>
       </section>
 
-      {/* Reports List */}
-      <div className="space-y-3">
-        {loading ? (
-          <GlassCard>
-            <p className="text-on-surface-variant">Loading reports...</p>
-          </GlassCard>
-        ) : reports.length > 0 ? (
-          reports.map((report, idx) => (
-            <div
-              key={idx}
-              onClick={() => openReport(report.filename)}
-              className="glass-card p-4 rounded-xl flex justify-between items-center hover:bg-surface-container transition-all cursor-pointer"
-            >
-              <div>
-                <h4 className="font-headline font-bold text-sm text-on-surface">📄 {report.filename}</h4>
-                <p className="text-[10px] text-on-surface-variant mt-1">
-                  Cập nhật: {report.modified} · {report.size_kb} KB
-                </p>
-              </div>
-              <span className="text-primary text-xs">Xem →</span>
-            </div>
-          ))
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <h2 className="font-headline text-2xl font-bold text-white">Selected Report</h2>
+        {activeReport ? (
+          <article className="prose prose-invert mt-6 max-w-none whitespace-pre-wrap text-sm text-slate-200">
+            {activeReport.content || "Select a report to inspect the output."}
+          </article>
         ) : (
-          <GlassCard>
-            <p className="text-on-surface-variant">Chưa có báo cáo. Chạy Pipeline để tạo báo cáo đầu tiên.</p>
-          </GlassCard>
+          <p className="mt-6 text-slate-400">No report selected yet.</p>
         )}
-      </div>
-
-      {/* Report Viewer */}
-      {selectedReport && (
-        <GlassCard className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-headline font-bold text-lg">{selectedReport}</h3>
-            <span
-              className="text-xs text-on-surface-variant cursor-pointer hover:text-error transition-colors"
-              onClick={closeViewer}
-            >
-              ✕ Đóng
-            </span>
-          </div>
-          <div className="space-y-4">
-            {sections.map((sec, idx) => (
-              <div key={idx} className="mb-4">
-                <h4 className="font-headline font-bold text-sm text-primary mb-2">{sec.heading}</h4>
-                <div className="text-sm text-on-surface-variant leading-relaxed">
-                  <MarkdownRenderer content={sec.body_html?.replace(/<[^>]+>/g, '') || ''} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </GlassCard>
-      )}
+      </section>
     </div>
   )
 }

@@ -1,0 +1,5 @@
+-r requirements-vector.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+sentence-transformers
+torch==2.5.1+cpu

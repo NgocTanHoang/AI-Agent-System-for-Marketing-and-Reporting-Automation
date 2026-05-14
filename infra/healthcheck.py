@@ -25,22 +25,35 @@ REQUIRED_MODULES = {
         "fastapi",
         "uvicorn",
         "markdown",
+        "litellm",
+        "ddgs",
     ],
     "worker": [
         "dotenv",
-        "fastapi",
-        "uvicorn",
-        "markdown",
         "crewai",
         "litellm",
         "pandas",
         "ddgs",
-        "sentence_transformers",
         "matplotlib",
-        "chromadb",
-        "torch",
     ],
 }
+
+OPTIONAL_VECTOR_MODULES = [
+    "chromadb",
+    "sentence_transformers",
+    "torch",
+]
+
+
+def _is_truthy(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def get_required_modules(mode: str) -> list[str]:
+    modules = list(REQUIRED_MODULES[mode])
+    if mode == "worker" and _is_truthy(os.getenv("HEALTHCHECK_REQUIRE_VECTOR_MODULES")):
+        modules.extend(OPTIONAL_VECTOR_MODULES)
+    return modules
 
 
 def check_required_directories() -> tuple[bool, str]:
@@ -60,7 +73,7 @@ def check_required_directories() -> tuple[bool, str]:
 
 def check_required_modules(mode: str) -> tuple[bool, list[str]]:
     missing = []
-    for module_name in REQUIRED_MODULES[mode]:
+    for module_name in get_required_modules(mode):
         try:
             importlib.import_module(module_name)
         except ImportError:

@@ -30,6 +30,10 @@ LLM_TIMEOUT = 600
 MAX_RETRIES = 3
 PIPELINE_CONFIG_PATH = CONFIG_DIR / "pipeline.json"
 
+OPENROUTER_MODEL_ID = os.getenv("OPENROUTER_MODEL_ID", "openai/gpt-oss-120b:free")
+OPENROUTER_MODEL_NAME = os.getenv("OPENROUTER_MODEL_NAME", "gpt-oss-120b (free)")
+OPENROUTER_MODEL_CONTEXT_WINDOW = os.getenv("OPENROUTER_MODEL_CONTEXT_WINDOW", "131K")
+
 DEFAULT_PIPELINE_SETTINGS = {
     "pipeline": {
         "market_topic": "Xu huong smartphone 2026 va thi truong AI Phone",
@@ -59,11 +63,11 @@ DEFAULT_PIPELINE_SETTINGS = {
             "env_keys": ["NVIDIA_NIM_API_KEY", "NVIDIA_API_KEY"],
         },
         "backup": {
-            "name": "Llama 3.3 70B",
+            "name": OPENROUTER_MODEL_NAME,
             "provider": "OpenRouter",
-            "model_id": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
-            "parameters": "70B",
-            "context_window": "128K",
+            "model_id": f"openrouter/{OPENROUTER_MODEL_ID}",
+            "parameters": "117B MoE",
+            "context_window": OPENROUTER_MODEL_CONTEXT_WINDOW,
             "env_keys": ["OPENROUTER_API_KEY"],
         },
     },

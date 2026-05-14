@@ -1,11 +1,7 @@
--r requirements-web.txt
---extra-index-url https://download.pytorch.org/whl/cpu
-
+python-dotenv
 crewai
 litellm
 pandas
+tabulate
 ddgs
 matplotlib
-chromadb
-sentence-transformers
-torch==2.5.1+cpu

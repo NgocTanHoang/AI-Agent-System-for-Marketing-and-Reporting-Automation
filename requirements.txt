@@ -1,1 +1,2 @@
+-r requirements-web.txt
 -r requirements-worker.txt

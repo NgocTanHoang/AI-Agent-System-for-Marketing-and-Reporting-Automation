@@ -7,10 +7,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements-web.txt requirements-worker.txt ./
+ARG INSTALL_LOCAL_EMBEDDINGS=false
+
+COPY requirements-worker.txt requirements-vector.txt requirements-worker-local-embedding.txt ./
 
 RUN pip install --upgrade pip && \
-    pip install -r requirements-worker.txt
+    pip install -r requirements-worker.txt && \
+    if [ "$INSTALL_LOCAL_EMBEDDINGS" = "true" ]; then pip install -r requirements-worker-local-embedding.txt; fi
 
 COPY main.py ./
 COPY src ./src
