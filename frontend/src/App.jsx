@@ -1,43 +1,21 @@
-import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './layout/Layout'
-import Intelligence from './pages/Intelligence'
-import Analytics from './pages/Analytics'
-import Pipelines from './pages/Pipelines'
-import Models from './pages/Models'
-import Reports from './pages/Reports'
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
+import Layout from "./layout/Layout"
+import Overview from "./pages/Overview"
+import Analytics from "./pages/Analytics"
+import Agents from "./pages/Agents"
+import Research from "./pages/Research"
+import Reports from "./pages/Reports"
 
 function App() {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('theme')
-    return saved || 'dark'
-  })
-
-  useEffect(() => {
-    const root = document.documentElement
-    if (theme === 'dark') {
-      root.classList.add('dark')
-      root.classList.remove('light')
-    } else {
-      root.classList.add('light')
-      root.classList.remove('dark')
-    }
-    localStorage.setItem('theme', theme)
-  }, [theme])
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout theme={theme} toggleTheme={toggleTheme} />}>
-          <Route index element={<Navigate to="/intelligence" replace />} />
-          <Route path="intelligence" element={<Intelligence />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/overview" replace />} />
+          <Route path="overview" element={<Overview />} />
           <Route path="analytics" element={<Analytics />} />
-          <Route path="pipelines" element={<Pipelines />} />
-          <Route path="models" element={<Models />} />
+          <Route path="agents" element={<Agents />} />
+          <Route path="research" element={<Research />} />
           <Route path="reports" element={<Reports />} />
         </Route>
       </Routes>

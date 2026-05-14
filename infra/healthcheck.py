@@ -25,6 +25,8 @@ REQUIRED_MODULES = {
         "fastapi",
         "uvicorn",
         "markdown",
+        "litellm",
+        "ddgs",
     ],
     "worker": [
         "dotenv",

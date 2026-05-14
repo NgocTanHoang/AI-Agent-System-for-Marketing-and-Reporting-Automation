@@ -83,6 +83,12 @@ config/credentials.json
 # Databases
 *.db
 *.sqlite
+data/processed/*
+!data/processed/.gitkeep
+data/chromadb/*
+!data/chromadb/.gitkeep
+logs/*
+!logs/.gitkeep
 
 # IDEs
 .vscode/

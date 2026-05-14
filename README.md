@@ -1,49 +1,56 @@
-# AI Agent System for Marketing and Reporting Automation
+# Obsidian Intelligence System - AI Marketing Agent Dashboard V2.0
 
-Multi-agent marketing intelligence system gồm:
+Obsidian Intelligence System là bản refactor của hệ thống marketing intelligence theo hướng backend-first:
 
-- FastAPI backend cho dashboard và API
-- CrewAI pipeline để research, planning và report generation
-- React/Vite frontend cho analytics và pipeline monitoring
-- SQLite + ChromaDB cho dữ liệu nghiệp vụ, report history và memory signals
+- FastAPI backend với contract API rõ ràng
+- Multi-agent pipeline có `run_id`, trạng thái, agent logs, dashboard artifacts và report artifacts
+- KPI marketing được tính deterministic bằng Python, không giao cho LLM
+- Model router: NVIDIA primary, OpenRouter fallback, có mock mode và throttle cho NVIDIA
+- React/Vite frontend với dashboard dark cyber-enterprise và Chart.js
 
-## Kiến trúc nhanh
+## Kiến trúc
 
-- `app.py`: FastAPI app và dashboard/API endpoints
-- `main.py`: pipeline batch runner
-- `src/agents.py`, `src/tasks.py`, `src/tools.py`: agent orchestration
-- `src/memory.py`: long-term learning signals
-- `frontend/`: React dashboard
-- `infra/docker/`: Dockerfiles và compose
-- `tests/`: backend/API/pipeline tests
+- [app.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/app.py): FastAPI app
+- [main.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/main.py): CLI batch runner
+- [src/obsidian/schemas.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/schemas.py): Pydantic contracts
+- [src/obsidian/repository.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/repository.py): database/report persistence
+- [src/obsidian/metrics.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/metrics.py): deterministic KPI engine
+- [src/obsidian/llm.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/llm.py): model router và throttle
+- [src/obsidian/search.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/search.py): DDGS search wrapper
+- [src/obsidian/agents.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/agents.py): agent orchestration
+- [src/obsidian/pipeline.py](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/src/obsidian/pipeline.py): pipeline service, state, artifacts
+- [frontend/src](C:/Users/Ngoc%20Tan/.codex/worktrees/a9ea/01_AI%20Agent%20System%20for%20Marketing%20and%20Reporting%20Automation/frontend/src): dashboard V2
 
-## Yêu cầu
+## API bắt buộc
 
-- Python 3.11+
-- Node.js 20+
-- Docker Desktop nếu muốn chạy bằng container
-- Ít nhất một API key để chạy pipeline LLM thật:
-  - `NVIDIA_NIM_API_KEY` hoặc `NVIDIA_API_KEY`
-  - `OPENROUTER_API_KEY`
+- `POST /api/run-pipeline`
+- `GET /api/pipeline-status`
+- `GET /api/agent-logs`
+- `GET /api/dashboard-data`
+- `GET /api/reports`
+- `GET /api/report/{id}`
+- `GET /api/model-info`
+- `GET /api/health`
 
-## Cấu hình môi trường
+## Biến môi trường
 
-Tạo `.env` từ `.env.example`:
+Tạo `.env` từ `.env.example`.
 
-```bash
-cp .env.example .env
-```
-
-Các biến chính:
+Biến chính:
 
 ```env
 NVIDIA_NIM_API_KEY=
 NVIDIA_API_KEY=
 OPENROUTER_API_KEY=
+MODEL_PROVIDER=auto
+ENABLE_MOCK_LLM=true
+DDGS_ENABLED=true
+NVIDIA_RPM_LIMIT=40
+OPENROUTER_MODEL_ID=openai/gpt-oss-120b:free
+OPENROUTER_MODEL_NAME=gpt-oss-120b (free)
+OPENROUTER_MODEL_CONTEXT_WINDOW=131K
 VITE_API_BASE_URL=
 ```
-
-`VITE_API_BASE_URL` có thể để trống để frontend dùng relative path.
 
 ## Chạy local backend
 
@@ -55,20 +62,6 @@ python src/init_db.py
 python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Các endpoint quan trọng:
-
-- `GET /api/health`
-- `GET /api/pipeline-status`
-- `GET /api/pipeline-logs`
-- `POST /run`
-- `GET /api/kpi-summary`
-- `GET /api/dashboard-data`
-- `GET /api/reports`
-- `GET /api/report/{filename}`
-- `POST /api/rate-report`
-- `GET /api/model-info`
-- `GET /api/social-posts`
-
 ## Chạy local frontend
 
 ```bash
@@ -77,97 +70,55 @@ npm ci
 npm run dev
 ```
 
-Mặc định Vite proxy các route `/api` và `/run` sang `http://localhost:8000`.
-
-Nếu frontend deploy riêng domain/host khác backend, set:
-
-```env
-VITE_API_BASE_URL=https://your-api-host
-```
+`VITE_API_BASE_URL` có thể để trống để frontend dùng same-host relative path hoặc Vite proxy.
 
 ## Chạy pipeline batch
 
-Pipeline thật cần API key LLM hợp lệ:
+Mock mode:
 
 ```bash
+set ENABLE_MOCK_LLM=true
+set DDGS_ENABLED=false
 python main.py
 ```
 
-Output sẽ được ghi vào `data/processed/`.
-
-## Chạy full Docker Compose
-
-Web/API:
+Live mode:
 
 ```bash
+set ENABLE_MOCK_LLM=false
+set DDGS_ENABLED=true
+python main.py
+```
+
+## Docker
+
+```bash
+docker build -f infra/docker/Dockerfile .
+docker build -f infra/docker/Dockerfile.worker .
 docker compose -f infra/docker/docker-compose.yml up --build ai-marketing-web
 ```
 
-Batch worker one-off:
-
-```bash
-docker compose -f infra/docker/docker-compose.yml run --rm --profile batch ai-marketing-worker
-```
-
-Hoặc qua Makefile:
-
-```bash
-make build
-make run
-make run-worker
-```
-
-## Test và kiểm tra
+## Test
 
 ```bash
 python -m compileall app.py main.py src tests
 python -m pytest tests -q
-```
-
-Frontend build:
-
-```bash
 cd frontend
-npm ci
 npm run build
 ```
 
-Health check local/container:
+## Report output
 
-```bash
-python infra/healthcheck.py --mode worker
-python infra/healthcheck.py --mode web --url http://127.0.0.1:8000/api/health
-```
-
-## CI/CD
-
-Workflow GitHub Actions hiện chạy:
-
-- Python dependency install
-- `compileall`
-- backend tests
-- frontend build
-- Docker smoke build cho web và worker
-- push image web/worker khi push vào `main`
-
-## Report output kỳ vọng
-
-Pipeline được thiết kế để sinh report chiến lược có cấu trúc rõ ràng. Prompt/report review hiện nhắm tới các khối nội dung sau:
+Report chuẩn mới:
 
 1. Executive Summary
-2. Campaign Objective
-3. Target Audience
-4. Market & Competitor Insights
-5. Key Findings
-6. Strategic Recommendations
-7. Content Plan
-8. Channel Strategy
-9. KPI & Measurement Plan
-10. Risks & Mitigations
+2. Data Sources
+3. Campaign Performance Overview
+4. Product Performance Analysis
+5. Market & Technology Signals
+6. Key Charts Interpretation
+7. Strategic Insights
+8. Recommended Campaigns
+9. Product Focus Plan
+10. Risks & Limitations
 11. Next Actions
-
-## Lưu ý thực tế
-
-- Dashboard/API và test có thể chạy mà không cần API key.
-- Pipeline LLM thật không thể xác minh end-to-end nếu thiếu secret hợp lệ.
-- ChromaDB data trong `data/chromadb/` là runtime state; cần quản lý riêng nếu deploy production.
